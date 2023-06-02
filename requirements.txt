@@ -1,0 +1,5 @@
+numpy
+beautifulsoup4
+matplotlib
+opencv-python
+pytest
