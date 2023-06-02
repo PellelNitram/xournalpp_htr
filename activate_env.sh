@@ -1,0 +1,1 @@
+conda activate xournalpp_htr
