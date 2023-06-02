@@ -1,6 +1,6 @@
 # Xournal++ HTR
 
-Developing handwritten text recognition for [Xournal++](https://github.com/xournalpp/xournalpp).
+Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwriting_recognition) for [Xournal++](https://github.com/xournalpp/xournalpp).
 
 ## Installation
 
