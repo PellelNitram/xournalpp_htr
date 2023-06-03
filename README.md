@@ -4,11 +4,9 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 
 ## Concept 1
 
-The following shows a demo using real-life handwriting data from a Xournal++ file:
+The following shows a video demo using real-life handwriting data from a Xournal++ file on YouTube:
 
-<center>
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/FGD_O8brGNY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-</center>
+[![Xournal++ HTR - Concept 1 - Demo](https://img.youtube.com/vi/FGD_O8brGNY/0.jpg)](https://www.youtube.com/watch?v=FGD_O8brGNY)
 
 Despite not being perfect, the main take away is that the performance is surprisingly good given that the underlying algorithm has not been optimised for Xournal++ data at all. I think the performance is already good enough to be useful for the Xournal++ user base.
 
