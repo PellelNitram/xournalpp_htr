@@ -2,6 +2,23 @@
 
 Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwriting_recognition) for [Xournal++](https://github.com/xournalpp/xournalpp).
 
+## Concept 1
+
+The following shows a demo using real-life handwriting data from a Xournal++ file:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/FGD_O8brGNY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+Despite not being perfect, the main take away is that the performance is surprisingly good given that the underlying algorithm has not been optimised for Xournal++ data at all. I think the performance is already good enough to be useful for the Xournal++ user base.
+
+Feel free to play around with the demo yourself using [this code](https://github.com/PellelNitram/xournalpp_htr/blob/master/scripts/demo_concept_1.sh) after [installing this project](#Installation).
+
+Next steps to improve the performance of the handwriting text recognition even further could be:
+- Re-train the algorithm on Xournal++ specific data, while potentially using data augmentation
+- Use language model to improve text encoding
+- Use sequence-to-sequence algorithm that makes use of [Xournal++](https://github.com/xournalpp/xournalpp)'s data format. This translates into using online HTR algorithms.
+
+I would like to acknowledge [Harald Scheidl](https://github.com/githubharald) for this concept as he wrote the underlying algorithms for it made them easily usable through [his HTRPipeline repository](https://github.com/githubharald/HTRPipeline). Go check out his great content!
+
 ## Installation
 
 1. Create an environment: ``conda create --name xournalpp_htr python=3.10.11``.
