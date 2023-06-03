@@ -20,7 +20,7 @@ def parse_arguments():
 
 def main(args):
 
-    TMP_FILE = Path('/home/martin/data/xournalpp_ml/tmp_image.jpg')
+    TMP_FILE = Path.home() / Path('xournalpp_htr_tmp_image.jpg')
 
     file_ending = args['input_file'].suffix
 
