@@ -26,7 +26,7 @@ Future concepts might explore:
 - Use data augmentation to increase effective size of training data
 - Use of language models to correct for spelling mistakes
 
-## Concept 1
+### Concept 1
 
 The following shows a video demo using real-life handwriting data from a Xournal++ file on YouTube:
 
