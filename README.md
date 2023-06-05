@@ -14,6 +14,18 @@ The purpose of this project is to change that!
 
 Xournal++ HTR strives to bring open-source on-device handwriting recognition to [Xournal++](https://github.com/xournalpp/xournalpp) as it is one of the most adopted open-source note taking apps.
 
+## Project structure
+
+Developing a usable HTR systems requires experimentation. The project structure is set up to accommodate this need. *Note that ideas on imrpoved project structures are appreciated.*
+
+The experimentation is carried out in terms of "concepts". Each concept explores a different approach to HTR and possibly improves over previous concepts. Concept 1 is already implemented and uses a computer vision approach that is explained below.
+
+Future concepts might explore:
+- Retrain computer vision models from concept 1 using native data representation of [Xournal++](https://github.com/xournalpp/xournalpp)
+- Use sequence-to-sequence models to take advantage of native data representation of [Xournal++](https://github.com/xournalpp/xournalpp)
+- Use data augmentation to increase effective size of training data
+- Use of language models to correct for spelling mistakes
+
 ## Concept 1
 
 The following shows a video demo using real-life handwriting data from a Xournal++ file on YouTube:
