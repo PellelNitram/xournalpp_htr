@@ -28,7 +28,9 @@ Future concepts might explore:
 
 ### Concept 1
 
-The following shows a video demo using real-life handwriting data from a Xournal++ file on YouTube:
+This concept uses computer vision based algorithms to first detect words on a page and then to read those words.
+
+The following shows a video demo on YouTube using real-life handwriting data from a Xournal++ file:
 
 [![Xournal++ HTR - Concept 1 - Demo](https://img.youtube.com/vi/FGD_O8brGNY/0.jpg)](https://www.youtube.com/watch?v=FGD_O8brGNY)
 
@@ -37,11 +39,11 @@ Despite not being perfect, the main take away is that the performance is surpris
 Feel free to play around with the demo yourself using [this code](https://github.com/PellelNitram/xournalpp_htr/blob/master/scripts/demo_concept_1.sh) after [installing this project](#Installation).
 
 Next steps to improve the performance of the handwriting text recognition even further could be:
-- Re-train the algorithm on Xournal++ specific data, while potentially using data augmentation
-- Use language model to improve text encoding
+- Re-train the algorithm on Xournal++ specific data, while potentially using data augmentation.
+- Use language model to improve text encoding.
 - Use sequence-to-sequence algorithm that makes use of [Xournal++](https://github.com/xournalpp/xournalpp)'s data format. This translates into using online HTR algorithms.
 
-I would like to acknowledge [Harald Scheidl](https://github.com/githubharald) for this concept as he wrote the underlying algorithms for it made them easily usable through [his HTRPipeline repository](https://github.com/githubharald/HTRPipeline). Go check out his great content!
+I would like to acknowledge [Harald Scheidl](https://github.com/githubharald) in this concept as he wrote the underlying algorithms and made them easily usable through [his HTRPipeline repository](https://github.com/githubharald/HTRPipeline) - after all I just feed his algorithm [Xournal++](https://github.com/xournalpp/xournalpp) data in concept 1. Go check out his great content!
 
 ## Installation
 
