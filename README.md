@@ -2,6 +2,8 @@
 
 Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwriting_recognition) for [Xournal++](https://github.com/xournalpp/xournalpp).
 
+Your contributions are greatly appreciated!
+
 ## Project description
 
 Taking handwritten notes digitally comes with many benefits but lacks searchability of your notes. Hence, there is a need to make your handwritten notes searchable. This process is called ["handwritten text recognition" (HTR)](https://en.wikipedia.org/wiki/Handwriting_recognition).
