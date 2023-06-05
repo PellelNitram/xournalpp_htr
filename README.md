@@ -2,6 +2,16 @@
 
 Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwriting_recognition) for [Xournal++](https://github.com/xournalpp/xournalpp).
 
+## Project description
+
+Taking handwritten notes digitally comes with many benefits but lacks searchability of your notes. Hence, there is a need to make your handwritten notes searchable. This process is called ["handwritten text recognition" (HTR)](https://en.wikipedia.org/wiki/Handwriting_recognition).
+
+While many commercial note taking apps feature great HTR systems to make your notes searchable, there is no such feature available in the open-source world that is privacy aware and keeps your data local.
+
+The purpose of this project is to change that!
+
+Xournal++ HTR strives to bring open-source on-device handwriting recognition to [Xournal++](https://github.com/xournalpp/xournalpp) as it is one of the most adopted open-source note taking apps.
+
 ## Concept 1
 
 The following shows a video demo using real-life handwriting data from a Xournal++ file on YouTube:
