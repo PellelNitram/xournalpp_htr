@@ -57,13 +57,15 @@ def main(args):
         img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
 
         # detect and read text
-        height = 700 # good
-        enlarge = 5
+        #height = 700 # good
+        #enlarge = 5
         #enlarge = 10
         # height = 1000 # good
         # height = 1600 # not good
+        scale = 0.4
+        margin = 5
         read_lines = read_page(img, 
-                               DetectorConfig(height=height, enlarge=enlarge), 
+                               DetectorConfig(scale=scale, margin=margin), 
                                line_clustering_config=LineClusteringConfig(min_words_per_line=2))
         
         # To prepare plotting
