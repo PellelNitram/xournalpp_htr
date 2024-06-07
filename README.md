@@ -43,7 +43,7 @@ The following shows a video demo on YouTube using real-life handwriting data fro
 
 Despite not being perfect, the main take away is that the performance is surprisingly good given that the underlying algorithm has not been optimised for Xournal++ data at all.
 
-**I think the performance is already good enough to be useful for the Xournal++ user base.**
+**The performance is sufficiently good to be useful for the Xournal++ user base.**
 
 Feel free to play around with the demo yourself using [this code](https://github.com/PellelNitram/xournalpp_htr/blob/master/scripts/demo_concept_1.sh) after [installing this project](#Installation).
 
