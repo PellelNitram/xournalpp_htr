@@ -7,4 +7,4 @@ def export_to_pdf_with_xournalpp(input_file: Path, output_file: Path) -> None:
     TODO
     """
     # TODO: Needs to raise Exception if export fails
-    pass
+    raise NotImplementedError('not implemented and also lacking docstring.')
