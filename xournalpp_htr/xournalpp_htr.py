@@ -1,3 +1,5 @@
+"""Script to perform HTR on Xournal(++) document."""
+
 import argparse
 from pathlib import Path
 
