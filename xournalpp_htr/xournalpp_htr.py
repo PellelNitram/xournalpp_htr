@@ -24,6 +24,13 @@ def main(args):
     
     pass
 
+    # TODO: Agenda
+    # 1. export X file to PDF
+    # 2. do HTR on X file using model that is specified by `parse_arguments`
+    # 3. store prediction as hidden text to PDF file
+
+    # TODO: Define coordinate transforms between X file, prediction and PDF as matrices like in computer graphics.
+
 if __name__ == '__main__':
     args = parse_arguments()
     main(args)
