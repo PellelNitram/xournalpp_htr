@@ -11,9 +11,7 @@ from xournalpp_htr.documents import XournalDocument
 
 
 def parse_arguments():
-    """
-    Parse arguments from command line.
-    """
+    """Parse arguments from command line."""
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-if', '--input-file', type=lambda p: Path(p).absolute(), required=True,
                         help='Path to the input Xournal or Xournal++ file.')
