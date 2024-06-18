@@ -15,6 +15,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-if', '--input-file', type=lambda p: Path(p).absolute(), required=True,
                         help='Path to the input Xournal or Xournal++ file.')
+    parser.add_argument('-m', '--model', type=str, required=True,
+                        help='The model to use for handwriting recognition.') # TODO: Introduce dummy model called "test_lua_to_python"; TODO: Register models somehow to allow choice keyword here
     args = vars( parser.parse_args() )
     return args
 
