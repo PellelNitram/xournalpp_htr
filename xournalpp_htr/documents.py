@@ -82,6 +82,7 @@ class Document(ABC):
 class XournalDocument(Document):
 
     def load_data(self):
+        """Load Xournal document content."""
 
         with gzip.open(self.path, 'r') as f: 
             content = f.read().decode("utf-8") 
