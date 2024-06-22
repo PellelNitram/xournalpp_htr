@@ -2,10 +2,18 @@
 
 import argparse
 from pathlib import Path
+import os
+import tempfile
 
 import cv2
 import matplotlib.pyplot as plt
 from htr_pipeline import read_page, DetectorConfig, LineClusteringConfig
+import pymupdf
+from pymupdf import TextWriter
+import cv2
+import matplotlib.pyplot as plt
+from htr_pipeline import read_page, DetectorConfig, LineClusteringConfig
+from tqdm import tqdm
 
 from documents import XournalDocument
 from utils import export_to_pdf_with_xournalpp
@@ -19,7 +27,16 @@ def parse_arguments():
     parser.add_argument('-of', '--output-file', type=lambda p: Path(p).absolute(), required=True,
                         help='Path to the output PDF file.')
     parser.add_argument('-m', '--model', type=str, required=True,
-                        help='The model to use for handwriting recognition.') # TODO: Introduce dummy model called "test_lua_to_python"; TODO: Register models somehow to allow choice keyword here
+                        help='The model to use for handwriting recognition.') # TODO: Introduce dummy model called "test_lua_to_python"; TODO: Register models somehow to allow choice keyword here; also add "none"; default to latest model
+    parser.add_argument('-pid', '--prediction-image-dir', type=lambda p: Path(p).absolute(), required=False,
+                        help='If provided, images of the pages with overlaid '
+                        'predictions are stored in the provided folder. '
+                        'Useful for debugging purposes.')
+    parser.add_argument('-sp', '--show-predictions', action='store_true',
+                        help='Store the predictions and bounding boxes '
+                        'visibly in the output file if enabled. '
+                        'Useful for debugging purposes. '
+                        'Otherwise only store invisible text.')  
     args = vars( parser.parse_args() )
     return args
 
@@ -34,44 +51,33 @@ def main(args):
     # TODO: Define coordinate transforms between X file, prediction and PDF as matrices like in computer graphics.
     """
 
-    from pathlib import Path
-    import subprocess
-    import os
-    import tempfile
-
-    import pymupdf
-    from pymupdf import TextWriter
-    import cv2
-    import matplotlib.pyplot as plt
-    from htr_pipeline import read_page, DetectorConfig, LineClusteringConfig
-    from tqdm import tqdm
-
     # Goal
     #
     # Export as PDF: Write a script that uses XOJ as input and exports a PDF with text layer.
 
     # Settings
 
-    XOJ_PATH = Path('../tests/test_1.xoj')
-    PDF_PATH = XOJ_PATH.with_suffix('.pdf')
-    PDF_PATH_OCR = PDF_PATH.parent / Path(PDF_PATH.stem+'_ocrd').with_suffix('.pdf')
+    input_file = args['input_file']
+    prediction_image_dir = args['prediction_image_dir']
+    output_file = args['output_file']
+    debug_htr = args['show_predictions']
 
-    PREDICTION_IMAGE_DIR = None
-    PREDICTION_IMAGE_DIR = Path('TEST_IMG') # Store prediction images in there for debugging purposes
-
-    DEBUG_HTR = False # Debug switch. DEBUG_HTR=True leading to drawn boxes and visible text. Otherwise invisible text only.
+    with tempfile.NamedTemporaryFile(
+        dir='/tmp',
+        delete=True,
+        prefix=f'xournalpp_htr__tmp_pdf_export__',
+        suffix='.pdf') as tmp_file_manager:
+        output_file_tmp_noOCR = Path(tmp_file_manager.name)
 
     # Step 1: XOJ to PDF
     #
     # First, turn test file from `xoj` into `pdf`.
 
-    export_to_pdf_with_xournalpp(args['input_file'], args['output_file'])
+    export_to_pdf_with_xournalpp(input_file, output_file_tmp_noOCR)
 
     # Step 2: Perform HTR predictions
 
     predictions = {}
-
-    input_file = XOJ_PATH
 
     file_ending = input_file.suffix
 
@@ -82,7 +88,7 @@ def main(args):
 
     nr_pages = len( document.pages )
 
-    for page_index in tqdm(range(nr_pages)):
+    for page_index in tqdm(range(nr_pages), desc='Recognition'):
 
         with tempfile.NamedTemporaryFile(dir='/tmp', delete=False, prefix=f'xournalpp_htr__page{page_index}__', suffix='.jpg') as tmpfile:
             TMP_FILE = Path(tmpfile.name)
@@ -124,16 +130,16 @@ def main(args):
 
     # Plot the predictions to ensure that they are working correctly:
 
-    if PREDICTION_IMAGE_DIR:
+    if prediction_image_dir:
 
-        PREDICTION_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
+        prediction_image_dir.mkdir(parents=True, exist_ok=True)
 
         nr_pages = len( document.pages )
 
-        for page_index in tqdm(range(nr_pages)):
+        for page_index in tqdm(range(nr_pages), desc='Store predictions'):
 
-            file_name = PREDICTION_IMAGE_DIR / f'page{page_index}.jpg'
-            file_name_ocrd = PREDICTION_IMAGE_DIR / f'page{page_index}_ocrd.jpg'
+            file_name = prediction_image_dir / f'page{page_index}.jpg'
+            file_name_ocrd = prediction_image_dir / f'page{page_index}_ocrd.jpg'
 
             written_file = document.save_page_as_image(page_index, file_name, False, dpi=150)
 
@@ -181,18 +187,11 @@ def main(args):
 
     # Step 3: Store predictions in PDF
 
-    try:
-        os.remove(PDF_PATH_OCR)
-    except Exception as e:
-        print(f'Error encountered while deleting {PDF_PATH_OCR}', e)
-
-    doc = pymupdf.open(PDF_PATH)
-
-    input_file = XOJ_PATH
+    doc = pymupdf.open(output_file_tmp_noOCR)
 
     nr_pages = len( document.pages )
 
-    for page_index in tqdm(range(nr_pages)):
+    for page_index in tqdm(range(nr_pages), desc='Export to PDF'):
 
         pdf_page = doc[page_index]
 
@@ -200,7 +199,7 @@ def main(args):
 
             text = prediction['text']
 
-            if DEBUG_HTR:
+            if debug_htr:
 
                 pdf_page.draw_rect(
                     rect=pymupdf.Rect(
@@ -231,11 +230,11 @@ def main(args):
                 color=pymupdf.pdfcolor["blue"],
                 align=pymupdf.TEXT_ALIGN_CENTER,
                 fontsize=6,
-                render_mode=0 if DEBUG_HTR else 3, # 0 for visible, 3 for invisible
+                render_mode=0 if debug_htr else 3, # 0 for visible, 3 for invisible
             ) # TODO: Improve text alignment with prediction. (1) center text vertically and then (2) stretch text to full box.
             #       Re (1) see https://github.com/pymupdf/PyMuPDF/discussions/1662.
 
-    doc.ez_save(PDF_PATH_OCR)
+    doc.ez_save(output_file)
 
     # Step 4: Next steps
     #
