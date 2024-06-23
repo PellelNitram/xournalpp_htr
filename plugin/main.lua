@@ -13,10 +13,12 @@ function run()
   -- TODO replace later w/ temp exported file - filename will be derived automatically
   filename = "/home/martin/Development/xournalpp_htr/tests/test_1.xoj"
 
-  -- TODO: Add command to inform about start
-  command = python_executable .. " " .. xournalpp_htr_path .. " -if " .. filename .. " -m " .. model .. " -of " .. output_file
-  os.execute(command)
-  -- TODO: add command to inform about end
+  local result = app.msgbox("Exports starts now, please wait until finished", {[1] = "Continue", [2] = "Cancel"})
+  if result == 1 then
+    command = python_executable .. " " .. xournalpp_htr_path .. " -if " .. filename .. " -m " .. model .. " -of " .. output_file
+    os.execute(command)
+    app.msgbox("Export finished!", {[1] = "Continue"})
+  end
 
   return
 end
