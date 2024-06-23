@@ -3,7 +3,21 @@ function initUi()
 end
   
 function run()
-  os.execute("/home/martin/anaconda3/envs/xournalpp_htr/bin/python /home/martin/Development/xournalpp_htr/xournalpp_htr/xournalpp_htr.py -if /home/martin/Development/xournalpp_htr/tests/test_1.xoj -m dummy -of /home/martin/Development/xournalpp_htr/tests/test_1_from_Xpp.pdf")
+  -- user settings
+  python_executable = "/home/martin/anaconda3/envs/xournalpp_htr/bin/python"
+  xournalpp_htr_path = "/home/martin/Development/xournalpp_htr/xournalpp_htr/xournalpp_htr.py"
+  model = "dummy"
+  output_file = "/home/martin/Development/xournalpp_htr/tests/test_1_from_Xpp.pdf"
+  -- TODO: allow UI to set other parameters as well of `xournalpp_htr`.
+
+  -- TODO replace later w/ temp exported file - filename will be derived automatically
+  filename = "/home/martin/Development/xournalpp_htr/tests/test_1.xoj"
+
+  -- TODO: Add command to inform about start
+  command = python_executable .. " " .. xournalpp_htr_path .. " -if " .. filename .. " -m " .. model .. " -of " .. output_file
+  os.execute(command)
+  -- TODO: add command to inform about end
+
   return
 end
 
