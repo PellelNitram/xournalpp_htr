@@ -30,8 +30,3 @@ end
 --   - Toggle logic: https://github.com/xournalpp/xournalpp/blob/master/plugins/HighlightPosition/main.lua#L5
 --   - UI: https://github.com/xournalpp/xournalpp/blob/master/plugins/MigrateFontSizes/main.lua
 --   - OS interaction: https://github.com/xournalpp/xournalpp/blob/master/plugins/QuickScreenshot/main.lua
-
--- function exampleCallback()
---   result = app.msgbox("Test123", {[1] = "Yes", [2] = "No"});
---   print("result = " .. result)
--- end
