@@ -3,6 +3,11 @@ function initUi()
 end
   
 function run()
+
+  -- Read settings
+  -- SEE: https://stackoverflow.com/a/41176826 or https://stackoverflow.com/a/41176958 both using G"lua read settings file"
+  --      Using the 2nd seems a bit cleaner to me.
+  
   -- user settings
   python_executable = "/home/martin/anaconda3/envs/xournalpp_htr/bin/python"
   xournalpp_htr_path = "/home/martin/Development/xournalpp_htr/xournalpp_htr/xournalpp_htr.py"
