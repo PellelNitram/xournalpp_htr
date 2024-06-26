@@ -4,23 +4,17 @@ end
   
 function run()
 
-  -- Read settings
-  -- SEE: https://stackoverflow.com/a/41176826 or https://stackoverflow.com/a/41176958 both using G"lua read settings file"
-  --      Using the 2nd seems a bit cleaner to me.
-  
-  -- user settings
-  python_executable = "/home/martin/anaconda3/envs/xournalpp_htr/bin/python"
-  xournalpp_htr_path = "/home/martin/Development/xournalpp_htr/xournalpp_htr/xournalpp_htr.py"
-  model = "dummy"
-  output_file = "/home/martin/Development/xournalpp_htr/tests/test_1_from_Xpp.pdf"
-  -- TODO: allow UI to set other parameters as well of `xournalpp_htr`.
-
-  -- TODO replace later w/ temp exported file - filename will be derived automatically
-  filename = "/home/martin/Development/xournalpp_htr/tests/test_1.xoj"
+  -- Read settings: I use this (https://stackoverflow.com/a/41176958). An
+  -- alternative could have been https://stackoverflow.com/a/41176826. Both
+  -- found using G"lua read settings file".
+  local config = require "config"
 
   local result = app.msgbox("Exports starts now, please wait until finished", {[1] = "Continue", [2] = "Cancel"})
   if result == 1 then
-    command = python_executable .. " " .. xournalpp_htr_path .. " -if " .. filename .. " -m " .. model .. " -of " .. output_file
+    command = config.python_executable .. " " .. config.xournalpp_htr_path
+              .. " -if " .. config.filename
+              .. "  -m " .. config.model
+              .. " -of " .. config.output_file
     os.execute(command)
     app.msgbox("Export finished!", {[1] = "Continue"})
   end

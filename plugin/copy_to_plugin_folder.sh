@@ -7,3 +7,4 @@ mkdir -p ${TARGET_FOLDER}
 
 cp plugin.ini ${TARGET_FOLDER}
 cp main.lua ${TARGET_FOLDER}
+cp config.lua ${TARGET_FOLDER}
