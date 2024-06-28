@@ -23,7 +23,6 @@ function run()
 
   app.fileDialogSave("save_file", "untitled.pdf")
 
-  return
 end
 
 -- TODO: Think of workflow to maximise usability for user
