@@ -10,15 +10,11 @@ function save_file(path)
     -- found using G"lua read settings file".
     local config = require "config"
 
-    result = app.msgbox("Exports starts now, please wait until finished", {[1] = "Continue", [2] = "Cancel"})
-    if result == 1 then
-      command = config.python_executable .. " " .. config.xournalpp_htr_path
-                .. " -if " .. config.filename
-                .. "  -m " .. config.model
-                .. " -of " .. config.output_file
-      os.execute(command)
-      app.msgbox("Export finished!", {[1] = "Continue"})
-    end
+    command = config.python_executable .. " " .. config.xournalpp_htr_path
+              .. " -if " .. config.filename
+              .. "  -m " .. config.model
+              .. " -of " .. config.output_file
+    os.execute(command)
 
   end
 end
