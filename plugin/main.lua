@@ -10,6 +10,8 @@ function save_file(path)
     -- found using G"lua read settings file".
     local config = require "config"
 
+    config.output_file = '"' .. path .. '"'
+
     command = config.python_executable .. " " .. config.xournalpp_htr_path
               .. " -if " .. config.filename
               .. "  -m " .. config.model
