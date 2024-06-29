@@ -16,6 +16,7 @@ from htr_pipeline import read_page, DetectorConfig, LineClusteringConfig
 from tqdm import tqdm
 
 from documents import XournalDocument
+from documents import XournalppDocument
 from utils import export_to_pdf_with_xournalpp
 
 
@@ -84,6 +85,8 @@ def main(args):
 
     if file_ending == '.xoj':
         document = XournalDocument(input_file)
+    elif file_ending == '.xopp':
+        document = XournalppDocument(input_file)
     else:
         raise NotImplementedError(f'File ending "{file_ending}" currently not readable.')
 
