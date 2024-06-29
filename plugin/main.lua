@@ -16,7 +16,11 @@ function save_file(path)
               .. " -if " .. config.filename
               .. "  -m " .. config.model
               .. " -of " .. config.output_file
-    os.execute(command)
+    if config.debug_HTR_command then
+      print(command)
+    else
+      os.execute(command)
+    end
 
   end
 end
