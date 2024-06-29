@@ -27,7 +27,13 @@ end
 
 function run()
 
-  app.fileDialogSave("save_file", "untitled.pdf")
+  document_structure = app.getDocumentStructure()
+
+  if document_structure['xoppFilename']:len() == 0 then
+    app.openDialog('Please save document prior to exporting it as searchable PDF!', {"Ok"}, "", true)
+  else
+    app.fileDialogSave("save_file", "untitled.pdf")
+  end
 
 end
 
