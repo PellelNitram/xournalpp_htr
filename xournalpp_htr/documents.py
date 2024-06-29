@@ -114,4 +114,31 @@ class XournalDocument(Document):
 class XournalppDocument(Document):
 
     def load_data(self):
-        raise NotImplementedError
+        """Load Xournal document content."""
+
+        with gzip.open(self.path, 'r') as f:
+            content = f.read().decode("utf-8")
+
+        bs_content = bs(content, "lxml")
+
+        for page in bs_content.find_all('page'):
+
+            layers = []
+            for layer in page.find_all('layer'):
+                strokes = []
+                for stroke in layer.find_all('stroke'):
+                    x, y = np.fromstring(stroke.text, sep=' ').reshape(-1, 2).T
+                    s = Stroke(x, y, stroke.attrs)
+                    strokes.append(s)
+
+                layers.append( Layer(strokes) )
+
+            background = page.find_all('background')
+            assert len( background ) == 1
+            background = background[0].attrs
+
+            p = Page(page.attrs, background, layers)
+
+            self.pages.append(p)
+
+        self.DPI = 72
