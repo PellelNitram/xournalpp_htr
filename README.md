@@ -11,6 +11,10 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 
 </div>
 
+## Xournal++ HTR in 90 seconds
+
+*TODO: Add video here.*
+
 ## Project description
 
 Taking handwritten notes digitally comes with many benefits but lacks searchability of your notes. Hence, there is a need to make your handwritten notes searchable. This can be achieved with ["handwritten text recognition" (HTR)](https://en.wikipedia.org/wiki/Handwriting_recognition), which is the process of assigning searchable text to written strokes.
