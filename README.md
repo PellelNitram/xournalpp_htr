@@ -65,7 +65,7 @@ I would like to acknowledge [Harald Scheidl](https://github.com/githubharald) in
 
 ## Installation
 
-On Linux: `bash INSTALL_LINUX.sh`
+On Linux: `bash INSTALL_LINUX.sh`.
 
 The commands executed by the above script are the following ones in case you want to install manually:
 
