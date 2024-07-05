@@ -65,6 +65,10 @@ I would like to acknowledge [Harald Scheidl](https://github.com/githubharald) in
 
 ## Installation
 
+On Linux: `bash INSTALL_LINUX.sh`
+
+The commands executed by the above script are the following ones in case you want to install manually:
+
 1. Create an environment: ``conda create --name xournalpp_htr python=3.10.11``.
 2. Use this environment: ``conda activate xournalpp_htr``.
 3. Install [HTRPipelines](https://github.com/githubharald/HTRPipeline) package using [its installation guide](https://github.com/githubharald/HTRPipeline/tree/master#installation).
