@@ -4,3 +4,5 @@ matplotlib
 opencv-python
 pytest
 lxml
+pymupdf
+tqdm
