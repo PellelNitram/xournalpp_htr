@@ -75,6 +75,8 @@ The commands executed by the above script are the following ones in case you wan
 4. Install all dependencies of this package ``pip install -r requirements.txt``.
 4. Install the package in development mode with ``pip install -e .`` (do not forget the dot, '.').
 
+After installation, test the installation by running `make tests-installation` from repository root directory.
+
 ## Usage
 
 1. Activate environment: ``conda activate xournalpp_htr``. Alternatively use ``source activate_env.sh`` as shortcut.
