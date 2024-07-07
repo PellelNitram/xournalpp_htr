@@ -7,4 +7,4 @@ docs:
 tests-installation:
 	pytest -v -m installation
 
-.PHONY: docs tests
+.PHONY: docs tests-installation
