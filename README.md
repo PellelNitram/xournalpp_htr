@@ -15,6 +15,20 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 
 *TODO: Add video here.*
 
+## Installation
+
+On Linux: `bash INSTALL_LINUX.sh`.
+
+The commands executed by the above script are the following ones in case you want to install manually:
+
+1. Create an environment: ``conda create --name xournalpp_htr python=3.10.11``.
+2. Use this environment: ``conda activate xournalpp_htr``.
+3. Install [HTRPipelines](https://github.com/githubharald/HTRPipeline) package using [its installation guide](https://github.com/githubharald/HTRPipeline/tree/master#installation).
+4. Install all dependencies of this package ``pip install -r requirements.txt``.
+4. Install the package in development mode with ``pip install -e .`` (do not forget the dot, '.').
+
+After installation, test the installation by running `make tests-installation` from repository root directory.
+
 ## Project description
 
 Taking handwritten notes digitally comes with many benefits but lacks searchability of your notes. Hence, there is a need to make your handwritten notes searchable. This can be achieved with ["handwritten text recognition" (HTR)](https://en.wikipedia.org/wiki/Handwriting_recognition), which is the process of assigning searchable text to written strokes.
@@ -62,20 +76,6 @@ Next steps to improve the performance of the handwritten text recognition even f
 - Use sequence-to-sequence algorithm that makes use of [Xournal++](https://github.com/xournalpp/xournalpp)'s data format. This translates into using online HTR algorithms.
 
 I would like to acknowledge [Harald Scheidl](https://github.com/githubharald) in this concept as he wrote the underlying algorithms and made them easily usable through [his HTRPipeline repository](https://github.com/githubharald/HTRPipeline) - after all I just feed his algorithm [Xournal++](https://github.com/xournalpp/xournalpp) data in concept 1. [Go check out his great content](https://githubharald.github.io/)!
-
-## Installation
-
-On Linux: `bash INSTALL_LINUX.sh`.
-
-The commands executed by the above script are the following ones in case you want to install manually:
-
-1. Create an environment: ``conda create --name xournalpp_htr python=3.10.11``.
-2. Use this environment: ``conda activate xournalpp_htr``.
-3. Install [HTRPipelines](https://github.com/githubharald/HTRPipeline) package using [its installation guide](https://github.com/githubharald/HTRPipeline/tree/master#installation).
-4. Install all dependencies of this package ``pip install -r requirements.txt``.
-4. Install the package in development mode with ``pip install -e .`` (do not forget the dot, '.').
-
-After installation, test the installation by running `make tests-installation` from repository root directory.
 
 ## Usage
 
