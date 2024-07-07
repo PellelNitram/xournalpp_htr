@@ -42,6 +42,9 @@ cd ${CURRENT_DIR}
 pip install -r requirements.txt
 pip install -e .
 
+cd plugin
+bash copy_to_plugin_folder.sh
+
 # ========
 # Feedback
 # ========
