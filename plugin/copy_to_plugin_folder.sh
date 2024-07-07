@@ -1,7 +1,13 @@
-# Potentially needs to be executed using `sudo`
+# ========
+# SETTINGS
+# ========
 
 TARGET_FOLDER=~/.config/xournalpp/plugins/xournalpp_htr/
 # TARGET_FOLDER=/usr/share/xournalpp/plugins/xournalpp_htr # requires `sudo`
+
+# ============
+# COPY PROCESS
+# ============
 
 mkdir -p ${TARGET_FOLDER}
 
