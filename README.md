@@ -17,17 +17,24 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 
 ## Installation
 
-On Linux: `bash INSTALL_LINUX.sh`.
+### Cross-platform
 
-The commands executed by the above script are the following ones in case you want to install manually:
+Execute the following commands:
 
 1. Create an environment: ``conda create --name xournalpp_htr python=3.10.11``.
 2. Use this environment: ``conda activate xournalpp_htr``.
 3. Install [HTRPipelines](https://github.com/githubharald/HTRPipeline) package using [its installation guide](https://github.com/githubharald/HTRPipeline/tree/master#installation).
 4. Install all dependencies of this package ``pip install -r requirements.txt``.
 4. Install the package in development mode with ``pip install -e .`` (do not forget the dot, '.').
+5. Move `plugin/` folder content to `${XOURNAL_CONFIG_PATH}/plugins/xournalpp_htr/` with `${XOURNAL_CONFIG_PATH}` being the configuration path of Xournal++, see Xournal++ manual [here](https://xournalpp.github.io/guide/file-locations/).
 
-After installation, test the installation by running `make tests-installation` from repository root directory.
+### Linux
+
+Run `bash INSTALL_LINUX.sh` from repository root directory.
+
+### After installation
+
+Confirm that the installation worked by running `make tests-installation` from repository root directory.
 
 ## Project description
 
