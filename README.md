@@ -13,7 +13,13 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 
 ## Xournal++ HTR in 90 seconds
 
-*TODO: Add video here.*
+*TODO: Add video here. Use [this](https://github.com/orgs/community/discussions/48753) for placing video here.*
+
+<div align="center">
+    
+[![YouTube](http://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg)](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
+
+</div>
 
 ## Installation
 
@@ -31,6 +37,8 @@ Execute the following commands:
 ### Linux
 
 Run `bash INSTALL_LINUX.sh` from repository root directory.
+
+This script also installs the plugin as explained in point 5 of the cross-platform installation procedure. The installation of the plugin is performed with `plugin/copy_to_plugin_folder.sh`, which can also be invoked independently of `INSTALL_LINUX.sh` for updating the plugin installation.
 
 ### After installation
 
