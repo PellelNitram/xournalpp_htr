@@ -54,12 +54,14 @@ While many commercial note taking apps feature great HTR systems to make your no
 
 Xournal++ HTR strives to bring open-source on-device handwriting recognition to [Xournal++](https://github.com/xournalpp/xournalpp) as it is one of the most adopted open-source note taking apps and thereby HTR can be delivered to the largest possible amount of users.
 
+## Project structure
+
+TODO: Tweak content below!
+
 <div align="center">
     <img src="docs/images/system_design.jpg" width="50%">
     <p><i>Design of this work.</i></p>
 </div>
-
-## Project structure
 
 Developing a usable HTR systems requires experimentation. The project structure is set up to accommodate this need. *Note that ideas on imrpoved project structures are appreciated.*
 
