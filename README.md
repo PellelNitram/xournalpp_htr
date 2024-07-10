@@ -16,8 +16,10 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 *TODO: Add video here. Use [this](https://github.com/orgs/community/discussions/48753) for placing video here.*
 
 <div align="center">
-    
-[![YouTube](http://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg)](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
+
+[![YouTube](http://i.ytimg.com/vi/boXm7lPFSRQ/hqdefault.jpg)](https://www.youtube.com/watch?v=boXm7lPFSRQ)
+
+*([Click on imgage or here to get to video](https://www.youtube.com/watch?v=boXm7lPFSRQ?utm_source=github&utm_medium=readme&utm_campaign=github_readme).)*
 
 </div>
 
