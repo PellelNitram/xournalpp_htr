@@ -50,7 +50,9 @@ Taking handwritten notes digitally comes with many benefits but lacks searchabil
 
 While many commercial note taking apps feature great HTR systems to make your notes searchable and there are a number of existing open-source implementations of various algorithms, there is no HTR feature available in an open-source note taking application that is privacy aware and processes your data locally.
 
-**The purpose of this project is to change that!**
+<div align="center">
+    <p><b>The purpose of the <i>Xournal++ HTR</i> project is to change that!</b></p>
+</div>
 
 Xournal++ HTR strives to bring open-source on-device handwriting recognition to [Xournal++](https://github.com/xournalpp/xournalpp) as it is one of the most adopted open-source note taking apps and thereby HTR can be delivered to the largest possible amount of users.
 
