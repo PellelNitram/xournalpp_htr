@@ -13,8 +13,6 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 
 ## Xournal++ HTR in 90 seconds
 
-*TODO: Add video here. Use [this](https://github.com/orgs/community/discussions/48753) for placing video here.*
-
 <div align="center">
 
 [![YouTube](http://i.ytimg.com/vi/boXm7lPFSRQ/hqdefault.jpg)](https://www.youtube.com/watch?v=boXm7lPFSRQ)
