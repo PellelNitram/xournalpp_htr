@@ -1,4 +1,5 @@
 from pathlib import Path
+import tempfile
 
 import pymupdf
 import tqdm
@@ -60,3 +61,15 @@ def write_predictions_to_PDF(
             #       Re (1) see https://github.com/pymupdf/PyMuPDF/discussions/1662.
 
     doc.ez_save(output_pdf_file)
+
+def get_temporary_filename() -> Path:
+    """TODO."""
+
+    with tempfile.NamedTemporaryFile(
+        dir='/tmp',
+        delete=True,
+        prefix=f'xournalpp_htr__tmp_pdf_export__',
+        suffix='.pdf') as tmp_file_manager:
+        output_file_tmp_noOCR = Path(tmp_file_manager.name)
+
+    return output_file_tmp_noOCR
