@@ -18,6 +18,7 @@ from tqdm import tqdm
 from documents import XournalDocument
 from documents import XournalppDocument
 from utils import export_to_pdf_with_xournalpp
+from io import get_temporary_filename
 
 
 def parse_arguments():
@@ -64,12 +65,7 @@ def main(args):
     output_file = args['output_file']
     debug_htr = args['show_predictions']
 
-    with tempfile.NamedTemporaryFile(
-        dir='/tmp',
-        delete=True,
-        prefix=f'xournalpp_htr__tmp_pdf_export__',
-        suffix='.pdf') as tmp_file_manager:
-        output_file_tmp_noOCR = Path(tmp_file_manager.name)
+    output_file_tmp_noOCR = get_temporary_filename()
 
     # Step 1: XOJ to PDF
     #
