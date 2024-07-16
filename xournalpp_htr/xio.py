@@ -1,3 +1,5 @@
+# TODO: Rename to `io` once `xournalpp_htr.py` was moved from this folder.
+
 from pathlib import Path
 import tempfile
 
