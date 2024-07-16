@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 
 import pymupdf
-import tqdm
+from tqdm import tqdm
 
 
 def write_predictions_to_PDF(
