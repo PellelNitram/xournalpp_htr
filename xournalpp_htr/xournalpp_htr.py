@@ -194,6 +194,8 @@ def main(args):
         debug_htr,
     )
 
+    print('xournalpp_htr: Done!')
+
     # Step 4: Next steps
     #
     # I want to build prediction code that can run both in a CLI and in a notebook like this here. Also, I'd like to be able to set the model flexibly.
