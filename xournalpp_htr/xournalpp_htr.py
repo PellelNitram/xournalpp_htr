@@ -18,8 +18,8 @@ from tqdm import tqdm
 from documents import XournalDocument
 from documents import XournalppDocument
 from utils import export_to_pdf_with_xournalpp
-from io import get_temporary_filename
-from io import write_predictions_to_PDF
+from xio import get_temporary_filename
+from xio import write_predictions_to_PDF
 
 
 def parse_arguments():
