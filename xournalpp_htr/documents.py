@@ -142,3 +142,17 @@ class XournalppDocument(Document):
             self.pages.append(p)
 
         self.DPI = 72
+
+def get_document(path: Path) -> Document:
+    """TODO!"""
+
+    file_ending = path.suffix
+
+    if file_ending == '.xoj':
+        document = XournalDocument(input_file)
+    elif file_ending == '.xopp':
+        document = XournalppDocument(input_file)
+    else:
+        raise NotImplementedError(f'File ending "{file_ending}" currently not readable.')
+
+    return document
