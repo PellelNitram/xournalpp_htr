@@ -15,7 +15,6 @@ function save_file(path)
 
     command = config.python_executable .. " " .. config.xournalpp_htr_path
               .. " -if " .. config.filename
-              .. "  -m " .. config.model
               .. " -of " .. config.output_file
     if config.debug_HTR_command then
       print(command)
