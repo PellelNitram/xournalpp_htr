@@ -40,7 +40,14 @@ jobs:
     - name: print location
       run: |
         echo $(pwd)
+    - name: ls location
+      run: |
+        ls -ls
+    - name: import test
+      run: |
+        python -c "from xournalpp_htr.documents import XournalDocument"
 # TODO: Add installation of htr_pipeline here as otherwise all tests fail!
     - name: Test with pytest
       run: |
+        ls -ls
         make tests-installation
