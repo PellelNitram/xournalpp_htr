@@ -3,11 +3,9 @@
 import argparse
 from pathlib import Path
 import os
-import tempfile
 
 import cv2
 import matplotlib.pyplot as plt
-from htr_pipeline import read_page, DetectorConfig, LineClusteringConfig
 import pymupdf
 from pymupdf import TextWriter
 import cv2
@@ -21,6 +19,7 @@ from documents import get_document
 from utils import export_to_pdf_with_xournalpp
 from xio import get_temporary_filename
 from xio import write_predictions_to_PDF
+from models import compute_predictions
 
 
 def parse_arguments():
@@ -77,51 +76,9 @@ def main(args):
 
     # Step 2: Perform HTR predictions
 
-    predictions = {}
-
     document = get_document(input_file)
 
-    nr_pages = len( document.pages )
-
-    for page_index in tqdm(range(nr_pages), desc='Recognition'):
-
-        with tempfile.NamedTemporaryFile(dir='/tmp', delete=False, prefix=f'xournalpp_htr__page{page_index}__', suffix='.jpg') as tmpfile:
-            TMP_FILE = Path(tmpfile.name)
-        
-            written_file = document.save_page_as_image(page_index, TMP_FILE, False, dpi=150)
-
-            # ======
-            # Do HTR
-            # ======
-
-            # read image
-            img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
-
-            # detect and read text
-            #height = 700 # good
-            #enlarge = 5
-            #enlarge = 10
-            # height = 1000 # good
-            # height = 1600 # not good
-            scale = 0.4
-            margin = 5
-            read_lines = read_page(img, 
-                                DetectorConfig(scale=scale, margin=margin), 
-                                line_clustering_config=LineClusteringConfig(min_words_per_line=2))
-            
-            predictions_page = []
-            for line in read_lines:
-                for word in line:
-                    data = {
-                        'page_index': page_index,
-                        'text': word.text,
-                        'xmin': word.aabb.xmin,
-                        'xmax': word.aabb.xmax,
-                        'ymin': word.aabb.ymin,
-                        'ymax': word.aabb.ymax,
-                    }
-                    predictions_page.append(data)
-            predictions[page_index] = predictions_page
+    predictions = compute_predictions(model_name=args['model'], document=document)
 
     # Plot the predictions to ensure that they are working correctly:
 
