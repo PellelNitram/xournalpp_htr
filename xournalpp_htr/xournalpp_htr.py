@@ -30,7 +30,7 @@ def parse_arguments():
     parser.add_argument('-of', '--output-file', type=lambda p: Path(p).absolute(), required=True,
                         help='Path to the output PDF file.')
     # v-- TODO: Make optional
-    parser.add_argument('-m', '--model', type=str, required=True,
+    parser.add_argument('-m', '--model', type=str, required=False, default='2024-07-18_htr_pipeline',
                         help='The model to use for handwriting recognition.') # TODO: Introduce dummy model called "test_lua_to_python"; TODO: Register models somehow to allow choice keyword here; also add "none"; default to latest model
     parser.add_argument('-pid', '--prediction-image-dir', type=lambda p: Path(p).absolute(), required=False,
                         help='If provided, images of the pages with overlaid '
