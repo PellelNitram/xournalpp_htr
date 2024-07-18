@@ -8,10 +8,8 @@ from tqdm import tqdm
 import cv2
 from htr_pipeline import read_page, DetectorConfig, LineClusteringConfig
 
-from xournalpp_htr.documents import Document
 
-
-def compute_predictions(model_name: str, document: Document) -> dict:
+def compute_predictions(model_name: str, document) -> dict:
 
     predictions = {}
 
