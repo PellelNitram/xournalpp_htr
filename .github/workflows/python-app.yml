@@ -28,28 +28,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install .
-    - name: Import tests 1
-      run: |
-        python -c "print('hi there')"
-    - name: Import tests 2
-      run: |
-        python -c "import numpy"
-    - name: Import tests 3
-      run: |
-        python -c "import xournalpp_htr"
-    - name: print location
-      run: |
-        echo $(pwd)
-    - name: ls location
-      run: |
-        ls -ls
-    - name: import test
-      run: |
-        python -c "from xournalpp_htr.documents import XournalDocument"
-    - name: import test 2
-      run: |
-        cd tests
-        python -c "from xournalpp_htr.documents import XournalDocument"
 # TODO: Add installation of htr_pipeline here as otherwise all tests fail!
     - name: Test with pytest
       run: |
