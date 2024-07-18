@@ -17,6 +17,7 @@ from tqdm import tqdm
 
 from documents import XournalDocument
 from documents import XournalppDocument
+from documents import get_document
 from utils import export_to_pdf_with_xournalpp
 from xio import get_temporary_filename
 from xio import write_predictions_to_PDF
@@ -78,14 +79,7 @@ def main(args):
 
     predictions = {}
 
-    file_ending = input_file.suffix
-
-    if file_ending == '.xoj':
-        document = XournalDocument(input_file)
-    elif file_ending == '.xopp':
-        document = XournalppDocument(input_file)
-    else:
-        raise NotImplementedError(f'File ending "{file_ending}" currently not readable.')
+    document = get_document(input_file)
 
     nr_pages = len( document.pages )
 
