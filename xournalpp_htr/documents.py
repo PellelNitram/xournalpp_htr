@@ -149,9 +149,9 @@ def get_document(path: Path) -> Document:
     file_ending = path.suffix
 
     if file_ending == '.xoj':
-        document = XournalDocument(input_file)
+        document = XournalDocument(path)
     elif file_ending == '.xopp':
-        document = XournalppDocument(input_file)
+        document = XournalppDocument(path)
     else:
         raise NotImplementedError(f'File ending "{file_ending}" currently not readable.')
 
