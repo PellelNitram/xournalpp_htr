@@ -27,7 +27,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install -e .
+        pip install .
 # TODO: Add installation of htr_pipeline here as otherwise all tests fail!
     - name: Test with pytest
       run: |
