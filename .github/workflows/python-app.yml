@@ -46,6 +46,10 @@ jobs:
     - name: import test
       run: |
         python -c "from xournalpp_htr.documents import XournalDocument"
+    - name: import test 2
+      run: |
+        cd tests
+        python -c "from xournalpp_htr.documents import XournalDocument"
 # TODO: Add installation of htr_pipeline here as otherwise all tests fail!
     - name: Test with pytest
       run: |
