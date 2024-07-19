@@ -5,6 +5,7 @@ from pathlib import Path
 import tempfile
 
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 import cv2
 from htr_pipeline import read_page, DetectorConfig, LineClusteringConfig
 
@@ -61,3 +62,58 @@ def compute_predictions(model_name: str, document) -> dict:
         raise NotImplementedError(f'Model "{model_name}" not implemented.')
 
     return predictions
+
+def store_predictions_as_images(output_directory: Path, predictions: dict, document) -> None:
+
+    output_directory.mkdir(parents=True, exist_ok=True)
+
+    nr_pages = len( document.pages )
+
+    for page_index in tqdm(range(nr_pages), desc='Store predictions as images'):
+
+        file_name = output_directory / f'page{page_index}.jpg'
+        file_name_ocrd = output_directory / f'page{page_index}_ocrd.jpg'
+
+        written_file = document.save_page_as_image(page_index, file_name, False, dpi=150)
+
+        # ======
+        # Do HTR
+        # ======
+
+        # read image
+        img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
+    
+        # To prepare plotting
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+
+        # Impose predictions on image
+        for prediction in predictions[page_index]:
+
+            text = prediction['text']
+            xmin = prediction['xmin']
+            xmax = prediction['xmax']
+            ymin = prediction['ymin']
+            ymax = prediction['ymax']
+
+            img = cv2.rectangle(img,
+                                (int(xmin), int(ymax)),
+                                (int(xmax), int(ymin)),
+                                (255, 0, 0),
+                                2)
+            
+            img = cv2.putText(img,
+                            text=text,
+                            org=(int(xmin), int(ymin)),
+                            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                            fontScale=1,
+                            color=(255, 0, 0),
+                            thickness=1,
+                            )
+                
+        plt_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        figure_aspect_ratio = float(document.pages[page_index].meta_data['height']) / float(document.pages[page_index].meta_data['width'])
+        plt.figure(figsize=(10, 10*figure_aspect_ratio))
+        imgplot = plt.imshow(plt_image)
+        plt.savefig(file_name_ocrd, dpi=150)
+        plt.close()
