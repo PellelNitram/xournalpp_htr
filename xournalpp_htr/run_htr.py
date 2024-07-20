@@ -3,12 +3,12 @@
 import argparse
 from pathlib import Path
 
-from documents import get_document
-from utils import export_to_pdf_with_xournalpp
-from xio import get_temporary_filename
-from xio import write_predictions_to_PDF
-from models import compute_predictions
-from models import store_predictions_as_images
+from xournalpp_htr.documents import get_document
+from xournalpp_htr.utils import export_to_pdf_with_xournalpp
+from xournalpp_htr.xio import get_temporary_filename
+from xournalpp_htr.xio import write_predictions_to_PDF
+from xournalpp_htr.models import compute_predictions
+from xournalpp_htr.models import store_predictions_as_images
 
 
 def parse_arguments():
