@@ -60,14 +60,14 @@ Xournal++ HTR strives to bring open-source on-device handwriting recognition to 
 
 The design of Xournal++ HTR tries to bridge the gap between both delivering a production ready product and allowing contributors to experiment with new algorithms.
 
-TODO: Tweak content below!
+The project design involves a Lua plugin and a Python backend, see the following figure. First, the production ready product is delivered by means of an Xournal++ plugin. The plugin is fully integrated in Xournal++ and calls a Python backend that performs the actual transcription. The Python backend allows selection of various recognition models and is thereby fully extendable with new models.
 
 <div align="center">
     <img src="docs/images/system_design.jpg" width="50%">
-    <p><i>Design of this work.</i></p>
+    <p><i>Design of xournalpp_htr.</i></p>
 </div>
 
-Developing a usable HTR systems requires experimentation. The project structure is set up to accommodate this need. *Note that ideas on imrpoved project structures are appreciated.*
+Developing a usable HTR systems requires experimentation. The project structure is set up to accommodate this need. *Note that ideas on improved project structures are appreciated.*
 
 The experimentation is carried out in terms of "concepts". Each concept explores a different approach to HTR and possibly improves over previous concepts, but not necessarily to allow for freedom in risky experiments. Concept 1 is already implemented and uses a computer vision approach that is explained below.
 
@@ -89,7 +89,7 @@ Despite not being perfect, the main take away is that the performance is surpris
 
 **The performance is sufficiently good to be useful for the Xournal++ user base.**
 
-Feel free to play around with the demo yourself using [this code](https://github.com/PellelNitram/xournalpp_htr/blob/master/scripts/demo_concept_1.sh) after [installing this project](#Installation).
+Feel free to play around with the demo yourself using [this code](https://github.com/PellelNitram/xournalpp_htr/blob/master/scripts/demo_concept_1.sh) after [installing this project](#Installation). The "concept 1" is also what is currently used in the plugin and shown in the [90 seconds demo](https://www.youtube.com/watch?v=boXm7lPFSRQ).
 
 Next steps to improve the performance of the handwritten text recognition even further could be:
 - Re-train the algorithm on Xournal++ specific data, while potentially using data augmentation.
