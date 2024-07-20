@@ -20,6 +20,7 @@ from utils import export_to_pdf_with_xournalpp
 from xio import get_temporary_filename
 from xio import write_predictions_to_PDF
 from models import compute_predictions
+from models import store_predictions_as_images
 
 
 def parse_arguments():
@@ -84,58 +85,7 @@ def main(args):
 
     if prediction_image_dir:
 
-        prediction_image_dir.mkdir(parents=True, exist_ok=True)
-
-        nr_pages = len( document.pages )
-
-        for page_index in tqdm(range(nr_pages), desc='Store predictions'):
-
-            file_name = prediction_image_dir / f'page{page_index}.jpg'
-            file_name_ocrd = prediction_image_dir / f'page{page_index}_ocrd.jpg'
-
-            written_file = document.save_page_as_image(page_index, file_name, False, dpi=150)
-
-            # ======
-            # Do HTR
-            # ======
-
-            # read image
-            img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
-        
-            # To prepare plotting
-            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-
-            # Impose predictions on image
-            for prediction in predictions[page_index]:
-
-                text = prediction['text']
-                xmin = prediction['xmin']
-                xmax = prediction['xmax']
-                ymin = prediction['ymin']
-                ymax = prediction['ymax']
-
-                img = cv2.rectangle(img,
-                                    (int(xmin), int(ymax)),
-                                    (int(xmax), int(ymin)),
-                                    (255, 0, 0),
-                                    2)
-                
-                img = cv2.putText(img,
-                                text=text,
-                                org=(int(xmin), int(ymin)),
-                                fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                                fontScale=1,
-                                color=(255, 0, 0),
-                                thickness=1,
-                                )
-                    
-            plt_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-            figure_aspect_ratio = float(document.pages[page_index].meta_data['height']) / float(document.pages[page_index].meta_data['width'])
-            plt.figure(figsize=(10, 10*figure_aspect_ratio))
-            imgplot = plt.imshow(plt_image)
-            plt.savefig(file_name_ocrd, dpi=150)
-            plt.close()
+        store_predictions_as_images(prediction_image_dir, predictions, document)
 
     # Step 3: Store predictions in PDF
     write_predictions_to_PDF(
