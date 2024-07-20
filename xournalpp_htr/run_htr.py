@@ -3,7 +3,6 @@
 import argparse
 from pathlib import Path
 
-#TODO: Why can I not use from `xournalpp_htr` in import?
 from documents import get_document
 from utils import export_to_pdf_with_xournalpp
 from xio import get_temporary_filename
