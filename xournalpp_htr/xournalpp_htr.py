@@ -2,19 +2,8 @@
 
 import argparse
 from pathlib import Path
-import os
 
-import cv2
-import matplotlib.pyplot as plt
-import pymupdf
-from pymupdf import TextWriter
-import cv2
-import matplotlib.pyplot as plt
-from htr_pipeline import read_page, DetectorConfig, LineClusteringConfig
-from tqdm import tqdm
-
-from documents import XournalDocument
-from documents import XournalppDocument
+#TODO: Why can I not use from `xournalpp_htr` in import?
 from documents import get_document
 from utils import export_to_pdf_with_xournalpp
 from xio import get_temporary_filename
