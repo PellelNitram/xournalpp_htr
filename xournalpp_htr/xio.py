@@ -65,7 +65,14 @@ def write_predictions_to_PDF(
     doc.ez_save(output_pdf_file)
 
 def get_temporary_filename() -> Path:
-    """TODO."""
+    """
+    Generates and returns a temporary PDF file name.
+
+    This function creates a named temporary file in `/tmp` using `tempfile.NamedTemporaryFile` with a `xournalpp_htr`
+    specific prefix and PDF suffix. The generated filename is returned as a `Path` object.
+
+    :return: A `Path` object representing the temporary PDF file name.
+    """
 
     with tempfile.NamedTemporaryFile(
         dir='/tmp',
