@@ -33,7 +33,7 @@ def parse_arguments():
     args = vars( parser.parse_args() )
     return args
 
-def main(args):
+def main(args: dict) -> None:
     """Main function that performs HTR.
 
     This function exports an Xournal(++) file to a PDF file, performs Handwritten Text Recognition (HTR) on the file using
