@@ -34,14 +34,19 @@ def parse_arguments():
     return args
 
 def main(args):
-    """TODO.
-    
-    TODO: This is what I do here:
-    1. export X file to PDF
-    2. do HTR on X file using model that is specified by `parse_arguments`
-    3. store prediction as hidden text to PDF file
+    """Main function that performs HTR.
 
-    # TODO: Define coordinate transforms between X file, prediction and PDF as matrices like in computer graphics.
+    This function exports an Xournal(++) file to a PDF file, performs Handwritten Text Recognition (HTR) on the file using
+    the specified model, and stores the predictions as hidden text in the resulting PDF file. The function can also plot
+    the predictions to ensure they are working correctly and save them to a directory for later inspection.
+
+    This function can be imported elsewhere to use, e.g., in Jupyter notebooks or tests.
+    
+    :param args: Dictionary containing the following input parameters: `input_file' (Path; path to the input Xournal(++) file),
+                 'prediction_image_dir' (Path or None; directory for storing prediction images (optional)), 'output_file'
+                 (Path; path to the output PDF file), 'model' (str; name of the HTR model to use for predictions) and
+                 `show_predictions` (bool; switch to render visible prediction texts in PDF instead of invisible texts).
+    :returns: None
     """
 
     # Goal
