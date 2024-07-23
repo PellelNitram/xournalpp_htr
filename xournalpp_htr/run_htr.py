@@ -59,6 +59,7 @@ def main(args: dict) -> None:
     prediction_image_dir = args['prediction_image_dir']
     output_file = args['output_file']
     debug_htr = args['show_predictions']
+    model = args['model']
 
     output_file_tmp_noOCR = get_temporary_filename()
 
@@ -72,7 +73,7 @@ def main(args: dict) -> None:
 
     document = get_document(input_file)
 
-    predictions = compute_predictions(model_name=args['model'], document=document)
+    predictions = compute_predictions(model_name=model, document=document)
 
     # Plot the predictions to ensure that they are working correctly:
 
