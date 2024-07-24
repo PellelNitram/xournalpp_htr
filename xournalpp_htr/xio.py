@@ -12,8 +12,20 @@ def write_predictions_to_PDF(
     output_pdf_file: Path,
     predictions: dict,
     debug_htr: bool,
-):
-    """TODO!"""
+) -> None:
+    """
+    Writes handwritten text predictions to a PDF file.
+
+    This function reads an input PDF file using PyMuPDF, extracts each page from the PDF, and then adds predictions to each page in the form of rectangles and text boxes.
+    The rectangles are drawn if `debug_htr` is True, otherwise they are not. The text boxes contain the predicted text and are visible if `debug_htr` is True, otherwise
+    they are invisible.
+
+    :param input_pdf_file: The input PDF file.
+    :param output_pdf_file: The output PDF file.
+    :param predictions: A dictionary of page indices to lists of predictions, where each prediction is a dictionary containing `text`, `xmin`, `ymin`, `xmax`, and `ymax` keys.
+    :param debug_htr: Whether to draw rectangles around the predicted regions and render visible text boxes. If False, the rectangles are not drawn and invisible text boxes are rendered.
+    :returns: Nothing.
+    """
 
     doc = pymupdf.open(input_pdf_file)
 
