@@ -11,7 +11,7 @@ from xournalpp_htr.models import compute_predictions
 from xournalpp_htr.models import store_predictions_as_images
 
 
-def parse_arguments():
+def parse_arguments(cli_string: None | str = None):
     """Parse arguments from command line."""
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-if', '--input-file', type=lambda p: Path(p).absolute(), required=True,
@@ -29,8 +29,8 @@ def parse_arguments():
                         help='Store the predictions and bounding boxes '
                         'visibly in the output file if enabled. '
                         'Useful for debugging purposes. '
-                        'Otherwise only store invisible text.')  
-    args = vars( parser.parse_args() )
+                        'Otherwise only store invisible text.')
+    args = vars( parser.parse_args(cli_string.split() if cli_string else None) )
     return args
 
 def main(args: dict) -> None:
