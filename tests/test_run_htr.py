@@ -11,6 +11,7 @@ def test_parse_arguments_empty():
     with pytest.raises(SystemExit) as e_info:
         parse_arguments()
 
+@pytest.mark.installation
 def test_parse_arguments_full():
     args = parse_arguments('-if input -of output -m dummy -pid dir -sp')
     assert len(args) == 5
