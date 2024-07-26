@@ -1,4 +1,5 @@
 from pathlib import Path
+import urllib.request
 
 import pytest
 
@@ -15,6 +16,21 @@ def get_repo_root_directory(request):
     rootdir = Path(request.config.rootdir)
     assert (rootdir / 'README.md').is_file()
     return rootdir
+
+@pytest.fixture
+def get_path_to_minimal_test_data(get_repo_root_directory):
+    """TODO. Get path to minimal test data file.
+
+    If the file does not exist, then it is created at `${repo_root}/tests/data/2024-07-26_minimal.xopp`
+    """
+
+    path_to_minimal_test_data = get_repo_root_directory / 'tests/data/2024-07-26_minimal.xopp'
+
+    if not path_to_minimal_test_data.is_file():
+        url = 'https://bit.ly/2024-07-26_minimal_xopp'
+        urllib.request.urlretrieve(url, path_to_minimal_test_data)
+
+    return path_to_minimal_test_data
 
 @pytest.mark.installation
 def test_parse_arguments_empty():
