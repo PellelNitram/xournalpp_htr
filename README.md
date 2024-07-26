@@ -110,6 +110,26 @@ TODO
 - proposed branch structure to keep main branch stable and allow
   experimentation: main > dev > feature branches
 
+```mermaid
+gitGraph
+    commit
+    commit
+    branch develop
+    commit
+    checkout develop
+    branch feature
+    checkout feature
+    commit
+    commit
+    commit
+    checkout develop
+    merge feature
+    checkout main
+    merge develop
+    commit
+    commit
+```
+
 ## Acknowledgements
 
 I would like to thank [Leonard Salewski](https://twitter.com/L_Salewski) and [Jonathan Prexl](https://scholar.google.com/citations?user=pqep1wkAAAAJ&hl=en) for useful discussions, [Harald Scheidl](https://github.com/githubharald/) for making his repositories about handwritten text recognition public ([SimpleHTR](https://github.com/githubharald/SimpleHTR), [WordDetectorNN](https://github.com/githubharald/WordDetectorNN) and [HTRPipeline](https://github.com/githubharald/HTRPipeline)) and the [School of Physics and Astronomy](https://www.ph.ed.ac.uk/) at [The University of Edinburgh](https://www.ed.ac.uk/) for providing compute power.
