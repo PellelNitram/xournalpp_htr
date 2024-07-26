@@ -6,6 +6,16 @@ from xournalpp_htr.run_htr import parse_arguments
 from xournalpp_htr.run_htr import main
 
 
+@pytest.fixture
+def get_repo_root_directory(request):
+    """TODO.
+
+    Fixture based on [this](https://stackoverflow.com/a/57039134).
+    """
+    rootdir = Path(request.config.rootdir)
+    assert (rootdir / 'README.md').is_file()
+    return rootdir
+
 @pytest.mark.installation
 def test_parse_arguments_empty():
     with pytest.raises(SystemExit) as e_info:
