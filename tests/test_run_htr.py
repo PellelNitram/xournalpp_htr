@@ -46,3 +46,21 @@ def test_parse_arguments_full():
     assert args['model'] == 'dummy'
     assert args['prediction_image_dir'].stem == 'dir'
     assert args['show_predictions'] == True
+
+def test_main(get_path_to_minimal_test_data):
+    """TODO.
+
+    This is not checked in Github Actions for now b/c I would have to install
+    the right `Xournal++` version there to allow `export_to_pdf_with_xournalpp`
+    to work.
+    """
+
+    args = {
+        'input_file': get_path_to_minimal_test_data,
+        'output_file': Path('test_main.pdf'), # TODO: Replace w/ temp filename
+        'model': '2024-07-18_htr_pipeline', # TODO: Add a `dummy` to test pipeline w/o ML part
+        'prediction_image_dir': None,
+        'show_predictions': False,
+    }
+
+    main(args)
