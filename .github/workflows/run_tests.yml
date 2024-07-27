@@ -1,15 +1,17 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-name: Python application
+name: Run tests
 
 on:
   push:
     branches:
     - "master"
+    - "dev"
   pull_request:
     branches:
     - "master"
+    - "dev"
 
 permissions:
   contents: read
@@ -42,8 +44,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install .
-# TODO: Add installation of htr_pipeline here as otherwise all tests fail!
     - name: Test with pytest
       run: |
-        ls -ls
         make tests-installation
