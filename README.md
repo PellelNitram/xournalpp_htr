@@ -106,29 +106,37 @@ I would like to acknowledge [Harald Scheidl](https://github.com/githubharald) in
 
 ## Community contributions
 
-TODO
-- proposed branch structure to keep main branch stable and allow
-  experimentation: main > dev > feature branches
+The following branching strategy is used to keep `main` branch stable and
+allow for experimentation: `main` > `dev` > `feature branches`.
+
+In more details, this repository currently follows the following git branching strategy: The
+`main` branch remains stable and delivers a functioning product. The `dev`
+consists of all code that will be merged to `main` soon where the corresponding
+features are developed in individual feature branches, see `feature_1` in the
+below visualisation. As a whole, the branching strategy is depicted in this
+visualisation.
 
 ```mermaid
 gitGraph
     commit
     commit
-    branch develop
+    branch dev
     commit
-    checkout develop
-    branch feature
-    checkout feature
+    checkout dev
+    branch feature_1
+    checkout feature_1
     commit
     commit
     commit
-    checkout develop
-    merge feature
+    checkout dev
+    merge feature_1
     checkout main
-    merge develop
+    merge dev
     commit
     commit
 ```
+
+The CI/CD pipeline runs on pushes or merges to `main` and `dev`.
 
 ## Acknowledgements
 
