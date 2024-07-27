@@ -106,17 +106,17 @@ I would like to acknowledge [Harald Scheidl](https://github.com/githubharald) in
 
 ## Community contributions
 
-The following branching strategy is used to keep `main` branch stable and
-allow for experimentation: `main` > `dev` > `feature branches`.
+The following branching strategy is used to keep the `master` branch stable and
+allow for experimentation: `master` > `dev` > `feature branches`.
 
 In more details, this repository currently follows the following git branching strategy: The
-`main` branch remains stable and delivers a functioning product. The `dev`
-consists of all code that will be merged to `main` soon where the corresponding
-features are developed in individual feature branches, see `feature_1` in the
-below visualisation. As a whole, the branching strategy is depicted in this
-visualisation.
+`master` branch remains stable and delivers a functioning product. The `dev` branch
+consists of all code that will be merged to `master` eventually where the corresponding
+features are developed in individual feature branches, see the `feature_1` branch in the
+below visualisation. Generally, the branching strategy is depicted in this below visualisation:
 
 ```mermaid
+%%{init:{  "gitGraph":{ "mainBranchName":"master" }}}%%
 gitGraph
     commit
     commit
@@ -130,13 +130,13 @@ gitGraph
     commit
     checkout dev
     merge feature_1
-    checkout main
+    checkout master
     merge dev
     commit
     commit
 ```
 
-The CI/CD pipeline runs on pushes or merges to `main` and `dev`.
+The CI/CD pipeline runs on the branches `master` and `dev`.
 
 ## Acknowledgements
 
