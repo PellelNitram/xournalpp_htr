@@ -1,5 +1,5 @@
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 
 def export_to_pdf_with_xournalpp(input_file: Path, output_file: Path) -> None:
@@ -36,16 +36,16 @@ def export_to_pdf_with_xournalpp(input_file: Path, output_file: Path) -> None:
     if not input_file.exists():
         raise ValueError(f'input file "{input_file}" does not exist.')
 
-    command = f'xournalpp {input_file} -p {output_file}'
-    export_result = subprocess.run(command,
-                                   shell=True,
-                                   capture_output=True)
+    command = f"xournalpp {input_file} -p {output_file}"
+    export_result = subprocess.run(command, shell=True, capture_output=True)
 
     return_code_fail = export_result.returncode != 0
-    stdout_fail = 'PDF file successfully created' not in export_result.stderr.decode('utf-8')
+    stdout_fail = "PDF file successfully created" not in export_result.stderr.decode(
+        "utf-8"
+    )
     file_existing_fail = not output_file.exists()
 
     if return_code_fail or stdout_fail or file_existing_fail:
-        raise RuntimeError('PDF export failed')
+        raise RuntimeError("PDF export failed")
 
     return output_file
