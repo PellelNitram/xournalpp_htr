@@ -6,3 +6,4 @@ pytest
 lxml
 pymupdf
 tqdm
+pre-commit
