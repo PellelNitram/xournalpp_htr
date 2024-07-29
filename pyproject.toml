@@ -1,6 +1,6 @@
 [tool.ruff]
 line-length = 88
-select = [
+lint.select = [
     "C",  # mccabe rules
     "F",  # pyflakes rules
     "E",  # pycodestyle error rules
@@ -8,7 +8,7 @@ select = [
     "B",  # flake8-bugbear rules
     "I",  # isort rules
 ]
-ignore = [
+lint.ignore = [
     "C901",  # max-complexity-10
     "E501",  # line-too-long
 ]
