@@ -1,7 +1,7 @@
 # TODO: Rename to `io` once `xournalpp_htr.py` was moved from this folder.
 
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 import pymupdf
 from tqdm import tqdm
@@ -29,27 +29,22 @@ def write_predictions_to_PDF(
 
     doc = pymupdf.open(input_pdf_file)
 
-    nr_pages = len( doc )
+    nr_pages = len(doc)
 
-    for page_index in tqdm(range(nr_pages), desc='Export to PDF'):
-
+    for page_index in tqdm(range(nr_pages), desc="Export to PDF"):
         pdf_page = doc[page_index]
 
         for prediction in predictions[page_index]:
-
-            text = prediction['text']
-
             if debug_htr:
-
                 pdf_page.draw_rect(
                     rect=pymupdf.Rect(
                         [
-                            prediction['xmin'] / 150 * 72,
-                            prediction['ymin'] / 150 * 72,
+                            prediction["xmin"] / 150 * 72,
+                            prediction["ymin"] / 150 * 72,
                         ],
                         [
-                            prediction['xmax'] / 150 * 72,
-                            prediction['ymax'] / 150 * 72,
+                            prediction["xmax"] / 150 * 72,
+                            prediction["ymax"] / 150 * 72,
                         ],
                     ),
                     color=pymupdf.pdfcolor["blue"],
@@ -58,23 +53,25 @@ def write_predictions_to_PDF(
             pdf_page.insert_textbox(
                 rect=pymupdf.Rect(
                     [
-                        prediction['xmin'] / 150 * 72,
-                        prediction['ymin'] / 150 * 72,
+                        prediction["xmin"] / 150 * 72,
+                        prediction["ymin"] / 150 * 72,
                     ],
                     [
-                        prediction['xmax'] / 150 * 72,
-                        prediction['ymax'] / 150 * 72,
+                        prediction["xmax"] / 150 * 72,
+                        prediction["ymax"] / 150 * 72,
                     ],
                 ),
-                buffer=prediction['text'],
+                buffer=prediction["text"],
                 color=pymupdf.pdfcolor["blue"],
                 align=pymupdf.TEXT_ALIGN_CENTER,
                 fontsize=6,
-                render_mode=0 if debug_htr else 3, # 0 for visible, 3 for invisible
-            ) # TODO: Improve text alignment with prediction. (1) center text vertically and then (2) stretch text to full box.
+                render_mode=0 if debug_htr else 3,  # 0 for visible, 3 for invisible
+            )
+            # TODO: Improve text alignment with prediction. (1) center text vertically and then (2) stretch text to full box.
             #       Re (1) see https://github.com/pymupdf/PyMuPDF/discussions/1662.
 
     doc.ez_save(output_pdf_file)
+
 
 def get_temporary_filename() -> Path:
     """
@@ -87,10 +84,8 @@ def get_temporary_filename() -> Path:
     """
 
     with tempfile.NamedTemporaryFile(
-        dir='/tmp',
-        delete=True,
-        prefix=f'xournalpp_htr__tmp_pdf_export__',
-        suffix='.pdf') as tmp_file_manager:
+        dir="/tmp", delete=True, prefix="xournalpp_htr__tmp_pdf_export__", suffix=".pdf"
+    ) as tmp_file_manager:
         output_file_tmp_noOCR = Path(tmp_file_manager.name)
 
     return output_file_tmp_noOCR
