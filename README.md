@@ -157,3 +157,16 @@ The CI/CD pipeline runs on the branches `master` and `dev`.
 ## Acknowledgements
 
 I would like to thank [Leonard Salewski](https://twitter.com/L_Salewski) and [Jonathan Prexl](https://scholar.google.com/citations?user=pqep1wkAAAAJ&hl=en) for useful discussions, [Harald Scheidl](https://github.com/githubharald/) for making his repositories about handwritten text recognition public ([SimpleHTR](https://github.com/githubharald/SimpleHTR), [WordDetectorNN](https://github.com/githubharald/WordDetectorNN) and [HTRPipeline](https://github.com/githubharald/HTRPipeline)) and the [School of Physics and Astronomy](https://www.ph.ed.ac.uk/) at [The University of Edinburgh](https://www.ed.ac.uk/) for providing compute power.
+
+## Cite
+
+If you are using Xournal++ HTR for your research, I'd appreciate if you could cite it. Use:
+
+```
+@software{Lellep_Xournalpp_HTR,
+  author = {Lellep, Martin},
+  title = {xournalpp_htr},
+  url = {https://github.com/PellelNitram/xournalpp_htr},
+  license = {GPL-2.0},
+}
+```
