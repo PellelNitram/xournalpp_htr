@@ -4,6 +4,7 @@
 
 [![python](https://img.shields.io/badge/-Python_3.10-blue?logo=python&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/ashleve/lightning-hydra-template/pulls)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwriting_recognition) for [Xournal++](https://github.com/xournalpp/xournalpp).
 
@@ -22,6 +23,8 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 </div>
 
 ## Installation
+
+TODO: add pre-commmit installation instructions!
 
 ### Cross-platform
 
@@ -104,6 +107,14 @@ I would like to acknowledge [Harald Scheidl](https://github.com/githubharald) in
 2. Use the code.
 3. To update the requirements file: ``pip freeze > requirements.txt``.
 
+## Code quality
+
+We try to keep up code quality as high as practically possible. For that reason, the following steps are implemented:
+
+- Testing. Xournal++ HTR uses `pytest` for implementing unit, regression and integration tests.
+- Linting. Xournal++ HTR uses `ruff` for linting and code best practises. `ruff` is implemented as git pre-commit hook. Since `ruff` as pre-commit hook is configured externally with `pyproject.toml`, you can use the same settings in your IDE if you wish to speed up the process.
+- Formatting. Xournal++ HTR uses `ruff-format` for consistent code formatting. `ruff-format` is implemented as git pre-commit hook. Since `ruff-format` as pre-commit hook is configured externally with `pyproject.toml`, you can use the same settings in your IDE if you wish to speed up the process.
+
 ## Community contributions
 
 The following branching strategy is used to keep the `master` branch stable and
@@ -123,13 +134,18 @@ gitGraph
     branch dev
     commit
     checkout dev
-    branch feature_1
-    checkout feature_1
+    commit
+    commit
+    branch feature/1
+    commit
+    checkout feature/1
     commit
     commit
     commit
     checkout dev
-    merge feature_1
+    merge feature/1
+    commit
+    commit
     checkout master
     merge dev
     commit
