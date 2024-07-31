@@ -152,6 +152,9 @@ gitGraph
     commit
 ```
 
+Given this structure, please implement new features as feature branches and
+rebase them onto the `dev` branch prior to sending a pull request to `dev`.
+
 The CI/CD pipeline runs on the branches `master` and `dev`.
 
 ## Acknowledgements
