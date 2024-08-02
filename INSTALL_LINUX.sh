@@ -41,6 +41,7 @@ install_htr_pipeline
 cd ${CURRENT_DIR}
 pip install -r requirements.txt
 pip install -e .
+pre-commit install
 
 cd plugin
 bash copy_to_plugin_folder.sh

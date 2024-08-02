@@ -24,8 +24,6 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 
 ## Installation
 
-TODO: add pre-commmit installation instructions!
-
 ### Cross-platform
 
 Execute the following commands:
@@ -35,13 +33,14 @@ Execute the following commands:
 3. Install [HTRPipelines](https://github.com/githubharald/HTRPipeline) package using [its installation guide](https://github.com/githubharald/HTRPipeline/tree/master#installation).
 4. Install all dependencies of this package ``pip install -r requirements.txt``.
 4. Install the package in development mode with ``pip install -e .`` (do not forget the dot, '.').
+4. Install pre-commit hooks with: `pre-commit install`.
 5. Move `plugin/` folder content to `${XOURNAL_CONFIG_PATH}/plugins/xournalpp_htr/` with `${XOURNAL_CONFIG_PATH}` being the configuration path of Xournal++, see Xournal++ manual [here](https://xournalpp.github.io/guide/file-locations/).
 
 ### Linux
 
 Run `bash INSTALL_LINUX.sh` from repository root directory.
 
-This script also installs the plugin as explained in point 5 of the cross-platform installation procedure. The installation of the plugin is performed with `plugin/copy_to_plugin_folder.sh`, which can also be invoked independently of `INSTALL_LINUX.sh` for updating the plugin installation.
+This script also installs the plugin as explained in the last point of the cross-platform installation procedure. The installation of the plugin is performed with `plugin/copy_to_plugin_folder.sh`, which can also be invoked independently of `INSTALL_LINUX.sh` for updating the plugin installation.
 
 ### After installation
 
