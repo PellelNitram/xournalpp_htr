@@ -7,7 +7,7 @@ from xournalpp_htr.run_htr import main, parse_arguments
 
 
 @pytest.fixture
-def get_repo_root_directory(request):
+def get_repo_root_directory(request: pytest.FixtureRequest) -> Path:
     """TODO.
 
     Fixture based on [this](https://stackoverflow.com/a/57039134).
@@ -18,7 +18,7 @@ def get_repo_root_directory(request):
 
 
 @pytest.fixture
-def get_path_to_minimal_test_data(get_repo_root_directory):
+def get_path_to_minimal_test_data(get_repo_root_directory: Path) -> Path:
     """TODO. Get path to minimal test data file.
 
     If the file does not exist, then it is created at `${repo_root}/tests/data/2024-07-26_minimal.xopp`
@@ -36,13 +36,13 @@ def get_path_to_minimal_test_data(get_repo_root_directory):
 
 
 @pytest.mark.installation
-def test_parse_arguments_empty():
+def test_parse_arguments_empty() -> None:
     with pytest.raises(SystemExit):
         parse_arguments()
 
 
 @pytest.mark.installation
-def test_parse_arguments_full():
+def test_parse_arguments_full() -> None:
     args = parse_arguments("-if input -of output -m dummy -pid dir -sp")
     assert len(args) == 5
     assert args["input_file"].stem == "input"
@@ -52,7 +52,7 @@ def test_parse_arguments_full():
     assert args["show_predictions"]
 
 
-def test_main(get_path_to_minimal_test_data, tmp_path):
+def test_main(get_path_to_minimal_test_data: Path, tmp_path: Path) -> None:
     """TODO.
 
     This is not checked in Github Actions for now b/c I would have to install
