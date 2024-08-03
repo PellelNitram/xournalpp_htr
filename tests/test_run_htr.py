@@ -87,11 +87,16 @@ def test_parse_arguments_full() -> None:
 
 
 def test_main(get_path_to_minimal_test_data: Path, tmp_path: Path) -> None:
-    """TODO.
+    """Tests the `main` function using minimal test data.
 
-    This is not checked in Github Actions for now b/c I would have to install
-    the right `Xournal++` version there to allow `export_to_pdf_with_xournalpp`
-    to work.
+    Note: This function is currently not executed in Github Actions due to
+    the requirement of a specific `Xournal++` version for the
+    `export_to_pdf_with_xournalpp` function.
+
+    :param get_path_to_minimal_test_data: Fixture to obtain path to the
+                                          minimal test data file.
+    :param tmp_path: Temporary path fixture used for storing the output
+                     PDF file as a temporary file.
     """
 
     args = {
