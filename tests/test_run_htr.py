@@ -55,6 +55,16 @@ def get_path_to_minimal_test_data(get_repo_root_directory: Path) -> Path:
 
 @pytest.mark.installation
 def test_parse_arguments_empty() -> None:
+    """Test `parse_arguments` with no command-line arguments.
+
+    Ensures that `parse_arguments` raises a `SystemExit` exception when
+    called without arguments. This typically occurs when required
+    arguments are missing, triggering `sys.exit()`.
+
+    Marked with `installation` for selective test runs.
+
+    :returns: None
+    """
     with pytest.raises(SystemExit):
         parse_arguments()
 
