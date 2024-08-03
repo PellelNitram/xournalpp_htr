@@ -52,7 +52,7 @@ def test_parse_arguments_full():
     assert args["show_predictions"]
 
 
-def test_main(get_path_to_minimal_test_data):
+def test_main(get_path_to_minimal_test_data, tmp_path):
     """TODO.
 
     This is not checked in Github Actions for now b/c I would have to install
@@ -62,7 +62,7 @@ def test_main(get_path_to_minimal_test_data):
 
     args = {
         "input_file": get_path_to_minimal_test_data,
-        "output_file": Path("test_main.pdf"),  # TODO: Replace w/ temp filename
+        "output_file": tmp_path / Path("test_main.pdf"),
         "model": "2024-07-18_htr_pipeline",  # TODO: Add a `dummy` to test pipeline w/o ML part
         "prediction_image_dir": None,
         "show_predictions": False,
