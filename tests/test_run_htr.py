@@ -29,9 +29,17 @@ def get_repo_root_directory(request: pytest.FixtureRequest) -> Path:
 
 @pytest.fixture
 def get_path_to_minimal_test_data(get_repo_root_directory: Path) -> Path:
-    """TODO. Get path to minimal test data file.
+    """Fixture to retrieve the path to the minimal test data file.
 
-    If the file does not exist, then it is created at `${repo_root}/tests/data/2024-07-26_minimal.xopp`
+    This function checks for the existence of a specific test data file
+    located at `${repo_root}/tests/data/2024-07-26_minimal.xopp`. If the
+    file does not exist, it is downloaded from a predefined URL and saved
+    at the specified location so that it can be retrieved directly next
+    time; i.e. it is cached.
+
+    :param get_repo_root_directory: A fixture that provides the root
+                                    directory of the repository.
+    :returns: The path to the minimal test data file.
     """
 
     path_to_minimal_test_data = (
