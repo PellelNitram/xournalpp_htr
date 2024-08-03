@@ -46,6 +46,12 @@ This script also installs the plugin as explained in the last point of the cross
 
 Confirm that the installation worked by running `make tests-installation` from repository root directory.
 
+## Usage
+
+1. Activate environment: ``conda activate xournalpp_htr``. Alternatively use ``source activate_env.sh`` as shortcut.
+2. Use the code.
+3. To update the requirements file: ``pip freeze > requirements.txt``.
+
 ## Project description
 
 Taking handwritten notes digitally comes with many benefits but lacks searchability of your notes. Hence, there is a need to make your handwritten notes searchable. This can be achieved with ["handwritten text recognition" (HTR)](https://en.wikipedia.org/wiki/Handwriting_recognition), which is the process of assigning searchable text to written strokes.
@@ -99,12 +105,6 @@ Next steps to improve the performance of the handwritten text recognition even f
 - Use sequence-to-sequence algorithm that makes use of [Xournal++](https://github.com/xournalpp/xournalpp)'s data format. This translates into using online HTR algorithms.
 
 I would like to acknowledge [Harald Scheidl](https://github.com/githubharald) in this concept as he wrote the underlying algorithms and made them easily usable through [his HTRPipeline repository](https://github.com/githubharald/HTRPipeline) - after all I just feed his algorithm [Xournal++](https://github.com/xournalpp/xournalpp) data in concept 1. [Go check out his great content](https://githubharald.github.io/)!
-
-## Usage
-
-1. Activate environment: ``conda activate xournalpp_htr``. Alternatively use ``source activate_env.sh`` as shortcut.
-2. Use the code.
-3. To update the requirements file: ``pip freeze > requirements.txt``.
 
 ## Code quality
 
