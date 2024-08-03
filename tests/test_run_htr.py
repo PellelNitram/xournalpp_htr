@@ -71,6 +71,12 @@ def test_parse_arguments_empty() -> None:
 
 @pytest.mark.installation
 def test_parse_arguments_full() -> None:
+    """
+    Test the `parse_arguments` function with a full set of input arguments.
+
+    This test verifies that the `parse_arguments` function correctly
+    parses a complete set of command-line arguments.
+    """
     args = parse_arguments("-if input -of output -m dummy -pid dir -sp")
     assert len(args) == 5
     assert args["input_file"].stem == "input"
