@@ -24,6 +24,10 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 
 ## Installation
 
+This project consists of both the inference and training code. Most users will only be interested in the inference part, so that the below only comprises of the inference part that you need to execute the plugin from within Xournal++.
+
+The training part is optional and allows to help to train our own models which improve over time. These installation process is optional and detailed further below.
+
 ### Cross-platform
 
 Execute the following commands:
@@ -86,6 +90,12 @@ While many commercial note taking apps feature great HTR systems to make your no
 </div>
 
 Xournal++ HTR strives to bring open-source on-device handwriting recognition to [Xournal++](https://github.com/xournalpp/xournalpp) as it is one of the most adopted open-source note taking apps and thereby HTR can be delivered to the largest possible amount of users.
+
+## Training
+
+### Installation
+
+Follow the above installation procedure and replace the step `pip install -r requirements.txt` by both `pip install -r requirements.txt` and `pip install -r requirements_training.txt` to install both the inference and training dependencies.
 
 ## Project design
 
