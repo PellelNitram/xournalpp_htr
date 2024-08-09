@@ -1,3 +1,5 @@
+"""Generic IO functionality."""
+
 import json
 import xml.etree.ElementTree as ET
 from pathlib import Path
