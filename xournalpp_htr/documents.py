@@ -150,7 +150,22 @@ class XournalppDocument(Document):
 
 
 def get_document(path: Path) -> Document:
-    """TODO!"""
+    """
+    Loads a document from a given file path based on the file extension.
+
+    This function determines the appropriate document type to load by
+    examining the file extension of the provided path. It supports files
+    with the extensions `.xoj` and `.xopp`, returning a corresponding
+    document object. If the file extension is not recognized, a
+    `NotImplementedError` is raised.
+
+    :param path: The file path to the document.
+    :returns: An instance of the appropriate `Document` class. Either
+              `XournalDocument` or `XournalppDocument`.
+    :raises NotImplementedError: If the file extension is not supported.
+                                 Supported file extensions are `.xoj` and
+                                 `.xopp`.
+    """
 
     file_ending = path.suffix
 
