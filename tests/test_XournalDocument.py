@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from xournalpp_htr.documents import XournalppDocument, get_document
 
 
@@ -35,3 +37,9 @@ def test_get_document_xopp(get_path_to_minimal_test_data: Path) -> None:
         == len(document.pages[0].layers[0].strokes)
         == 85
     )
+
+
+def test_get_document_unsupported() -> None:
+    """Tests `get_document` function for an unsupported file extension."""
+    with pytest.raises(NotImplementedError):
+        get_document(Path("/a/file/that/is.unsupported"))
