@@ -3,7 +3,7 @@ from pathlib import Path
 from xournalpp_htr.documents import XournalppDocument, get_document
 
 
-def test_XournalppDocument(get_path_to_minimal_test_data: Path):
+def test_XournalppDocument(get_path_to_minimal_test_data: Path) -> None:
     """Tests `XournalppDocument` and thereby its `load_data` function."""
     xpp_document = XournalppDocument(get_path_to_minimal_test_data)
     assert xpp_document.path == get_path_to_minimal_test_data
@@ -20,7 +20,7 @@ def test_XournalppDocument(get_path_to_minimal_test_data: Path):
     assert len(layer.strokes) == 85
 
 
-def test_get_document_xopp(get_path_to_minimal_test_data: Path):
+def test_get_document_xopp(get_path_to_minimal_test_data: Path) -> None:
     """Tests `get_document` function for a `xopp` file."""
     xpp_document = XournalppDocument(get_path_to_minimal_test_data)
     document = get_document(get_path_to_minimal_test_data)
