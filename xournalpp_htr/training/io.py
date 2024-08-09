@@ -37,3 +37,26 @@ def load_df_iam_ondb(path: Path) -> pd.DataFrame:
     assert df["stroke_nr"].max() + 1 == len(stroke_set)
 
     return df
+
+
+def load_IAM_OnDB_text_line(path: Path, line_nr: int) -> str:
+    """
+    Load text line of IAM OnDB sample.
+
+    :param path: Path to lines file.
+    :param line_nr: Number of line to extract. This is a 0-indexed value.
+    :returns: The text line.
+    """
+
+    with open(path, "r") as f:
+        all_lines = [xx.strip() for xx in f.readlines()]
+
+    for ii, line in enumerate(all_lines):
+        if line == "CSR:":
+            i_start = ii + 1
+            break
+
+    all_lines = all_lines[i_start:]
+    all_lines = [xx for xx in all_lines if len(xx) > 0]
+
+    return all_lines[line_nr]
