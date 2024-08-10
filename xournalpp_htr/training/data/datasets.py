@@ -327,3 +327,37 @@ class IAM_OnDB_Dataset(Dataset):
         plt.gca().set_aspect("equal")
         plt.savefig(file_path)
         plt.close()
+
+
+class PageDatasetFromOnline(Dataset):
+    """Dataset to assemble a page dataset using samples from an existing dataset.
+
+    It places existing samples on a page while keeping track of the positions of
+    the bounding boxes.
+
+    TODO.
+    """
+
+    # TODO: Think about how to store both images and
+
+    # TODO: Will keep track of it in online space and then can render to offline space
+
+    def __init__(
+        self,
+        dataset: Dataset,  # TODO: An online dataset; can come w/ a transform obviously if desired
+        positions: dict[int, list[int]],  # { int, bbox }
+        page_size: list[float, float],
+        stroke_width: float,
+    ) -> None:
+        """Initialise a `PageDataset`.
+
+        TODO.
+        """
+        self.dataset = dataset
+        self.positions = positions
+        self.page_size = page_size
+        self.stroke_width = stroke_width
+
+    # TODO: When placing the positions, the dataset should spit out a warning,
+    #       or crash, if bounding boxes overlap b/c that'd never happen for a
+    #       normal document
