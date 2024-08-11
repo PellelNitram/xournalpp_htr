@@ -15,6 +15,8 @@ import pandas as pd
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
+DatasetIndex = int
+
 
 class IAM_OnDB_Dataset(Dataset):
     """IAM-OnDB dataset implementation in PyTorch.
