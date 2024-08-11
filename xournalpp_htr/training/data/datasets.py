@@ -5,6 +5,7 @@ xournalpp_htr models.
 
 import os
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List
 
@@ -329,6 +330,14 @@ class IAM_OnDB_Dataset(Dataset):
         plt.close()
 
 
+@dataclass
+class PageDatasetFromOnlinePosition:
+    """Class for keeping track of position TODO."""
+
+    stroke_width: float
+    page_index: int
+
+
 class PageDatasetFromOnline(Dataset):
     """Dataset to assemble a page dataset using samples from an existing dataset.
 
@@ -345,7 +354,11 @@ class PageDatasetFromOnline(Dataset):
     def __init__(
         self,
         dataset: Dataset,  # TODO: An online dataset; can come w/ a transform obviously if desired
-        positions: dict[int, list[int]],  # { int, bbox }
+        positions: dict[
+            int, list[int]
+        ],  # { int, bbox }; also add stroke width here. probably make it a class;
+        # TODO: Replace w/ PageDatasetFromOnlinePosition - how to do with mapping from sample? sample
+        #       index in dataset?
         page_size: list[float, float],
         stroke_width: float,
     ) -> None:
