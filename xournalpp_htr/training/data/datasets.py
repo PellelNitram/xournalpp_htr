@@ -338,6 +338,9 @@ class PageDatasetFromOnlinePosition:
 
     stroke_width: float
     page_index: int
+    center_x: float
+    center_y: float
+    height: float  # width is derived automatically by keeping aspect ratio constant
 
 
 class PageDatasetFromOnline(Dataset):
