@@ -356,11 +356,7 @@ class PageDatasetFromOnline(Dataset):
     def __init__(
         self,
         dataset: Dataset,  # TODO: An online dataset; can come w/ a transform obviously if desired
-        positions: dict[
-            int, list[int]
-        ],  # { int, bbox }; also add stroke width here. probably make it a class;
-        # TODO: Replace w/ PageDatasetFromOnlinePosition - how to do with mapping from sample? sample
-        #       index in dataset?
+        positions: dict[DatasetIndex, PageDatasetFromOnlinePosition],
         page_size: list[float, float],
         stroke_width: float,
     ) -> None:
