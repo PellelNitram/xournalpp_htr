@@ -356,6 +356,8 @@ class PageDatasetFromOnline(Dataset):
 
     # TODO: Will keep track of it in online space and then can render to offline space
 
+    # TODO: Check if a placed sample leaves the page and also if sample overlap with existing ones.
+
     def __init__(
         self,
         dataset: Dataset,  # TODO: An online dataset; can come w/ a transform obviously if desired
