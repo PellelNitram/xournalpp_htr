@@ -334,7 +334,22 @@ class IAM_OnDB_Dataset(Dataset):
 
 @dataclass
 class PageDatasetFromOnlinePosition:
-    """Class for keeping track of position TODO."""
+    """Represents a position of a handwritten text placed on a page.
+
+    This class stores information about a specific position within a page, including its stroke width,
+    page index, center coordinates and height. The width is automatically derived to maintain a constant aspect ratio.
+
+    :param stroke_width: The width of the stroke used at this position.
+    :type stroke_width: float
+    :param page_index: The index of the page where this position is located.
+    :type page_index: int
+    :param center_x: The x-coordinate of the center of the position.
+    :type center_x: float
+    :param center_y: The y-coordinate of the center of the position.
+    :type center_y: float
+    :param height: The height of the position. The width is derived based on this (using sample) to maintain aspect ratio.
+    :type height: float
+    """
 
     stroke_width: float
     page_index: int
