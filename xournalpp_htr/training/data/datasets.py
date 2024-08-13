@@ -377,7 +377,7 @@ class PageDatasetFromOnline(Dataset):
         self,
         dataset: Dataset,  # TODO: An online dataset; can come w/ a transform obviously if desired
         positions: dict[DatasetIndex, PageDatasetFromOnlinePosition],
-        page_size: list[float, float],
+        page_size: list[float, float],  # TODO: Think about unit! mm, inch, dots?
         stroke_width: float,
     ) -> None:
         """Initialise a `PageDataset`.
@@ -388,6 +388,19 @@ class PageDatasetFromOnline(Dataset):
         self.positions = positions
         self.page_size = page_size
         self.stroke_width = stroke_width
+
+    def compute(self) -> list:
+        pass
+        # Steps to perform:
+        # 1. Loop over `self.positions` to obtain index and location.
+        # 2. Get sample from dataset.
+        # 3. Transform sample location to reflect position on page.
+        # 4. Store all that in a list and return it
+
+    def render_pages(self) -> None:
+        pass
+        # Steps to perform:
+        # TODO
 
     # TODO: When placing the positions, the dataset should spit out a warning,
     #       or crash, if bounding boxes overlap b/c that'd never happen for a
