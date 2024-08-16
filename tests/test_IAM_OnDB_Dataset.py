@@ -2,7 +2,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from src.data.online_handwriting_datasets import IAM_OnDB_Dataset
+
+from xournalpp_htr.training.data.datasets import IAM_OnDB_Dataset
 
 PATH = Path("data/datasets/IAM-OnDB")  # Needs to be parameterised
 
