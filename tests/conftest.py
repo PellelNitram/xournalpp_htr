@@ -49,3 +49,12 @@ def get_path_to_minimal_test_data(get_repo_root_directory: Path) -> Path:
         urllib.request.urlretrieve(url, path_to_minimal_test_data)
 
     return path_to_minimal_test_data
+
+
+@pytest.fixture
+def get_path_to_IAM_OnDB_dataset(get_repo_root_directory: Path) -> Path:
+    """TODO Add docstring."""
+
+    path_to_IAM_OnDB_dataset = get_repo_root_directory / "data/datasets/IAM-OnDB"
+
+    return path_to_IAM_OnDB_dataset
