@@ -1,5 +1,6 @@
 external/
 tests/data/
+data/datasets/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
