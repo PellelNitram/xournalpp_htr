@@ -7,6 +7,11 @@ from xournalpp_htr.training.data.datasets import IAM_OnDB_Dataset
 
 
 @pytest.mark.data
+def test_dataset_path_exists(get_path_to_IAM_OnDB_dataset: Path):
+    assert get_path_to_IAM_OnDB_dataset.exists()
+
+
+@pytest.mark.data
 def test_construction_with_limit(get_path_to_IAM_OnDB_dataset: Path):
     limit = 5
 
