@@ -349,6 +349,8 @@ class PageDatasetFromOnlinePosition:
     :type center_y: float
     :param height: The height of the position. The width is derived based on this (using sample) to maintain aspect ratio.
     :type height: float
+    :param dataset_index: The index in the dataset that this assigned this position.
+    :type datset_index: DatasetIndex
     """
 
     stroke_width: float
@@ -356,6 +358,7 @@ class PageDatasetFromOnlinePosition:
     center_x: float
     center_y: float
     height: float  # width is derived automatically by keeping aspect ratio constant
+    dataset_index: DatasetIndex
 
 
 class PageDatasetFromOnline(Dataset):
