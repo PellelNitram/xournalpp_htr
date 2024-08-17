@@ -379,7 +379,7 @@ class PageDatasetFromOnline(Dataset):
     def __init__(
         self,
         dataset: Dataset,  # TODO: An online dataset; can come w/ a transform obviously if desired
-        positions: dict[DatasetIndex, PageDatasetFromOnlinePosition],
+        positions: list[PageDatasetFromOnlinePosition],
         page_size: list[float, float],  # TODO: Think about unit! mm, inch, dots?
     ) -> None:
         """Initialise a `PageDataset`.
