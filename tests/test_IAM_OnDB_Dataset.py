@@ -7,12 +7,12 @@ from xournalpp_htr.training.data.datasets import IAM_OnDB_Dataset
 
 
 @pytest.mark.data
-def test_dataset_path_exists(get_path_to_IAM_OnDB_dataset: Path):
+def test_dataset_path_exists(get_path_to_IAM_OnDB_dataset: Path) -> None:
     assert get_path_to_IAM_OnDB_dataset.exists()
 
 
 @pytest.mark.data
-def test_construction_with_limit(get_path_to_IAM_OnDB_dataset: Path):
+def test_construction_with_limit(get_path_to_IAM_OnDB_dataset: Path) -> None:
     limit = 5
 
     ds = IAM_OnDB_Dataset(
@@ -24,7 +24,7 @@ def test_construction_with_limit(get_path_to_IAM_OnDB_dataset: Path):
 
 @pytest.mark.data
 @pytest.mark.slow
-def test_construction_no_limit(get_path_to_IAM_OnDB_dataset: Path):
+def test_construction_no_limit(get_path_to_IAM_OnDB_dataset: Path) -> None:
     ds = IAM_OnDB_Dataset(path=get_path_to_IAM_OnDB_dataset, transform=None, limit=-1)
 
     assert len(ds) == IAM_OnDB_Dataset.LENGTH
@@ -34,7 +34,7 @@ def test_construction_no_limit(get_path_to_IAM_OnDB_dataset: Path):
 @pytest.mark.slow
 def test_construction_no_limit_skip_carbune2020_fails(
     get_path_to_IAM_OnDB_dataset: Path,
-):
+) -> None:
     ds = IAM_OnDB_Dataset(
         path=get_path_to_IAM_OnDB_dataset,
         transform=None,
@@ -49,7 +49,9 @@ def test_construction_no_limit_skip_carbune2020_fails(
 
 @pytest.mark.data
 @pytest.mark.slow
-def test_correctness_manually(tmp_path: Path, get_path_to_IAM_OnDB_dataset: Path):
+def test_correctness_manually(
+    tmp_path: Path, get_path_to_IAM_OnDB_dataset: Path
+) -> None:
     # This saves samples to files so that one can inspect the correctness of the
     # dataset manually. Enabling the pytest setting `-s` allows one to see where
     # the files were saved temporarily.
