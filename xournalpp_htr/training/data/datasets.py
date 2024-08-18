@@ -403,7 +403,7 @@ class PageDatasetFromOnline(Dataset):
 
         TODO: Explain returned list.
         """
-        result = defaultdict(list)  # TODO: DEAL w/ PAGES, using dict or defaultdict
+        result = defaultdict(list)
         for position in self.positions:
             sample = self.dataset[position.dataset_index]
             x = sample["x"]
