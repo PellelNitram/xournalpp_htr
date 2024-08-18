@@ -5,12 +5,14 @@ xournalpp_htr models.
 
 import os
 import xml.etree.ElementTree as ET
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List
 
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset
 from tqdm import tqdm
@@ -390,13 +392,40 @@ class PageDatasetFromOnline(Dataset):
         self.positions = positions
         self.page_size = page_size
 
-    def compute(self) -> list:
-        pass
-        # Steps to perform:
-        # 1. Loop over `self.positions` to obtain index and location.
-        # 2. Get sample from dataset.
-        # 3. Transform sample location to reflect position on page.
-        # 4. Store all that in a list and return it
+    def compute(self) -> defaultdict[list]:
+        """TODO.
+
+        These are the steps performed:
+        1. Loop over `self.positions` to obtain index and location.
+        2. Get sample from dataset.
+        3. Transform sample location to reflect position on page.
+        4. Store all that in a list and return it, including the label.
+
+        TODO: Explain returned list.
+        """
+        result = defaultdict(list)  # TODO: DEAL w/ PAGES, using dict or defaultdict
+        for position in self.positions:
+            sample = self.dataset[position.dataset_index]
+            x = sample["x"]
+            x = x - x.min()
+            y = sample["y"]
+            y = y - y.min()
+            label = sample["label"]
+            scale_factor = position.height / y.max()
+            x *= scale_factor
+            y *= scale_factor
+            x = x - x.max() / 2 + position.center_x
+            y = y - y.max() / 2 + position.center_y
+            stroke_nrs = np.sort(np.unique(sample["stroke_nr"]))
+            strokes = {}
+            for stroke_nr in stroke_nrs:
+                mask = sample["stroke_nr"] == stroke_nr
+                strokes[stroke_nr] = {
+                    "x": x[mask].copy(),
+                    "y": y[mask].copy(),
+                }
+            result[position.page_index].append({"strokes": strokes, "label": label})
+        return result
 
     def render_pages(self) -> None:
         pass
