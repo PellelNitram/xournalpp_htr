@@ -430,7 +430,9 @@ class PageDatasetFromOnline(Dataset):
     def render_pages(self) -> None:
         pass
         # Steps to perform:
-        # TODO
+
+    def compute_segmentation_masks(self) -> None:
+        pass
 
     # TODO: When placing the positions, the dataset should spit out a warning,
     #       or crash, if bounding boxes overlap b/c that'd never happen for a
