@@ -383,6 +383,7 @@ class PageDatasetFromOnline(Dataset):
         dataset: Dataset,  # TODO: An online dataset; can come w/ a transform obviously if desired
         positions: list[PageDatasetFromOnlinePosition],
         page_size: list[float, float],  # TODO: Think about unit! mm, inch, dots?
+        dpi: float,
     ) -> None:
         """Initialise a `PageDataset`.
 
@@ -391,6 +392,7 @@ class PageDatasetFromOnline(Dataset):
         self.dataset = dataset
         self.positions = positions
         self.page_size = page_size
+        self.dpi = dpi
 
     def compute(self) -> defaultdict[list]:
         """TODO.
@@ -427,11 +429,28 @@ class PageDatasetFromOnline(Dataset):
             result[position.page_index].append({"strokes": strokes, "label": label})
         return result
 
-    def render_pages(self) -> None:
-        pass
-        # Steps to perform:
+    def render_pages(self, output_path: Path) -> None:
+        """TODO.
 
-    def compute_segmentation_masks(self) -> None:
+        Steps that are performed: TODO.
+        """
+        result = self.compute()
+        for page_index in result:
+            plt.figure(figsize=(self.page_size))
+            for data in result[page_index]:
+                for stroke_nr in data["strokes"]:
+                    x = data["strokes"][stroke_nr]["x"]
+                    y = data["strokes"][stroke_nr]["y"]
+                    plt.plot(
+                        x,
+                        y,
+                        c="black",
+                    )
+            plt.gca().set_aspect("equal")
+            plt.savefig(output_path / f"{page_index:06}.png", dpi=self.dpi)
+            plt.close()
+
+    def compute_segmentation_masks(self, output_path: Path) -> None:
         pass
 
     # TODO: When placing the positions, the dataset should spit out a warning,
