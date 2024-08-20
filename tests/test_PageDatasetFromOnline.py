@@ -40,6 +40,7 @@ def test_compute(get_path_to_IAM_OnDB_dataset: Path):
         dataset=ds,
         positions=positions,
         page_size=(10, 10),
+        dpi=72,
     )
     result = p_ds.compute()
     p_ds.render_pages()
