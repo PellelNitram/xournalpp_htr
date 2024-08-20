@@ -64,7 +64,41 @@ def test_compute(get_path_to_IAM_OnDB_dataset: Path):
     # TODO: construct segmentation mask as well
 
 
-def test_render_pages():
-    raise NotImplementedError("TODO")
-    pass
+def test_render_pages(get_path_to_IAM_OnDB_dataset: Path, tmp_path: Path):
+    print(f"\n\nPath to check out: {tmp_path}.\n")
+
+    limit = 100
+    ds = IAM_OnDB_Dataset(
+        path=get_path_to_IAM_OnDB_dataset, transform=None, limit=limit
+    )
+
+    positions_height = 5.0
+    positions = [
+        PageDatasetFromOnlinePosition(
+            stroke_width=1,
+            page_index=0,
+            center_x=10.0,
+            center_y=10.0,
+            height=positions_height,
+            dataset_index=0,
+        ),
+        PageDatasetFromOnlinePosition(
+            stroke_width=1,
+            page_index=0,
+            center_x=10.0,
+            center_y=20.0,
+            height=positions_height,
+            dataset_index=1,
+        ),
+    ]
+
+    print(len(ds.data))
+    p_ds = PageDatasetFromOnline(
+        dataset=ds,
+        positions=positions,
+        page_size=(10, 10),
+        dpi=72,
+    )
+    p_ds.render_pages(tmp_path)
+
     # TODO: Make sure to check the pages visually
