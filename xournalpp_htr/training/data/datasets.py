@@ -453,6 +453,9 @@ class PageDatasetFromOnline(Dataset):
     def compute_segmentation_masks(self, output_path: Path) -> None:
         pass
 
+    def __getitem__(self, idx) -> dict:
+        raise NotImplementedError
+
     # TODO: When placing the positions, the dataset should spit out a warning,
     #       or crash, if bounding boxes overlap b/c that'd never happen for a
     #       normal document
