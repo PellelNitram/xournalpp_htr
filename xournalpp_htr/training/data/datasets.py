@@ -453,7 +453,12 @@ class PageDatasetFromOnline(Dataset):
     def compute_segmentation_masks(self, output_path: Path) -> None:
         pass
 
-    def __getitem__(self, idx) -> dict:
+    def __getitem__(self, idx: int) -> dict:
+        """TODO."""
+        # TODO: Idea
+        # - once accessed, the page is rendered and saved in output folder (which is specified to constructor)
+        # - then, it is returned
+        # - then, when accessed again, it is loaded from page instead of recomputed
         raise NotImplementedError
 
     # TODO: When placing the positions, the dataset should spit out a warning,
