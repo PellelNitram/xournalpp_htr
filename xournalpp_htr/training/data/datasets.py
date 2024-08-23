@@ -430,6 +430,9 @@ class PageDatasetFromOnline(Dataset):
             result[position.page_index].append({"strokes": strokes, "label": label})
         return result
 
+    def __len__(self) -> int:
+        return len(self.data)
+
     def render_pages(self, output_path: Path) -> None:
         """TODO.
 
