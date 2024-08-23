@@ -433,26 +433,25 @@ class PageDatasetFromOnline(Dataset):
     def __len__(self) -> int:
         return len(self.data)
 
-    def render_pages(self, output_path: Path) -> None:
+    def render_pages(self, page_index: int, output_path: Path) -> None:
         """TODO.
 
         Steps that are performed: TODO.
         """
-        result = self.compute()
-        for page_index in result:
-            plt.figure(figsize=(self.page_size))
-            for data in result[page_index]:
-                for stroke_nr in data["strokes"]:
-                    x = data["strokes"][stroke_nr]["x"]
-                    y = data["strokes"][stroke_nr]["y"]
-                    plt.plot(
-                        x,
-                        y,
-                        c="black",
-                    )
-            plt.gca().set_aspect("equal")
-            plt.savefig(output_path / f"{page_index:06}.png", dpi=self.dpi)
-            plt.close()
+        # TODO: Determine page sizes etc & adjust rendering
+        plt.figure(figsize=(self.page_size))
+        for data in self.data[page_index]:
+            for stroke_nr in data["strokes"]:
+                x = data["strokes"][stroke_nr]["x"]
+                y = data["strokes"][stroke_nr]["y"]
+                plt.plot(
+                    x,
+                    y,
+                    c="black",
+                )
+        plt.gca().set_aspect("equal")
+        plt.savefig(output_path, dpi=self.dpi)
+        plt.close()
 
     def compute_segmentation_masks(self, output_path: Path) -> None:
         pass
