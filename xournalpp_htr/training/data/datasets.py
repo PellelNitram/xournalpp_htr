@@ -458,6 +458,10 @@ class PageDatasetFromOnline(Dataset):
     def compute_segmentation_masks(self, output_path: Path) -> None:
         pass
 
+    @staticmethod
+    def get_file_name(idx: int) -> str:
+        return f"{idx:06}.png"
+
     def __getitem__(self, idx: int) -> dict:
         """TODO."""
         # TODO: Idea
