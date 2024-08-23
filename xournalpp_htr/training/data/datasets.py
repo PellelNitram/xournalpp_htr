@@ -393,6 +393,7 @@ class PageDatasetFromOnline(Dataset):
         self.positions = positions
         self.page_size = page_size
         self.dpi = dpi
+        self.data = self.compute()
 
     def compute(self) -> defaultdict[list]:
         """TODO.
