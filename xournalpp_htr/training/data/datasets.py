@@ -464,6 +464,13 @@ class PageDatasetFromOnline(Dataset):
 
     def __getitem__(self, idx: int) -> dict:
         """TODO."""
+        filename = self.cache_dir / PageDatasetFromOnline.get_file_name(idx)
+        if not filename.exists():
+            self.render_pages(idx, filename)
+            pass
+
+        # TODO: Return data; check how to best return; image and segmentation
+
         # TODO: Idea
         # - once accessed, the page is rendered and saved in output folder (which is specified to constructor)
         # - then, it is returned
