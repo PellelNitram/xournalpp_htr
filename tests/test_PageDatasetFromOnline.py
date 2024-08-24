@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import pytest
 
 from xournalpp_htr.training.data.datasets import (
     IAM_OnDB_Dataset,
@@ -64,6 +65,7 @@ def test_compute(get_path_to_IAM_OnDB_dataset: Path):
     # TODO: construct segmentation mask as well
 
 
+@pytest.mark.visual_check
 def test_render_pages(get_path_to_IAM_OnDB_dataset: Path, tmp_path: Path):
     print(f"\n\nPath to check out: {tmp_path}.\n")
 
@@ -92,13 +94,12 @@ def test_render_pages(get_path_to_IAM_OnDB_dataset: Path, tmp_path: Path):
         ),
     ]
 
-    print(len(ds.data))
     p_ds = PageDatasetFromOnline(
         dataset=ds,
         positions=positions,
         page_size=(10, 10),
+        cache_dir=tmp_path,
         dpi=72,
     )
-    p_ds.render_pages(tmp_path)
-
-    # TODO: Make sure to check the pages visually
+    for key in p_ds.data:
+        p_ds.render_pages(key, tmp_path / f"test_{key}.png")
