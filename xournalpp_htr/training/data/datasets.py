@@ -19,6 +19,7 @@ from torchvision.io import read_image
 from tqdm import tqdm
 
 DatasetIndex = int
+MillimeterDimension = float
 
 
 class IAM_OnDB_Dataset(Dataset):
