@@ -344,24 +344,24 @@ class PageDatasetFromOnlinePosition:
     page index, center coordinates and height. The width is automatically derived to maintain a constant aspect ratio.
 
     :param stroke_width: The width of the stroke used at this position.
-    :type stroke_width: float
+    :type stroke_width: MillimeterDimension
     :param page_index: The index of the page where this position is located.
     :type page_index: int
     :param center_x: The x-coordinate of the center of the position.
-    :type center_x: float
+    :type center_x: MillimeterDimension
     :param center_y: The y-coordinate of the center of the position.
-    :type center_y: float
+    :type center_y: MillimeterDimension
     :param height: The height of the position. The width is derived based on this (using sample) to maintain aspect ratio.
-    :type height: float
+    :type height: MillimeterDimension
     :param dataset_index: The index in the dataset that this assigned this position.
     :type datset_index: DatasetIndex
     """
 
-    stroke_width: float
+    stroke_width: MillimeterDimension
     page_index: int
-    center_x: float
-    center_y: float
-    height: float  # width is derived automatically by keeping aspect ratio constant
+    center_x: MillimeterDimension
+    center_y: MillimeterDimension
+    height: MillimeterDimension  # width is derived automatically by keeping aspect ratio constant
     dataset_index: DatasetIndex
 
 
