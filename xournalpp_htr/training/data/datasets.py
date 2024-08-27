@@ -384,7 +384,7 @@ class PageDatasetFromOnline(Dataset):
         self,
         dataset: Dataset,  # TODO: An online dataset; can come w/ a transform obviously if desired
         positions: list[PageDatasetFromOnlinePosition],
-        page_size: list[float, float],  # TODO: Think about unit! mm, inch, dots?
+        page_size: list[MillimeterDimension, MillimeterDimension],
         cache_dir: Path,
         dpi: float,
     ) -> None:
