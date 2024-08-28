@@ -431,7 +431,13 @@ class PageDatasetFromOnline(Dataset):
                     "x": x[mask].copy(),
                     "y": y[mask].copy(),
                 }
-            result[position.page_index].append({"strokes": strokes, "label": label})
+            result[position.page_index].append(
+                {
+                    "strokes": strokes,
+                    "label": label,
+                    "stroke_width": position.stroke_width,
+                }
+            )
         return result
 
     def __len__(self) -> int:
@@ -442,20 +448,42 @@ class PageDatasetFromOnline(Dataset):
 
         Steps that are performed: TODO.
         """
+
+        from PIL import Image, ImageDraw
+
+        inch_per_mm = 1.0 / 25.4
+        dots_per_mm = self.dpi * inch_per_mm
+
+        image_size = (
+            round(self.page_size[1] * dots_per_mm),
+            round(self.page_size[0] * dots_per_mm),
+        )
+        im = Image.new(
+            "RGB",
+            image_size,
+            "white",
+        )
+        draw = ImageDraw.Draw(im)
         # TODO: Determine page sizes etc & adjust rendering
-        plt.figure(figsize=(self.page_size))
         for data in self.data[page_index]:
             for stroke_nr in data["strokes"]:
-                x = data["strokes"][stroke_nr]["x"]
-                y = data["strokes"][stroke_nr]["y"]
-                plt.plot(
-                    x,
-                    y,
-                    c="black",
+                x = +data["strokes"][stroke_nr]["x"] * dots_per_mm
+                y = +data["strokes"][stroke_nr]["y"] * dots_per_mm
+                draw.line(
+                    list(zip(x, y)),
+                    fill="black",
+                    width=round(data["stroke_width"] * dots_per_mm),
                 )
-        plt.gca().set_aspect("equal")
-        plt.savefig(output_path, dpi=self.dpi)
-        plt.close()
+        im.save(output_path)
+
+        # TODO: Why is it mirrored?!
+
+        # TODO: Should I maybe go back to dots as unit? just to have more
+        # control w/o `round()` function. I prefer control at the level of
+        # my training data as to be able to reproduce it easily.
+
+        # TODO: Note that all strokes will have same width. why put it in
+        # position class therefore?!
 
     def compute_segmentation_masks(self, output_path: Path) -> None:
         pass
