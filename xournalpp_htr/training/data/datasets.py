@@ -20,6 +20,7 @@ from tqdm import tqdm
 
 DatasetIndex = int
 MillimeterDimension = float
+DotDimension = int
 
 
 class IAM_OnDB_Dataset(Dataset):
