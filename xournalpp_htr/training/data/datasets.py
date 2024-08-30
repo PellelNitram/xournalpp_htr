@@ -510,8 +510,6 @@ class PageDatasetFromOnline(Dataset):
 
         return sample
 
-        # TODO: Return data; check how to best return; image and segmentation
-
         # TODO: Idea
         # - once accessed, the page is rendered and saved in output folder (which is specified to constructor)
         # - then, it is returned
