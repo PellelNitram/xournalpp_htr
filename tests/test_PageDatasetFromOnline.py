@@ -67,7 +67,7 @@ def test_compute(get_path_to_IAM_OnDB_dataset: Path):
 
 
 @pytest.mark.visual_check
-def test_render_pages(get_path_to_IAM_OnDB_dataset: Path, tmp_path: Path):
+def test_render_page_and_mask(get_path_to_IAM_OnDB_dataset: Path, tmp_path: Path):
     print(f"\n\nPath to check out: {tmp_path}.\n")
 
     limit = 100
@@ -75,21 +75,21 @@ def test_render_pages(get_path_to_IAM_OnDB_dataset: Path, tmp_path: Path):
         path=get_path_to_IAM_OnDB_dataset, transform=None, limit=limit
     )
 
-    positions_height = 5.0
+    positions_height = 15.0
     positions = [
         PageDatasetFromOnlinePosition(
             stroke_width=1,
             page_index=0,
-            center_x=10.0,
-            center_y=10.0,
+            center_x=105.0,
+            center_y=100.0,
             height=positions_height,
             dataset_index=0,
         ),
         PageDatasetFromOnlinePosition(
             stroke_width=1,
             page_index=0,
-            center_x=10.0,
-            center_y=20.0,
+            center_x=105.0,
+            center_y=200.0,
             height=positions_height,
             dataset_index=1,
         ),
@@ -98,12 +98,16 @@ def test_render_pages(get_path_to_IAM_OnDB_dataset: Path, tmp_path: Path):
     p_ds = PageDatasetFromOnline(
         dataset=ds,
         positions=positions,
-        page_size=(10, 10),
+        page_size=(297, 210),
         cache_dir=tmp_path,
         dpi=72,
     )
     for key in p_ds.data:
-        p_ds.render_pages(key, tmp_path / f"test_{key}.png")
+        p_ds.render_page_and_mask(
+            page_index=key,
+            output_path_page=tmp_path / f"test_page_{key}.png",
+            output_path_mask=tmp_path / f"test_mask_{key}.png",
+        )
 
 
 @pytest.mark.visual_check
