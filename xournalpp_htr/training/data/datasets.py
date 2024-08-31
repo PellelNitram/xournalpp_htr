@@ -444,7 +444,9 @@ class PageDatasetFromOnline(Dataset):
     def __len__(self) -> int:
         return len(self.data)
 
-    def render_pages(self, page_index: int, output_path: Path) -> None:
+    def render_page_and_mask(
+        self, page_index: int, output_path_page: Path, output_path_mask: Path
+    ) -> None:
         """TODO.
 
         Steps that are performed: TODO.
@@ -459,23 +461,47 @@ class PageDatasetFromOnline(Dataset):
             round(self.page_size[1] * dots_per_mm),
             round(self.page_size[0] * dots_per_mm),
         )
-        im = Image.new(
+        im_page = Image.new(
             "RGB",
             image_size,
             "white",
         )
-        draw = ImageDraw.Draw(im)
+        im_mask = Image.new(
+            "RGB",
+            image_size,
+            "white",
+        )
+        draw_page = ImageDraw.Draw(im_page)
+        draw_mask = ImageDraw.Draw(im_mask)
         # TODO: Determine page sizes etc & adjust rendering
         for data in self.data[page_index]:
+            x0 = np.inf
+            y0 = np.inf
+            x1 = -np.inf
+            y1 = -np.inf
             for stroke_nr in data["strokes"]:
                 x = +data["strokes"][stroke_nr]["x"] * dots_per_mm
                 y = +data["strokes"][stroke_nr]["y"] * dots_per_mm
-                draw.line(
+                draw_page.line(
                     list(zip(x, y)),
                     fill="black",
                     width=round(data["stroke_width"] * dots_per_mm),
                 )
-        im.save(output_path)
+                x_min = x.min()
+                x_max = x.max()
+                y_min = y.min()
+                y_max = y.max()
+                if x_min < x0:
+                    x0 = x_min
+                if x_max > x1:
+                    x1 = x_max
+                if y_min < y0:
+                    y0 = y_min
+                if y_max > y1:
+                    y1 = y_max
+            draw_mask.rectangle(xy=[(x0, y0), (x1, y1)], fill="black")
+        im_page.save(output_path_page)
+        im_mask.save(output_path_mask)
 
         # TODO: Why is it mirrored?!
 
