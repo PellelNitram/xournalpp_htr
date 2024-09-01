@@ -14,6 +14,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from PIL import Image, ImageDraw
 from torch.utils.data import Dataset
 from torchvision.io import read_image
 from tqdm import tqdm
@@ -451,8 +452,6 @@ class PageDatasetFromOnline(Dataset):
 
         Steps that are performed: TODO.
         """
-
-        from PIL import Image, ImageDraw
 
         inch_per_mm = 1.0 / 25.4
         dots_per_mm = self.dpi * inch_per_mm
