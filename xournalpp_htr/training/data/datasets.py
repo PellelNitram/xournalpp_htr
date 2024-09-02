@@ -515,18 +515,23 @@ class PageDatasetFromOnline(Dataset):
         pass
 
     @staticmethod
-    def get_file_name(idx: int) -> str:
-        return f"{idx:06}.png"
+    def get_file_name(idx: int, file_type: str) -> str:
+        return f"{file_type}_{idx:06}.png"
 
     def __getitem__(self, idx: int) -> dict:
         """TODO."""
-        filename = self.cache_dir / PageDatasetFromOnline.get_file_name(idx)
+        filename_page = self.cache_dir / PageDatasetFromOnline.get_file_name(
+            idx, "page"
+        )
+        filename_mask = self.cache_dir / PageDatasetFromOnline.get_file_name(
+            idx, "mask"
+        )
 
-        if not filename.exists():
-            self.render_pages(idx, filename)
+        if not filename_page.exists() or not filename_mask.exists():
+            self.render_page_and_mask(idx, filename_page, filename_mask)
 
-        image = read_image(filename)
-        segmentation_mask = -1
+        image = read_image(filename_page)
+        segmentation_mask = read_image(filename_mask)  # TODO: Test it!
 
         sample = {
             "image": image,
