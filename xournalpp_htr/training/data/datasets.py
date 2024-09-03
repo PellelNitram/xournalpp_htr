@@ -519,7 +519,15 @@ class PageDatasetFromOnline(Dataset):
         return f"{file_type}_{idx:06}.png"
 
     def __getitem__(self, idx: int) -> dict:
-        """TODO."""
+        """TODO.
+
+        TODO: Idea behind logic:
+        - once accessed, the page is rendered and saved in output folder (which is specified to constructor)
+        - then, it is returned
+        - then, when accessed again, it is loaded from page instead of recomputed
+
+        TODO.
+        """
         filename_page = self.cache_dir / PageDatasetFromOnline.get_file_name(
             idx, "page"
         )
@@ -539,11 +547,6 @@ class PageDatasetFromOnline(Dataset):
         }
 
         return sample
-
-        # TODO: Idea
-        # - once accessed, the page is rendered and saved in output folder (which is specified to constructor)
-        # - then, it is returned
-        # - then, when accessed again, it is loaded from page instead of recomputed
 
     # TODO: When placing the positions, the dataset should spit out a warning,
     #       or crash, if bounding boxes overlap b/c that'd never happen for a
