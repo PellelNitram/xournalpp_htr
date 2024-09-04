@@ -119,21 +119,21 @@ def test_getitem(get_path_to_IAM_OnDB_dataset: Path, tmp_path: Path):
         path=get_path_to_IAM_OnDB_dataset, transform=None, limit=limit
     )
 
-    positions_height = 5.0
+    positions_height = 15.0
     positions = [
         PageDatasetFromOnlinePosition(
             stroke_width=1,
             page_index=0,
-            center_x=10.0,
-            center_y=10.0,
+            center_x=105.0,
+            center_y=100.0,
             height=positions_height,
             dataset_index=0,
         ),
         PageDatasetFromOnlinePosition(
             stroke_width=1,
             page_index=0,
-            center_x=10.0,
-            center_y=20.0,
+            center_x=105.0,
+            center_y=200.0,
             height=positions_height,
             dataset_index=1,
         ),
@@ -142,21 +142,21 @@ def test_getitem(get_path_to_IAM_OnDB_dataset: Path, tmp_path: Path):
     p_ds = PageDatasetFromOnline(
         dataset=ds,
         positions=positions,
-        page_size=(10, 10),
+        page_size=(297, 210),
         cache_dir=tmp_path,
         dpi=72,
     )
     sample = p_ds[0]
 
     image = sample["image"]
-    # segmentation_mask = sample["segmentation_mask"]
+    segmentation_mask = sample["segmentation_mask"]
 
     assert isinstance(image, torch.Tensor)
-    assert image.shape[0] == 4  # This might change!
+    assert image.shape[0] == 3
     assert image.dtype == torch.uint8
-
-    # TODO: Check segmentation_mask, e.g.:
-    # - image.shape[1:] == segmentation_mask[1:]
+    assert image.shape[1:] == segmentation_mask.shape[1:]
+    assert segmentation_mask.shape[0] == 3
+    assert segmentation_mask.dtype == torch.uint8
 
 
 # TODO: Add tests for all `PageDatasetFromOnline` functions - really?
