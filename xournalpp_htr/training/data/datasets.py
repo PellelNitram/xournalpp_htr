@@ -506,9 +506,6 @@ class PageDatasetFromOnline(Dataset):
         # control w/o `round()` function. I prefer control at the level of
         # my training data as to be able to reproduce it easily.
 
-        # TODO: Note that all strokes will have same width. why put it in
-        # position class therefore?!
-
     @staticmethod
     def compute_segmentation_masks(
         x, y, x0, y0, x1, y1
