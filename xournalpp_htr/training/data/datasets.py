@@ -486,18 +486,9 @@ class PageDatasetFromOnline(Dataset):
                     fill="black",
                     width=round(data["stroke_width"] * dots_per_mm),
                 )
-                x_min = x.min()
-                x_max = x.max()
-                y_min = y.min()
-                y_max = y.max()
-                if x_min < x0:
-                    x0 = x_min
-                if x_max > x1:
-                    x1 = x_max
-                if y_min < y0:
-                    y0 = y_min
-                if y_max > y1:
-                    y1 = y_max
+                x0, y0, x1, y1 = PageDatasetFromOnline.compute_segmentation_masks(
+                    x, y, x0, y0, x1, y1
+                )
             draw_mask.rectangle(xy=[(x0, y0), (x1, y1)], fill="black")
         im_page.save(output_path_page)
         im_mask.save(output_path_mask)
@@ -511,8 +502,24 @@ class PageDatasetFromOnline(Dataset):
         # TODO: Note that all strokes will have same width. why put it in
         # position class therefore?!
 
-    def compute_segmentation_masks(self, output_path: Path) -> None:
-        pass
+    @staticmethod
+    def compute_segmentation_masks(
+        x, y, x0, y0, x1, y1
+    ) -> tuple[float, float, float, float]:
+        """TODO."""
+        x_min = x.min()
+        x_max = x.max()
+        y_min = y.min()
+        y_max = y.max()
+        if x_min < x0:
+            x0 = x_min
+        if x_max > x1:
+            x1 = x_max
+        if y_min < y0:
+            y0 = y_min
+        if y_max > y1:
+            y1 = y_max
+        return x0, y0, x1, y1
 
     @staticmethod
     def get_file_name(idx: int, file_type: str) -> str:
