@@ -438,6 +438,8 @@ class PageDatasetFromOnline(Dataset):
                     "strokes": strokes,
                     "label": label,
                     "stroke_width": position.stroke_width,
+                    "center_x": position.center_x,
+                    "center_y": position.center_y,
                 }
             )
         return result
@@ -480,7 +482,14 @@ class PageDatasetFromOnline(Dataset):
             y1 = -np.inf
             for stroke_nr in data["strokes"]:
                 x = +data["strokes"][stroke_nr]["x"] * dots_per_mm
-                y = +data["strokes"][stroke_nr]["y"] * dots_per_mm
+                y = (
+                    -1 * data["strokes"][stroke_nr]["y"] + 2 * data["center_y"]
+                ) * dots_per_mm
+                # `y` needs modification because PIL y direction points downwards,
+                # so that the data appears mirrored. The `y` data modification is
+                # a transform that is based on the idea to flip on y mean of
+                # bounding box axis. TODO: Add blog article on that here where I explain
+                # how to construct such a data transform.
                 draw_page.line(
                     list(zip(x, y)),
                     fill="black",
@@ -492,8 +501,6 @@ class PageDatasetFromOnline(Dataset):
             draw_mask.rectangle(xy=[(x0, y0), (x1, y1)], fill="black")
         im_page.save(output_path_page)
         im_mask.save(output_path_mask)
-
-        # TODO: Why is it mirrored?!
 
         # TODO: Should I maybe go back to dots as unit? just to have more
         # control w/o `round()` function. I prefer control at the level of
