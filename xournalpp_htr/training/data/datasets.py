@@ -453,6 +453,8 @@ class PageDatasetFromOnline(Dataset):
         """TODO.
 
         Steps that are performed: TODO.
+
+        TODO: Determine page sizes etc & adjust rendering
         """
 
         inch_per_mm = 1.0 / 25.4
@@ -474,7 +476,6 @@ class PageDatasetFromOnline(Dataset):
         )
         draw_page = ImageDraw.Draw(im_page)
         draw_mask = ImageDraw.Draw(im_mask)
-        # TODO: Determine page sizes etc & adjust rendering
         for data in self.data[page_index]:
             x0 = np.inf
             y0 = np.inf
