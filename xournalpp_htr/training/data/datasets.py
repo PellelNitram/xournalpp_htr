@@ -560,6 +560,73 @@ class PageDatasetFromOnline(Dataset):
 
         return sample
 
-    # TODO: When placing the positions, the dataset should spit out a warning,
-    #       or crash, if bounding boxes overlap b/c that'd never happen for a
-    #       normal document
+    @staticmethod
+    def check_if_bounding_boxes_overlap(data):
+        """TODO
+
+        raises an error if they overlap b/c that is not allowed as it's not possible in a document
+        that I consider here.
+
+        TODO: Do a pairwise check, also stating that this leads to O(N^2) unfortunately.
+
+        When placing the positions, the dataset should spit out a warning,
+        or crash, if bounding boxes overlap b/c that'd never happen for a
+        normal document -> this is what the method here checks for and it
+        raises an exception if they overlap!
+        """
+
+        # TODO: Write test for function!
+
+        def does_bboxes_overlap(bbox_1, bbox_2):
+            """TODO.
+
+            Sources:
+            - https://stackoverflow.com/a/40795835 and
+            - https://code.tutsplus.com/collision-detection-using-the-separating-axis-theorem--gamedev-169t
+
+            note that I do allow the bounding boxes to be directly adjacent to each others
+            """
+            separated_by_x = (
+                bbox_1["top_right_x"] <= bbox_2["bottom_left_x"]
+                or bbox_2["top_right_x"] <= bbox_1["bottom_left_x"]
+            )
+            separated_by_y = (
+                bbox_1["top_right_y"] <= bbox_2["bottom_left_y"]
+                or bbox_2["top_right_y"] <= bbox_1["bottom_left_y"]
+            )
+            return not (separated_by_x or separated_by_y)
+
+        # First, get bounding boxes for every page and position
+        bounding_boxes = []
+        for page_index in data:
+            positions = data[page_index]
+            for i_position, position in enumerate(positions):
+                all_strokes_x = []
+                all_strokes_y = []
+
+                for stroke in position["strokes"]:
+                    data_x = position["strokes"][stroke]["x"]
+                    data_y = position["strokes"][stroke]["y"]
+                    all_strokes_x.extend(data_x)
+                    all_strokes_y.extend(data_y)
+                bbox = {
+                    "bottom_left_x": min(all_strokes_x),
+                    "bottom_left_y": min(all_strokes_y),
+                    "top_right_x": max(all_strokes_x),
+                    "top_right_y": max(all_strokes_y),
+                }
+                bounding_boxes.append(
+                    {"page_index": page_index, "i_position": i_position, "bbox": bbox}
+                )
+
+        # Second, check if the boxes intersect in a pairwise manner
+        for i in range(len(bounding_boxes)):
+            for j in range(i + 1, len(bounding_boxes)):
+                data_1 = bounding_boxes[i]
+                data_2 = bounding_boxes[j]
+                bbox_1 = data_1["bbox"]
+                bbox_2 = data_2["bbox"]
+                if does_bboxes_overlap(bbox_1, bbox_2):
+                    raise ValueError(
+                        f"bounding boxes may not overlap but do: {data_1}, {data_2}"
+                    )
