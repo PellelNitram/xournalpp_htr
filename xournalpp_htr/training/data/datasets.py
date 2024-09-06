@@ -400,6 +400,7 @@ class PageDatasetFromOnline(Dataset):
         self.cache_dir = cache_dir
         self.dpi = dpi
         self.data = self.compute()
+        PageDatasetFromOnline.check_if_bounding_boxes_overlap(self.data)
 
     def compute(self) -> defaultdict[list]:
         """TODO.
