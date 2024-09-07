@@ -401,6 +401,7 @@ class PageDatasetFromOnline(Dataset):
         self.dpi = dpi
         self.data = self.compute()
         PageDatasetFromOnline.check_if_bounding_boxes_overlap(self.data)
+        PageDatasetFromOnline.check_if_data_exceeds_page(self.data, self.page_size)
 
     def compute(self) -> defaultdict[list]:
         """TODO.
