@@ -631,3 +631,28 @@ class PageDatasetFromOnline(Dataset):
                     raise ValueError(
                         f"bounding boxes may not overlap but do: {data_1}, {data_2}"
                     )
+
+    @staticmethod
+    def check_if_data_exceeds_page(data, page_size) -> None:
+        """TODO
+
+        raises an error if a text box exceeds page.
+        """
+
+        # TODO: Write test for function!
+
+        for page_index in data:
+            positions = data[page_index]
+            for position in positions:
+                for stroke in position["strokes"]:
+                    data_x = position["strokes"][stroke]["x"]
+                    data_y = position["strokes"][stroke]["y"]
+
+                    if data_x.min() < 0:
+                        raise ValueError("x must not be smaller 0")
+                    if data_y.min() < 0:
+                        raise ValueError("y must not be smaller 0")
+                    if data_x.max() > page_size[0]:
+                        raise ValueError("x must not be larger than page_size[0]")
+                    if data_y.max() > page_size[1]:
+                        raise ValueError("y must not be larger than page_size[1]")
