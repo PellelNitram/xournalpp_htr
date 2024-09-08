@@ -530,6 +530,24 @@ class PageDatasetFromOnline(Dataset):
 
     @staticmethod
     def get_file_name(idx: int, file_type: str) -> str:
+        """
+        Generate a file name based on an index and a file type.
+
+        This method returns a string in the format: `"{file_type}_{idx:06}.png"`,
+        where `idx` is zero-padded to 6 digits, and `file_type` is a prefix provided
+        by the user. The file will always have a `.png` extension.
+
+        :param idx: The integer index to be included in the file name, padded to 6 digits.
+        :type idx: int
+        :param file_type: The prefix representing the type of file.
+        :type file_type: str
+        :return: A formatted string representing the file name.
+        :rtype: str
+        :example:
+
+            >>> get_file_name(42, "image")
+            'image_000042.png'
+        """
         return f"{file_type}_{idx:06}.png"
 
     def __getitem__(self, idx: int) -> dict:
