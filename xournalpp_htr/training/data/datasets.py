@@ -513,7 +513,32 @@ class PageDatasetFromOnline(Dataset):
     def compute_segmentation_masks(
         x, y, x0, y0, x1, y1
     ) -> tuple[float, float, float, float]:
-        """TODO."""
+        """
+        Adjusts the bounding box coordinates based on input x and y coordinate arrays.
+
+        This method updates the bounding box defined by `(x0, y0, x1, y1)` to ensure
+        it encompasses all points specified in the `x` and `y` arrays. The bounding
+        box is expanded if necessary by comparing the minimum and maximum values of
+        `x` and `y` with the initial bounding box values.
+
+        :param x: Array-like of x coordinates.
+        :type x: array-like
+        :param y: Array-like of y coordinates.
+        :type y: array-like
+        :param x0: Initial minimum x-coordinate of the bounding box.
+        :type x0: float
+        :param y0: Initial minimum y-coordinate of the bounding box.
+        :type y0: float
+        :param x1: Initial maximum x-coordinate of the bounding box.
+        :type x1: float
+        :param y1: Initial maximum y-coordinate of the bounding box.
+        :type y1: float
+
+        :return: A tuple of updated bounding box coordinates (x0, y0, x1, y1),
+                 where `x0`, `y0` are the lower-left corner and `x1`, `y1`
+                 are the upper-right corner of the bounding box.
+        :rtype: tuple[float, float, float, float]
+        """
         x_min = x.min()
         x_max = x.max()
         y_min = y.min()
