@@ -78,7 +78,8 @@ def get_temporary_filename() -> Path:
     Generates and returns a temporary PDF file name.
 
     This function creates a named temporary file in `/tmp` using `tempfile.NamedTemporaryFile` with a `xournalpp_htr`
-    specific prefix and PDF suffix. The generated filename is returned as a `Path` object.
+    specific prefix and PDF suffix. The generated filename is returned as a `Path` object. To ensure that this method
+    also works on Windows, the parent folder of the temporary file is created just to be on the safe side.
 
     :return: A `Path` object representing the temporary PDF file name.
     """
@@ -87,5 +88,7 @@ def get_temporary_filename() -> Path:
         dir="/tmp", delete=True, prefix="xournalpp_htr__tmp_pdf_export__", suffix=".pdf"
     ) as tmp_file_manager:
         output_file_tmp_noOCR = Path(tmp_file_manager.name)
+
+    output_file_tmp_noOCR.parent.mkdir(parents=True, exist_ok=True)
 
     return output_file_tmp_noOCR
