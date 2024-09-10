@@ -678,9 +678,23 @@ class PageDatasetFromOnline(Dataset):
 
     @staticmethod
     def check_if_data_exceeds_page(data, page_size) -> None:
-        """TODO
+        """
+        Check if the stroke data exceeds the page boundaries.
 
-        raises an error if a text box exceeds page.
+        This method verifies if any stroke data within a page exceeds the
+        specified page boundaries. It raises a `ValueError` if any of the
+        stroke coordinates are found to be out of bounds.
+
+        :param data: A dictionary representing stroke data for each page,
+                     where each key corresponds to a page index and the value
+                     is a list of positions with their respective stroke data.
+        :type data: dict
+        :param page_size: A tuple representing the dimensions of the page (height, width).
+        :type page_size: tuple(float, float)
+        :raises ValueError: If any x or y coordinates in the stroke data are
+                            smaller than 0 or larger than the corresponding
+                            page size boundaries.
+        :returns: None
         """
 
         # TODO: Write test for function!
