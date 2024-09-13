@@ -36,7 +36,7 @@ def export_to_pdf_with_xournalpp(input_file: Path, output_file: Path) -> None:
     if not input_file.exists():
         raise ValueError(f'input file "{input_file}" does not exist.')
 
-    command = f"xournalpp {input_file} -p {output_file}"
+    command = f'xournalpp "{input_file}" -p "{output_file}"'
     export_result = subprocess.run(command, shell=True, capture_output=True)
 
     return_code_fail = export_result.returncode != 0
