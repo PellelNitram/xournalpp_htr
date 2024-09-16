@@ -110,6 +110,16 @@ The project design involves a Lua plugin and a Python backend, see the following
     <p><i>Design of xournalpp_htr.</i></p>
 </div>
 
+An alternative figure is shown below: (todo: restructure readme)
+
+```mermaid
+sequenceDiagram
+    User in Xpp-->>Xpp HTR Plugin: starts process using currently open file
+    Xpp HTR Lua Plugin -->>Xpp HTR Python Backend: constructs command using CLI
+    Xpp HTR Python Backend -->> Xpp HTR Python Backend: Does OCR & stores PDF
+    Xpp HTR Python Backend-->>User in Xpp: Gives back control to UI
+```
+
 Developing a usable HTR systems requires experimentation. The project structure is set up to accommodate this need. *Note that ideas on improved project structures are appreciated.*
 
 The experimentation is carried out in terms of "concepts". Each concept explores a different approach to HTR and possibly improves over previous concepts, but not necessarily to allow for freedom in risky experiments. Concept 1 is already implemented and uses a computer vision approach that is explained below.
