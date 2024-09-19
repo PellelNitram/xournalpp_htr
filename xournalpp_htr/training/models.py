@@ -17,3 +17,6 @@ class WordDetectorNN(LightningModule):
 
     def forward(self, inputs):
         pass
+
+    def training_step(self, batch, batch_idx):
+        pass
