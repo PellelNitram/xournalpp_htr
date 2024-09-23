@@ -20,3 +20,6 @@ class WordDetectorNN(LightningModule):
 
     def training_step(self, batch, batch_idx):
         pass
+
+    def configure_optimizers(self):
+        pass
