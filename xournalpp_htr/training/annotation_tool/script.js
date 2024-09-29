@@ -17,13 +17,63 @@ function readGZFile() {
             
             if (isXML(decompressedData)) {
                 const formattedXML = formatXML(decompressedData);
-                output.textContent = formattedXML;
+                // output.textContent = formattedXML;
 
                 const strokes = getStrokesByPage(decompressedData);
-                console.log(strokes);
+                // console.log(strokes);
+
+                strokesPage = strokes[0]; // TODO: Deal w/ pages
+
+                // ------------------
+                // Adjust canvas size
+                // ------------------
+
+                // Get the canvas element and its context
+                const canvas = document.getElementById('myCanvas');
+
+                // Find max
+                let xMax = -1.0;
+                let yMax = -1.0;
+                for (let iStrokes = 0; iStrokes < strokesPage.length; iStrokes++) {
+                    xValue = strokesPage[iStrokes][0];
+                    yValue = strokesPage[iStrokes][1];
+                    if (xValue > xMax) {
+                        xMax = xValue;
+                    }
+                    if (yValue > yMax) {
+                        yMax = yValue;
+                    }
+                }
+
+                // Adjust canvas
+                // canvas.style.width = Math.ceil(1.1*xMax).toString()+"px"; 
+                // canvas.style.height = Math.ceil(1.1*yMax).toString()+"px";
+                // TODO: This doesn't seem to work!
+                // canvas.style.width = "1500px"; 
+                // canvas.style.height = "2500px";
+
+                // ---------
+                // Draw data
+                // ---------
+
+                const ctx = canvas.getContext('2d');
+
+                // Function to plot a point on the canvas
+                function plotPoint(x, y, color = 'black', radius = 1) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                    ctx.fillStyle = color;
+                    ctx.fill();
+                    ctx.closePath();
+                }
+
+                // Plot all the points
+                strokesPage.forEach(point => {
+                    plotPoint(point[0], point[1], 'black');
+                });
 
             } else {
-                output.textContent = decompressedData;
+                // output.textContent = decompressedData;
             }
         } catch (e) {
             output.textContent = "An error occurred while reading the file: " + e.message;
@@ -50,7 +100,7 @@ function formatXML(xmlString) {
         const xmlDoc = parser.parseFromString(xmlString, "application/xml");
         const serializer = new XMLSerializer();
         let formatted = serializer.serializeToString(xmlDoc);
-        
+
         // Format the XML string with indentation
         formatted = formatted.replace(/(>)(<)(\/*)/g, '$1\n$2$3');
         const lines = formatted.split('\n');
