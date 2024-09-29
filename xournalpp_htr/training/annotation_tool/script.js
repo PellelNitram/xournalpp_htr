@@ -18,6 +18,10 @@ function readGZFile() {
             if (isXML(decompressedData)) {
                 const formattedXML = formatXML(decompressedData);
                 output.textContent = formattedXML;
+
+                const strokes = getStrokesByPage(decompressedData);
+                console.log(strokes);
+
             } else {
                 output.textContent = decompressedData;
             }
@@ -66,4 +70,52 @@ function formatXML(xmlString) {
     } catch (e) {
         return "Error parsing XML: " + e.message;
     }
+}
+
+function getStrokesByPage(xmlString) {
+
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlString, "application/xml");
+
+    const pageElements = xmlDoc.getElementsByTagName('page');
+
+    let data = [];
+
+    for (let iPage = 0; iPage < pageElements.length; iPage++){
+
+        const strokeElements = pageElements[iPage].getElementsByTagName('stroke');
+
+        let xCoordinates = [];
+        let yCoordinates = [];
+
+        for (let i = 0; i < strokeElements.length; i++) {
+
+            // Get the stroke value and split it by spaces into an array of coordinates
+            let coordinates = strokeElements[i].textContent.trim().split(/\s+/);
+
+            // Iterate through coordinates array, separating x and y values
+            for (let j = 0; j < coordinates.length; j++) {
+                if (j % 2 === 0) {
+                    // Even index: x coordinate
+                    xCoordinates.push(Number(coordinates[j]));
+                } else {
+                    // Odd index: y coordinate
+                    yCoordinates.push(Number(coordinates[j]));
+                }
+            }
+        }
+
+        // Add the coordinates as tuples to the data structure that stores page-wise information
+        let pageData = [];
+
+        for (let k = 0; k < xCoordinates.length; k++) {
+            pageData.push([xCoordinates[k], yCoordinates[k]]);
+        }
+
+        // Add the page data to the overall data array
+        data.push(pageData);
+    }
+
+    // Return the data array containing all page-wise coordinates
+    return data;
 }
