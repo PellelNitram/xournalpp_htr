@@ -68,6 +68,11 @@ This script helps to annotate Xournal(++) files.
 
 # TODO: define storage schema to allow backward compatibility when improving the script later on
 
+# TODO: Adhere to design document called `annotate_tool_UI_design.svg`. Potentially model it in PenPot?
+
+# TODO: Properly read about TKINTER interface design
+# - https://tkinterpython.top/layout/
+
 # -*- coding: utf-8 -*-
 # Advanced zoom example. Like in Google Maps.
 # It zooms only a tile, but not the whole image. So the zoomed tile occupies
