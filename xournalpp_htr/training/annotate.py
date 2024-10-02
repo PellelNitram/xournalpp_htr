@@ -280,9 +280,7 @@ currently_loaded_document = None
 def load_document():
     global currently_loaded_document
     filename = askopenfilename()
-    print("before:", currently_loaded_document)
     currently_loaded_document = filename
-    print("after:", currently_loaded_document)
     status_file.configure(text=f"File loaded: {currently_loaded_document}")
     status_file.update()
     return filename
