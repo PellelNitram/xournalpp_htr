@@ -283,11 +283,16 @@ def load_document():
     print("before:", currently_loaded_document)
     currently_loaded_document = filename
     print("after:", currently_loaded_document)
+    status_file.configure(text=f"File loaded: {currently_loaded_document}")
+    status_file.update()
     return filename
 
 
 w = tk.Button(root, text="Load document", command=load_document)
 w.place(x=50, y=50)
+
+status_file = tk.Label(root, text=f"File loaded: {currently_loaded_document}")
+status_file.place(x=10, y=10)
 
 # # Create left and right frames
 # left_frame = tk.Frame(root, width=200, height=400, bg="grey")
