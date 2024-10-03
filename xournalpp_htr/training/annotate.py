@@ -78,11 +78,15 @@ This script helps to annotate Xournal(++) files.
 # It zooms only a tile, but not the whole image. So the zoomed tile occupies
 # constant memory and not crams it with a huge resized image for the large zooms.
 import random
+import sys
 import tkinter as tk
+from pathlib import Path
 from tkinter import ttk
 from tkinter.filedialog import askopenfilename
 
 from PIL import Image, ImageTk
+
+from xournalpp_htr.documents import XournalppDocument
 
 
 class AutoScrollbar(ttk.Scrollbar):
@@ -267,14 +271,25 @@ class Zoom_Advanced(ttk.Frame):
 # TODO: First, no zoom in!
 
 
+# Useful structure for app: https://stackoverflow.com/questions/17125842/changing-the-text-on-a-label
+
 root = tk.Tk()  # create root window
 root.title("Annotate Tool")  # title of the GUI window
 # root.maxsize(900, 600)  # specify the max size the window can expand to
-root.geometry("400x400")
+root.geometry("1000x800")
 root.config(bg="skyblue")  # specify background color
 
+# TODO: Fix layout of GUI
 
-currently_loaded_document = None
+
+DEBUG = len(sys.argv) > 1
+
+if DEBUG:
+    currently_loaded_document = Path(
+        "/home/martin/Development/xournalpp_htr/tests/data/2024-07-26_minimal.xopp"
+    )
+else:
+    currently_loaded_document = None
 
 
 def load_document():
@@ -286,11 +301,57 @@ def load_document():
     return filename
 
 
+def draw_a_point(c: tk.Canvas, coord_x: float, coord_y: float, color: str) -> None:
+    x1, y1 = (coord_x - 1), (coord_y - 1)
+    x2, y2 = (coord_x + 1), (coord_y + 1)
+    c.create_oval(x1, y1, x2, y2, fill=color)
+
+
+I_PAGE = 0  # TODO: Make selectable
+
+DRAW_STROKE_BOUNDING_BOX = True
+
+
+def draw_document():
+    xpp_document = XournalppDocument(Path(currently_loaded_document))
+
+    color = "black"  # python_green = "#476042"  # draw different colour for each stroke
+
+    # Adjust canvas size
+    coord_boundaries = xpp_document.get_min_max_coordinates_per_page()
+    new_width = coord_boundaries[I_PAGE]["max_x"] * 1.1
+    new_height = coord_boundaries[I_PAGE]["max_y"] * 1.1
+    canvas.config(width=new_width, height=new_height)
+
+    # Plot points
+    for layer in xpp_document.pages[I_PAGE].layers:
+        for stroke in layer.strokes:
+            for coord_x, coord_y in zip(stroke.x, stroke.y):
+                draw_a_point(canvas, coord_x, coord_y, color)
+
+    if DRAW_STROKE_BOUNDING_BOX:
+        x0 = coord_boundaries[I_PAGE]["min_x"]
+        y0 = coord_boundaries[I_PAGE]["max_y"]
+        x1 = coord_boundaries[I_PAGE]["max_x"]
+        y1 = coord_boundaries[I_PAGE]["min_y"]
+        canvas.create_rectangle(x0, y0, x1, y1, fill="", outline="red")
+        canvas.create_text(x1, y1, text="data bounding box", anchor=tk.SE, fill="red")
+
+
 w = tk.Button(root, text="Load document", command=load_document)
 w.place(x=50, y=50)
 
+button_draw = tk.Button(root, text="Draw document", command=draw_document)
+button_draw.place(x=50, y=90)
+
 status_file = tk.Label(root, text=f"File loaded: {currently_loaded_document}")
-status_file.place(x=10, y=10)
+status_file.place(x=0, y=20)
+
+status_bar = tk.Label(root, text="status bar")
+status_bar.place(x=0, y=0)
+
+canvas = tk.Canvas(root, width=500, height=500)
+canvas.place(x=50, y=150)
 
 # # Create left and right frames
 # left_frame = tk.Frame(root, width=200, height=400, bg="grey")
