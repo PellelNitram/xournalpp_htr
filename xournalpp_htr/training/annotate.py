@@ -251,8 +251,6 @@ def draw_a_point(c: tk.Canvas, coord_x: float, coord_y: float, color: str) -> No
 
 I_PAGE = 0  # TODO: Make selectable
 
-DRAW_STROKE_BOUNDING_BOX = True
-
 
 def draw_document():
     xpp_document = XournalppDocument(Path(currently_loaded_document))
@@ -271,7 +269,7 @@ def draw_document():
             for coord_x, coord_y in zip(stroke.x, stroke.y):
                 draw_a_point(canvas, coord_x, coord_y, color)
 
-    if DRAW_STROKE_BOUNDING_BOX:
+    if DRAW_STROKE_BOUNDING_BOX.get():
         x0 = coord_boundaries[I_PAGE]["min_x"]
         y0 = coord_boundaries[I_PAGE]["max_y"]
         x1 = coord_boundaries[I_PAGE]["max_x"]
@@ -282,6 +280,12 @@ def draw_document():
 
 w = tk.Button(root, text="Load document", command=load_document)
 w.place(x=50, y=50)
+
+DRAW_STROKE_BOUNDING_BOX = tk.BooleanVar()
+b = tk.Checkbutton(
+    root, text="Enable DRAW_STROKE_BOUNDING_BOX?", variable=DRAW_STROKE_BOUNDING_BOX
+)
+b.place(x=50, y=120)
 
 button_draw = tk.Button(root, text="Draw document", command=draw_document)
 button_draw.place(x=50, y=90)
