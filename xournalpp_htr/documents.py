@@ -86,6 +86,39 @@ class Document(ABC):
 
         return out_path
 
+    def get_min_max_coordintes_per_page(self):
+        """Compute x and y coordinate minimal and maximal values for each page.
+
+        TODO: Add documentation.
+
+        TODO: Add tests.
+
+        TODO: Add type annotations."""
+
+        result = {}
+        for i_page, page in enumerate(self.pages):
+            min_x = np.inf
+            min_y = np.inf
+            max_x = -np.inf
+            max_y = -np.inf
+            for layer in page.layers:
+                for stroke in layer.strokes:
+                    if stroke.x.max() > max_x:
+                        max_x = stroke.x.max()
+                    if stroke.y.max() > max_y:
+                        max_y = stroke.y.max()
+                    if stroke.x.min() < min_x:
+                        min_x = stroke.x.min()
+                    if stroke.y.min() < min_y:
+                        min_y = stroke.y.min()
+            result[i_page] = {
+                "min_x": min_x,
+                "min_y": min_y,
+                "max_x": max_x,
+                "max_y": max_y,
+            }
+        return result
+
 
 class XournalDocument(Document):
     def load_data(self):
