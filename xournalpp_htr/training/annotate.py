@@ -253,6 +253,8 @@ I_PAGE = 0  # TODO: Make selectable
 
 
 def draw_document():
+    canvas.delete("all")
+
     xpp_document = XournalppDocument(Path(currently_loaded_document))
 
     color = "black"  # python_green = "#476042"  # draw different colour for each stroke
