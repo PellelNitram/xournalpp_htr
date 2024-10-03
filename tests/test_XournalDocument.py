@@ -43,3 +43,23 @@ def test_get_document_unsupported() -> None:
     """Tests `get_document` function for an unsupported file extension."""
     with pytest.raises(NotImplementedError):
         get_document(Path("/a/file/that/is.unsupported"))
+
+
+def test_get_min_max_coordintes_per_page(get_path_to_minimal_test_data: Path) -> None:
+    """
+    Regression test of `Document.get_min_max_coordintes_per_page` function.
+    """
+    xpp_document = XournalppDocument(get_path_to_minimal_test_data)
+
+    result = xpp_document.get_min_max_coordintes_per_page()
+
+    expected_result = {
+        0: {
+            "min_x": 110.41164,
+            "min_y": 127.30273,
+            "max_x": 573.78978,
+            "max_y": 516.39615,
+        }
+    }
+
+    assert result == expected_result
