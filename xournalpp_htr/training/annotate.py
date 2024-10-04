@@ -301,6 +301,8 @@ status_bar.place(x=0, y=0)
 canvas = tk.Canvas(root, width=500, height=500)
 canvas.place(x=50, y=150)
 
+# todo: add button to start drawing bbox
+
 # # Create left and right frames
 # left_frame = tk.Frame(root, width=200, height=400, bg="grey")
 # left_frame.grid(row=0, column=0, padx=10, pady=5)
