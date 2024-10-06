@@ -303,6 +303,13 @@ canvas.place(x=50, y=150)
 
 # todo: add button to start drawing bbox
 
+# todo: add listview to show list of all bboxes
+
+# todo: add details viewer to show a selected bbox, which consists of bbox and text
+
+# todo: add button to export annotations; using a schema
+
+
 # # Create left and right frames
 # left_frame = tk.Frame(root, width=200, height=400, bg="grey")
 # left_frame.grid(row=0, column=0, padx=10, pady=5)
