@@ -251,6 +251,8 @@ def draw_a_point(c: tk.Canvas, coord_x: float, coord_y: float, color: str) -> No
 
 I_PAGE = 0  # TODO: Make selectable
 
+START_DRAWING_BBOX = False
+
 
 def draw_document():
     canvas.delete("all")
@@ -280,6 +282,11 @@ def draw_document():
         canvas.create_text(x1, y1, text="data bounding box", anchor=tk.SE, fill="red")
 
 
+def draw_bbox():
+    global START_DRAWING_BBOX
+    START_DRAWING_BBOX = True
+
+
 w = tk.Button(root, text="Load document", command=load_document)
 w.place(x=50, y=50)
 
@@ -300,6 +307,9 @@ status_bar.place(x=0, y=0)
 
 canvas = tk.Canvas(root, width=500, height=500)
 canvas.place(x=50, y=150)
+
+button_draw_bbox = tk.Button(root, text="Draw bbox", command=draw_bbox)
+button_draw_bbox.place(x=200, y=90)
 
 # TODO: Next: drawing bounding box on canvas; and then keep track of them in listview
 # - G"tkinter draw bounding box on canvas"
