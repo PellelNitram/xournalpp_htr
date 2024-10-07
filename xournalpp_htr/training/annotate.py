@@ -287,6 +287,34 @@ def draw_bbox():
     START_DRAWING_BBOX = True
 
 
+BBOX_FIRST_POINT = None
+
+
+def paint_bbox(event):
+    global START_DRAWING_BBOX
+    global BBOX_FIRST_POINT
+    if START_DRAWING_BBOX:
+        BBOX_FIRST_POINT = event.x, event.y
+        START_DRAWING_BBOX = False
+    else:
+        if BBOX_FIRST_POINT:
+            # Get point
+            second_point = event.x, event.y
+
+            # Draw
+            canvas.create_rectangle(
+                BBOX_FIRST_POINT[0],
+                BBOX_FIRST_POINT[1],
+                second_point[0],
+                second_point[1],
+                fill="",
+                outline="orange",
+            )
+
+            # Book keeping
+            BBOX_FIRST_POINT = None
+
+
 w = tk.Button(root, text="Load document", command=load_document)
 w.place(x=50, y=50)
 
@@ -307,6 +335,7 @@ status_bar.place(x=0, y=0)
 
 canvas = tk.Canvas(root, width=500, height=500)
 canvas.place(x=50, y=150)
+canvas.bind("<Button-1>", paint_bbox)
 
 button_draw_bbox = tk.Button(root, text="Draw bbox", command=draw_bbox)
 button_draw_bbox.place(x=200, y=90)
