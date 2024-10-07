@@ -301,6 +301,10 @@ status_bar.place(x=0, y=0)
 canvas = tk.Canvas(root, width=500, height=500)
 canvas.place(x=50, y=150)
 
+# TODO: Next: drawing bounding box on canvas; and then keep track of them in listview
+# - G"tkinter draw bounding box on canvas"
+#   - https://stackoverflow.com/questions/29789554/tkinter-draw-rectangle-using-a-mouse
+
 # todo: add button to start drawing bbox
 
 # todo: add listview to show list of all bboxes
