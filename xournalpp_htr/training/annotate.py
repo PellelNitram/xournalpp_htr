@@ -269,6 +269,12 @@ class BBox:
     def __str__(self) -> str:
         return str(self.capture_date)
 
+    def to_json_str(self) -> str:
+        return self.__str__() + "to"
+
+    def from_json_str(self, json_str: str) -> None:
+        pass
+
 
 def draw_document():
     canvas.delete("all")
@@ -375,7 +381,13 @@ button_draw_bbox.place(x=200, y=90)
 
 
 def listbox_select(event):
+    index = listbox.curselection()[0]
+    bbox = listbox.get(index, None)
+
     print(str(event) + "\n" + str(listbox.curselection()))
+    print(bbox)
+
+    textfield.insert(tk.INSERT, bbox.to_json_str())
 
 
 # create listbox object
