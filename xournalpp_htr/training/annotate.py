@@ -19,12 +19,15 @@ This script helps to annotate Xournal(++) files.
 # Advanced zoom example. Like in Google Maps.
 # It zooms only a tile, but not the whole image. So the zoomed tile occupies
 # constant memory and not crams it with a huge resized image for the large zooms.
+import datetime
 import random
 import sys
 import tkinter as tk
+from dataclasses import dataclass
 from pathlib import Path
 from tkinter import ttk
 from tkinter.filedialog import askopenfilename
+from tkinter.scrolledtext import ScrolledText
 
 from PIL import Image, ImageTk
 
@@ -254,6 +257,19 @@ I_PAGE = 0  # TODO: Make selectable
 START_DRAWING_BBOX = False
 
 
+@dataclass
+class BBox:
+    text: str
+    point_1_x: float
+    point_1_y: float
+    point_2_x: float
+    point_2_y: float
+    capture_date: datetime.datetime
+
+    def __str__(self) -> str:
+        return str(self.capture_date)
+
+
 def draw_document():
     canvas.delete("all")
 
@@ -289,10 +305,13 @@ def draw_bbox():
 
 BBOX_FIRST_POINT = None
 
+LIST_OF_BBOXES = []
+
 
 def paint_bbox(event):
     global START_DRAWING_BBOX
     global BBOX_FIRST_POINT
+    global LIST_OF_BBOXES
     if START_DRAWING_BBOX:
         BBOX_FIRST_POINT = event.x, event.y
         START_DRAWING_BBOX = False
@@ -310,6 +329,20 @@ def paint_bbox(event):
                 fill="",
                 outline="orange",
             )
+
+            # Store bbox
+            bbox = BBox(
+                text=None,
+                point_1_x=BBOX_FIRST_POINT[0],
+                point_1_y=BBOX_FIRST_POINT[1],
+                point_2_x=second_point[0],
+                point_2_y=second_point[1],
+                capture_date=datetime.datetime.now(),
+            )
+            LIST_OF_BBOXES.append(bbox)
+
+            # Add to listview
+            listbox.insert(tk.END, bbox)
 
             # Book keeping
             BBOX_FIRST_POINT = None
@@ -339,6 +372,30 @@ canvas.bind("<Button-1>", paint_bbox)
 
 button_draw_bbox = tk.Button(root, text="Draw bbox", command=draw_bbox)
 button_draw_bbox.place(x=200, y=90)
+
+
+def listbox_select(event):
+    print(str(event) + "\n" + str(listbox.curselection()))
+
+
+# create listbox object
+listbox = tk.Listbox(
+    root,
+    height=10,
+    width=25,
+    bg="grey",
+    activestyle="dotbox",
+    font="Helvetica",
+    fg="yellow",
+)
+listbox.place(x=700, y=150)
+# See here for what I want to do: https://tk-tutorial.readthedocs.io/en/latest/listbox/listbox.html#edit-a-listbox-item
+listbox.bind("<<ListboxSelect>>", listbox_select)
+# Another good resource: https://www.geeksforgeeks.org/python-tkinter-listbox-widget/
+
+
+textfield = ScrolledText(root, wrap=tk.WORD)
+textfield.place(x=700, y=400)
 
 # TODO: Next: drawing bounding box on canvas; and then keep track of them in listview
 # - G"tkinter draw bounding box on canvas"
