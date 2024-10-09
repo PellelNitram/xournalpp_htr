@@ -19,15 +19,17 @@ This script helps to annotate Xournal(++) files.
 # Advanced zoom example. Like in Google Maps.
 # It zooms only a tile, but not the whole image. So the zoomed tile occupies
 # constant memory and not crams it with a huge resized image for the large zooms.
+import dataclasses
 import datetime
+import json
 import random
 import sys
 import tkinter as tk
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from tkinter import ttk
 from tkinter.filedialog import askopenfilename
-from tkinter.scrolledtext import ScrolledText
 
 from PIL import Image, ImageTk
 
@@ -265,15 +267,23 @@ class BBox:
     point_2_x: float
     point_2_y: float
     capture_date: datetime.datetime
+    uuid: str
 
     def __str__(self) -> str:
         return str(self.capture_date)
 
     def to_json_str(self) -> str:
-        return self.__str__() + "to"
+        return json.dumps(
+            dataclasses.asdict(self), indent=4, sort_keys=True, default=str
+        )
 
     def from_json_str(self, json_str: str) -> None:
+        print("from_json_str")
         pass
+
+    @staticmethod
+    def get_new_uuid() -> str:
+        return str(uuid.uuid4())
 
 
 def draw_document():
@@ -326,16 +336,6 @@ def paint_bbox(event):
             # Get point
             second_point = event.x, event.y
 
-            # Draw
-            canvas.create_rectangle(
-                BBOX_FIRST_POINT[0],
-                BBOX_FIRST_POINT[1],
-                second_point[0],
-                second_point[1],
-                fill="",
-                outline="orange",
-            )
-
             # Store bbox
             bbox = BBox(
                 text=None,
@@ -344,8 +344,23 @@ def paint_bbox(event):
                 point_2_x=second_point[0],
                 point_2_y=second_point[1],
                 capture_date=datetime.datetime.now(),
+                uuid=BBox.get_new_uuid(),
             )
+
+            print(bbox)
+            print(dataclasses.asdict(bbox))
+
             LIST_OF_BBOXES.append(bbox)
+
+            # Draw
+            canvas.create_rectangle(
+                bbox.point_1_x,
+                bbox.point_1_y,
+                bbox.point_2_x,
+                bbox.point_2_y,
+                fill="",
+                outline="orange",
+            )
 
             # Add to listview
             listbox.insert(tk.END, bbox)
@@ -383,11 +398,9 @@ button_draw_bbox.place(x=200, y=90)
 def listbox_select(event):
     index = listbox.curselection()[0]
     bbox = listbox.get(index, None)
-
-    print(str(event) + "\n" + str(listbox.curselection()))
-    print(bbox)
-
-    textfield.insert(tk.INSERT, bbox.to_json_str())
+    bbox = LIST_OF_BBOXES[index]
+    edit_text.delete(1.0, tk.END)
+    edit_text.insert(tk.END, "" if bbox.text is None else bbox.text)
 
 
 # create listbox object
@@ -406,8 +419,18 @@ listbox.bind("<<ListboxSelect>>", listbox_select)
 # Another good resource: https://www.geeksforgeeks.org/python-tkinter-listbox-widget/
 
 
-textfield = ScrolledText(root, wrap=tk.WORD)
-textfield.place(x=700, y=400)
+edit_text = tk.Text(root, height=2, width=30, font=40)
+edit_text.place(x=700, y=500)
+
+
+def update_bbox_text():
+    index = listbox.curselection()[0]
+    bbox = LIST_OF_BBOXES[index]
+    bbox.text = edit_text.get("1.0", tk.END)
+
+
+update_text = tk.Button(root, text="Update bbox text", command=update_bbox_text)
+update_text.place(x=700, y=600)
 
 # TODO: Next: drawing bounding box on canvas; and then keep track of them in listview
 # - G"tkinter draw bounding box on canvas"
@@ -421,6 +444,9 @@ textfield.place(x=700, y=400)
 
 # todo: add button to export annotations; using a schema
 
+# TODO: Add reference to drawn rectangle in order to change colour and to add annotated text.
+
+# TODO: Add annotator's name. Do so by adding a text field.
 
 # # Create left and right frames
 # left_frame = tk.Frame(root, width=200, height=400, bg="grey")
