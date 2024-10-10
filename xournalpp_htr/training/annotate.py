@@ -268,6 +268,7 @@ class BBox:
     point_2_y: float
     capture_date: datetime.datetime
     uuid: str
+    rect_reference: int | None
 
     def __str__(self) -> str:
         return str(self.capture_date)
@@ -345,6 +346,7 @@ def paint_bbox(event):
                 point_2_y=second_point[1],
                 capture_date=datetime.datetime.now(),
                 uuid=BBox.get_new_uuid(),
+                rect_reference=None,
             )
 
             print(bbox)
@@ -353,14 +355,18 @@ def paint_bbox(event):
             LIST_OF_BBOXES.append(bbox)
 
             # Draw
-            canvas.create_rectangle(
+            rect = canvas.create_rectangle(
                 bbox.point_1_x,
                 bbox.point_1_y,
                 bbox.point_2_x,
                 bbox.point_2_y,
                 fill="",
-                outline="orange",
+                outline=DEFAULT_BBOX_OUTLINE_COLOR,
             )
+            bbox.rect_reference = rect
+            print(
+                rect, type(rect)
+            )  # Use it like shown here: https://stackoverflow.com/a/35935638 & https://stackoverflow.com/a/13212501
 
             # Add to listview
             listbox.insert(tk.END, bbox)
@@ -394,11 +400,17 @@ canvas.bind("<Button-1>", paint_bbox)
 button_draw_bbox = tk.Button(root, text="Draw bbox", command=draw_bbox)
 button_draw_bbox.place(x=200, y=90)
 
+DEFAULT_BBOX_OUTLINE_COLOR = "orange"
+HIGHLIGHTED_BBOX_OUTLINE_COLOR = "red"
+
 
 def listbox_select(event):
     index = listbox.curselection()[0]
     bbox = listbox.get(index, None)
-    bbox = LIST_OF_BBOXES[index]
+    for bbox in LIST_OF_BBOXES:  # Reset colors
+        canvas.itemconfig(bbox.rect_reference, outline=DEFAULT_BBOX_OUTLINE_COLOR)
+    bbox: BBox = LIST_OF_BBOXES[index]
+    canvas.itemconfig(bbox.rect_reference, outline=HIGHLIGHTED_BBOX_OUTLINE_COLOR)
     edit_text.delete(1.0, tk.END)
     edit_text.insert(tk.END, "" if bbox.text is None else bbox.text)
 
@@ -442,11 +454,13 @@ update_text.place(x=700, y=600)
 
 # todo: add details viewer to show a selected bbox, which consists of bbox and text
 
-# todo: add button to export annotations; using a schema
+# todo: add button to export annotations; using a schema; export the minimal bbox (obviously)
 
 # TODO: Add reference to drawn rectangle in order to change colour and to add annotated text.
 
 # TODO: Add annotator's name. Do so by adding a text field.
+
+# TODO: check why there's an exception (perceived somewhat randomly)
 
 # # Create left and right frames
 # left_frame = tk.Frame(root, width=200, height=400, bg="grey")
