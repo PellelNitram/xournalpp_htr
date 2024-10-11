@@ -444,6 +444,10 @@ def update_bbox_text():
 update_text = tk.Button(root, text="Update bbox text", command=update_bbox_text)
 update_text.place(x=700, y=600)
 
+annotator_ID = tk.Text(root, height=2, width=30, font=40)
+annotator_ID.insert(tk.END, "(add annotator ID here)")
+annotator_ID.place(x=800, y=650)
+
 # TODO: Next: drawing bounding box on canvas; and then keep track of them in listview
 # - G"tkinter draw bounding box on canvas"
 #   - https://stackoverflow.com/questions/29789554/tkinter-draw-rectangle-using-a-mouse
