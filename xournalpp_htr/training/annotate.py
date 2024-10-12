@@ -449,6 +449,10 @@ annotator_ID = tk.Text(root, height=2, width=30, font=40)
 annotator_ID.insert(tk.END, "(add annotator ID here)")
 annotator_ID.place(x=800, y=650)
 
+writer_ID = tk.Text(root, height=2, width=30, font=40)
+writer_ID.insert(tk.END, "(add writer ID here)")
+writer_ID.place(x=800, y=700)
+
 repo = git.Repo(search_parent_directories=True)
 sha = repo.head.object.hexsha
 git_commit_hash_label = tk.Label(root, text=f"git commit: {sha}")
