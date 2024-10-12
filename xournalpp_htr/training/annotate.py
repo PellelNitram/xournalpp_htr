@@ -442,7 +442,7 @@ edit_text.place(x=700, y=500)
 def update_bbox_text():
     index = listbox.curselection()[0]
     bbox = LIST_OF_BBOXES[index]
-    bbox.text = edit_text.get("1.0", tk.END)
+    bbox.text = edit_text.get("1.0", tk.END).strip()
 
 
 update_text = tk.Button(root, text="Update bbox text", command=update_bbox_text)
