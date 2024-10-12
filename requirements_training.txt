@@ -1,3 +1,4 @@
 pandas
 jupyter
 gradio
+gitpython
