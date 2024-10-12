@@ -243,6 +243,8 @@ else:
 
 def load_document():
     global currently_loaded_document
+    global I_PAGE
+    I_PAGE = int(page_selector_text.get("1.0"))
     filename = askopenfilename()
     currently_loaded_document = filename
     status_file.configure(text=f"File loaded: {currently_loaded_document}")
@@ -256,7 +258,7 @@ def draw_a_point(c: tk.Canvas, coord_x: float, coord_y: float, color: str) -> No
     c.create_oval(x1, y1, x2, y2, fill=color)
 
 
-I_PAGE = 0  # TODO: Make selectable
+I_PAGE = 0
 
 START_DRAWING_BBOX = False
 
@@ -381,6 +383,18 @@ def paint_bbox(event):
 
 w = tk.Button(root, text="Load document", command=load_document)
 w.place(x=50, y=50)
+
+page_selector_label = tk.Label(root, text="Select page:")
+page_selector_label.place(x=200, y=50)
+
+page_selector_text = tk.Text(
+    root,
+    height=1,
+    width=4,
+    font=40,
+)
+page_selector_text.place(x=280, y=50)
+page_selector_text.insert("1.0", "0")
 
 DRAW_STROKE_BOUNDING_BOX = tk.BooleanVar()
 b = tk.Checkbutton(
