@@ -29,12 +29,13 @@ import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from tkinter import ttk
-from tkinter.filedialog import askopenfilename
+from tkinter.filedialog import askopenfilename, asksaveasfilename
 
 import git
+import numpy as np
 from PIL import Image, ImageTk
 
-from xournalpp_htr.documents import XournalppDocument
+from xournalpp_htr.documents import Stroke, XournalppDocument
 
 
 class AutoScrollbar(ttk.Scrollbar):
@@ -270,6 +271,7 @@ class BBox:
     capture_date: datetime.datetime
     uuid: str
     rect_reference: int | None
+    strokes: list[Stroke] | None
 
     def __str__(self) -> str:
         return str(self.capture_date)
@@ -323,7 +325,7 @@ def draw_bbox():
 
 BBOX_FIRST_POINT = None
 
-LIST_OF_BBOXES = []
+LIST_OF_BBOXES: list[BBox] = []
 
 
 def paint_bbox(event):
@@ -348,6 +350,7 @@ def paint_bbox(event):
                 capture_date=datetime.datetime.now(),
                 uuid=BBox.get_new_uuid(),
                 rect_reference=None,
+                strokes=None,
             )
 
             print(bbox)
@@ -457,6 +460,72 @@ repo = git.Repo(search_parent_directories=True)
 sha = repo.head.object.hexsha
 git_commit_hash_label = tk.Label(root, text=f"git commit: {sha}")
 git_commit_hash_label.place(x=500, y=0)
+
+
+def export():
+    if DEBUG:
+        output_path = Path(
+            "/home/martin/Development/xournalpp_htr/tests/data/2024-10-12_annotate_test_output.json"
+        )
+    else:
+        output_path = Path(
+            asksaveasfilename(
+                initialfile="Untitled.json",
+                defaultextension=".json",
+                filetypes=[("All Files", "*.*"), ("JSON Documents", "*.json")],
+            )
+        )
+
+    xpp_document = XournalppDocument(Path(currently_loaded_document))
+
+    # Get all strokes on that page in a list
+    all_strokes: list[Stroke] = []
+    for layer in xpp_document.pages[I_PAGE].layers:
+        for stroke in layer.strokes:
+            all_strokes.append(stroke)
+
+    stroke_already_used = np.zeros(len(all_strokes), dtype=bool)
+
+    # Determine strokes
+    for bbox in LIST_OF_BBOXES:
+        min_x = min(bbox.point_1_x, bbox.point_2_x)
+        max_x = max(bbox.point_1_x, bbox.point_2_x)
+        min_y = min(bbox.point_1_y, bbox.point_2_y)
+        max_y = max(bbox.point_1_y, bbox.point_2_y)
+        bbox_strokes = []
+        for i_stroke, stroke in enumerate(all_strokes):
+            # Skip strokes that are already part of a bbox
+            if stroke_already_used[i_stroke]:
+                continue
+            condition_x_min = np.all(min_x <= stroke.x)
+            condition_x_max = np.all(stroke.x <= max_x)
+            condition_y_min = np.all(min_y <= stroke.y)
+            condition_y_max = np.all(stroke.y <= max_y)
+            if (
+                condition_x_min
+                and condition_x_max
+                and condition_y_min
+                and condition_y_max
+            ):
+                bbox_strokes.append(stroke)
+                stroke_already_used[i_stroke] = True
+        assert bbox.strokes is None
+        bbox.strokes = bbox_strokes
+
+        # TODO: Store bbox'es as JSON; I do so by storing all the
+        # relevant detail in a dict first. The method that turns
+        # it in to a JSON might as well be part of `Bbox`!
+
+        # TODO: Also loading the JSON into a dict will be a part of
+        # the `Bbox` class for the sake of simplicity.
+
+        # TODO: Add a storage schema
+
+    print(output_path)  # TODO: Replace w/ storing operation.
+
+
+export_annotations = tk.Button(root, text="Export annotations", command=export)
+export_annotations.place(x=50, y=750)
 
 
 # TODO: Next: drawing bounding box on canvas; and then keep track of them in listview
