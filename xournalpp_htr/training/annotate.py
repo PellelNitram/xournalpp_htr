@@ -31,6 +31,7 @@ from pathlib import Path
 from tkinter import ttk
 from tkinter.filedialog import askopenfilename
 
+import git
 from PIL import Image, ImageTk
 
 from xournalpp_htr.documents import XournalppDocument
@@ -447,6 +448,12 @@ update_text.place(x=700, y=600)
 annotator_ID = tk.Text(root, height=2, width=30, font=40)
 annotator_ID.insert(tk.END, "(add annotator ID here)")
 annotator_ID.place(x=800, y=650)
+
+repo = git.Repo(search_parent_directories=True)
+sha = repo.head.object.hexsha
+git_commit_hash_label = tk.Label(root, text=f"git commit: {sha}")
+git_commit_hash_label.place(x=500, y=0)
+
 
 # TODO: Next: drawing bounding box on canvas; and then keep track of them in listview
 # - G"tkinter draw bounding box on canvas"
