@@ -131,6 +131,8 @@ class Document(ABC):
             }
         return result
 
+    # TODO: Add method to get all strokes on a single page in a list. I use this 2x in `annotate.py`!
+
 
 class XournalDocument(Document):
     def load_data(self):
