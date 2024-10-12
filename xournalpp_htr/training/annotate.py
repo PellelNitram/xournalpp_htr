@@ -562,6 +562,8 @@ def export():
         storage["bboxes"].append(value)
         storage["annotator_ID"] = annotator_ID.get("1.0", tk.END).strip()
         storage["writer_ID"] = writer_ID.get("1.0", tk.END).strip()
+        storage["currently_loaded_document"] = str(currently_loaded_document)
+        storage["page_index"] = I_PAGE
 
     with open(output_path, mode="w") as f:
         json.dump(storage, f)
