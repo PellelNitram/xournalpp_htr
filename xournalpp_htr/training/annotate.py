@@ -14,6 +14,7 @@ import git
 import numpy as np
 
 from xournalpp_htr.documents import Stroke, XournalppDocument
+from xournalpp_htr.training.io import store_list_of_bboxes
 
 # =====
 # TODOs
@@ -237,38 +238,17 @@ def export():
         # TODO: Add a storage schema
         # TODO: define storage schema to allow backward compatibility when improving the script later on
 
-    storage = {"bboxes": []}
-
-    for bbox in LIST_OF_BBOXES:
-        print(bbox)
-        value = {}
-
-        # TODO: Use BBox.as_json_str; how does that work w/ `strokes` list?
-        value["capture_date"] = str(bbox.capture_date)
-        value["point_1_x"] = bbox.point_1_x
-        value["point_1_y"] = bbox.point_1_y
-        value["point_2_x"] = bbox.point_2_x
-        value["point_2_y"] = bbox.point_2_y
-        value["text"] = bbox.text
-        value["uuid"] = bbox.uuid
-        value["bbox_strokes"] = []
-        for stroke in bbox.strokes:
-            value["bbox_strokes"].append(
-                {
-                    "meta_data": stroke.meta_data,
-                    "x": stroke.x.tolist(),
-                    "y": stroke.y.tolist(),
-                }
-            )
-
-        storage["bboxes"].append(value)
-        storage["annotator_ID"] = annotator_ID.get("1.0", tk.END).strip()
-        storage["writer_ID"] = writer_ID.get("1.0", tk.END).strip()
-        storage["currently_loaded_document"] = str(currently_loaded_document)
-        storage["page_index"] = I_PAGE
-
-    with open(output_path, mode="w") as f:
-        json.dump(storage, f)
+    store_list_of_bboxes(
+        output_path=output_path,
+        list_of_bboxes=LIST_OF_BBOXES,
+        schema_version="v1_2024-10-13",
+        meta_data={
+            "annotator_ID": annotator_ID.get("1.0", tk.END).strip(),
+            "writer_ID": writer_ID.get("1.0", tk.END).strip(),
+            "currently_loaded_document": str(currently_loaded_document),
+            "page_index": I_PAGE,
+        },
+    )
 
 
 # =========
