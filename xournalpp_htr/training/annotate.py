@@ -181,7 +181,7 @@ def update_bbox_text():
 def export():
     if DEBUG:
         output_path = Path(
-            "/home/martin/Development/xournalpp_htr/tests/data/2024-10-12_annotate_test_output.json"
+            "/home/martin/Development/xournalpp_htr/tests/data/2024-10-13_minimal.annotations.json"
         )
     else:
         output_path = Path(
