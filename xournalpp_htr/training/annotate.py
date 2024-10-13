@@ -2,16 +2,6 @@
 This script helps to annotate Xournal(++) files.
 """
 
-# ====================
-# Experiment w TKINTER
-# ====================
-
-# I use this to speed up the process
-
-# -*- coding: utf-8 -*-
-# Advanced zoom example. Like in Google Maps.
-# It zooms only a tile, but not the whole image. So the zoomed tile occupies
-# constant memory and not crams it with a huge resized image for the large zooms.
 import dataclasses
 import datetime
 import json
