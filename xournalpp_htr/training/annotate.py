@@ -1,6 +1,4 @@
-"""
-This script helps to annotate Xournal(++) files.
-"""
+"""This script helps to annotate Xournal++ files."""
 
 import dataclasses
 import datetime
