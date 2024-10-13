@@ -8,13 +8,6 @@ This script helps to annotate Xournal(++) files.
 
 # I use this to speed up the process
 
-# TODO: Properly read about TKINTER interface design
-# - https://tkinterpython.top/layout/
-
-# TODO: Adhere to design document called `annotate_tool_UI_design.svg`. Potentially model it in PenPot?
-
-# TODO: define storage schema to allow backward compatibility when improving the script later on
-
 # -*- coding: utf-8 -*-
 # Advanced zoom example. Like in Google Maps.
 # It zooms only a tile, but not the whole image. So the zoomed tile occupies
@@ -33,6 +26,15 @@ import git
 import numpy as np
 
 from xournalpp_htr.documents import Stroke, XournalppDocument
+
+# =====
+# TODOs
+# =====
+
+# TODO: Adhere to design document called `annotate_tool_UI_design.svg`. Potentially model it in PenPot?
+# TODO: Useful structure for app: https://stackoverflow.com/questions/17125842/changing-the-text-on-a-label
+# TODO: Improve GUI layout; Properly read about TKINTER interface design:
+# - https://tkinterpython.top/layout/
 
 # ===========
 # Helper code
@@ -244,6 +246,7 @@ def export():
         # the `Bbox` class for the sake of simplicity.
 
         # TODO: Add a storage schema
+        # TODO: define storage schema to allow backward compatibility when improving the script later on
 
     storage = {"bboxes": []}
 
@@ -283,15 +286,11 @@ def export():
 # Main code
 # =========
 
-# Useful structure for app: https://stackoverflow.com/questions/17125842/changing-the-text-on-a-label
 
 root = tk.Tk()  # create root window
 root.title("Annotate Tool")  # title of the GUI window
-# root.maxsize(900, 600)  # specify the max size the window can expand to
 root.geometry("1000x800")
 root.config(bg="skyblue")  # specify background color
-
-# TODO: Fix layout of GUI
 
 
 DEBUG = len(sys.argv) > 1
@@ -394,24 +393,5 @@ git_commit_hash_label.place(x=500, y=0)
 
 export_annotations = tk.Button(root, text="Export annotations", command=export)
 export_annotations.place(x=50, y=750)
-
-
-# TODO: Next: drawing bounding box on canvas; and then keep track of them in listview
-# - G"tkinter draw bounding box on canvas"
-#   - https://stackoverflow.com/questions/29789554/tkinter-draw-rectangle-using-a-mouse
-
-# todo: add button to start drawing bbox
-
-# todo: add listview to show list of all bboxes
-
-# todo: add details viewer to show a selected bbox, which consists of bbox and text
-
-# todo: add button to export annotations; using a schema; export the minimal bbox (obviously)
-
-# TODO: Add reference to drawn rectangle in order to change colour and to add annotated text.
-
-# TODO: Add annotator's name. Do so by adding a text field.
-
-# TODO: check why there's an exception (perceived somewhat randomly)
 
 root.mainloop()
