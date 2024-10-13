@@ -66,7 +66,11 @@ def load_alphabet(infile: Path) -> list[str]:
 def store_list_of_bboxes(
     output_path: Path, list_of_bboxes: list, schema_version: str, meta_data: dict
 ):
-    # TODO: Add test and docstring.
+    """TODO: Add test and docstring.
+
+    TODO: Add schema to version data storage and loading properly. This is to make
+    the anntation process future proof for upcoming `annotate.py` versions.
+    """
     storage = {"bboxes": []}
 
     for bbox in list_of_bboxes:
