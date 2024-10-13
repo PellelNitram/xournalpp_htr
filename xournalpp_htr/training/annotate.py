@@ -23,6 +23,7 @@ from xournalpp_htr.documents import Stroke, XournalppDocument
 # TODO: Useful structure for app: https://stackoverflow.com/questions/17125842/changing-the-text-on-a-label
 # TODO: Improve GUI layout; Properly read about TKINTER interface design:
 # - https://tkinterpython.top/layout/
+# TODO: Everything in here is untested. I will probably leave it as is for now.
 
 # ===========
 # Helper code
