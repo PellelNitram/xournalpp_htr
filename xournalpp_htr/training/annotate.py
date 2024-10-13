@@ -34,25 +34,9 @@ import numpy as np
 
 from xournalpp_htr.documents import Stroke, XournalppDocument
 
-# Useful structure for app: https://stackoverflow.com/questions/17125842/changing-the-text-on-a-label
-
-root = tk.Tk()  # create root window
-root.title("Annotate Tool")  # title of the GUI window
-# root.maxsize(900, 600)  # specify the max size the window can expand to
-root.geometry("1000x800")
-root.config(bg="skyblue")  # specify background color
-
-# TODO: Fix layout of GUI
-
-
-DEBUG = len(sys.argv) > 1
-
-if DEBUG:
-    currently_loaded_document = Path(
-        "/home/martin/Development/xournalpp_htr/tests/data/2024-07-26_minimal.xopp"
-    )
-else:
-    currently_loaded_document = None
+# ===========
+# Helper code
+# ===========
 
 
 def load_document():
@@ -70,11 +54,6 @@ def draw_a_point(c: tk.Canvas, coord_x: float, coord_y: float, color: str) -> No
     x1, y1 = (coord_x - 1), (coord_y - 1)
     x2, y2 = (coord_x + 1), (coord_y + 1)
     c.create_oval(x1, y1, x2, y2, fill=color)
-
-
-I_PAGE = 0
-
-START_DRAWING_BBOX = False
 
 
 @dataclass
@@ -139,11 +118,6 @@ def draw_bbox():
     START_DRAWING_BBOX = True
 
 
-BBOX_FIRST_POINT = None
-
-LIST_OF_BBOXES: list[BBox] = []
-
-
 def paint_bbox(event):
     global START_DRAWING_BBOX
     global BBOX_FIRST_POINT
@@ -195,47 +169,6 @@ def paint_bbox(event):
             BBOX_FIRST_POINT = None
 
 
-w = tk.Button(root, text="Load document", command=load_document)
-w.place(x=50, y=50)
-
-page_selector_label = tk.Label(root, text="Select page:")
-page_selector_label.place(x=200, y=50)
-
-page_selector_text = tk.Text(
-    root,
-    height=1,
-    width=4,
-    font=40,
-)
-page_selector_text.place(x=280, y=50)
-page_selector_text.insert("1.0", "0")
-
-DRAW_STROKE_BOUNDING_BOX = tk.BooleanVar()
-b = tk.Checkbutton(
-    root, text="Enable DRAW_STROKE_BOUNDING_BOX?", variable=DRAW_STROKE_BOUNDING_BOX
-)
-b.place(x=50, y=120)
-
-button_draw = tk.Button(root, text="Draw document", command=draw_document)
-button_draw.place(x=50, y=90)
-
-status_file = tk.Label(root, text=f"File loaded: {currently_loaded_document}")
-status_file.place(x=0, y=20)
-
-status_bar = tk.Label(root, text="status bar")
-status_bar.place(x=0, y=0)
-
-canvas = tk.Canvas(root, width=500, height=500)
-canvas.place(x=50, y=150)
-canvas.bind("<Button-1>", paint_bbox)
-
-button_draw_bbox = tk.Button(root, text="Draw bbox", command=draw_bbox)
-button_draw_bbox.place(x=200, y=90)
-
-DEFAULT_BBOX_OUTLINE_COLOR = "orange"
-HIGHLIGHTED_BBOX_OUTLINE_COLOR = "red"
-
-
 def listbox_select(event):
     index = listbox.curselection()[0]
     bbox = listbox.get(index, None)
@@ -247,47 +180,10 @@ def listbox_select(event):
     edit_text.insert(tk.END, "" if bbox.text is None else bbox.text)
 
 
-# create listbox object
-listbox = tk.Listbox(
-    root,
-    height=10,
-    width=25,
-    bg="grey",
-    activestyle="dotbox",
-    font="Helvetica",
-    fg="yellow",
-)
-listbox.place(x=700, y=150)
-# See here for what I want to do: https://tk-tutorial.readthedocs.io/en/latest/listbox/listbox.html#edit-a-listbox-item
-listbox.bind("<<ListboxSelect>>", listbox_select)
-# Another good resource: https://www.geeksforgeeks.org/python-tkinter-listbox-widget/
-
-
-edit_text = tk.Text(root, height=2, width=30, font=40)
-edit_text.place(x=700, y=500)
-
-
 def update_bbox_text():
     index = listbox.curselection()[0]
     bbox = LIST_OF_BBOXES[index]
     bbox.text = edit_text.get("1.0", tk.END).strip()
-
-
-update_text = tk.Button(root, text="Update bbox text", command=update_bbox_text)
-update_text.place(x=700, y=600)
-
-annotator_ID = tk.Text(root, height=2, width=30, font=40)
-annotator_ID.insert(tk.END, "(add annotator ID here)")
-annotator_ID.place(x=800, y=650)
-
-writer_ID = tk.Text(root, height=2, width=30, font=40)
-writer_ID.insert(tk.END, "(add writer ID here)")
-writer_ID.place(x=800, y=700)
-
-repo = git.Repo(search_parent_directories=True)
-sha = repo.head.object.hexsha
-git_commit_hash_label = tk.Label(root, text=f"git commit: {sha}")
-git_commit_hash_label.place(x=500, y=0)
 
 
 def export():
@@ -381,6 +277,119 @@ def export():
 
     with open(output_path, mode="w") as f:
         json.dump(storage, f)
+
+
+# =========
+# Main code
+# =========
+
+# Useful structure for app: https://stackoverflow.com/questions/17125842/changing-the-text-on-a-label
+
+root = tk.Tk()  # create root window
+root.title("Annotate Tool")  # title of the GUI window
+# root.maxsize(900, 600)  # specify the max size the window can expand to
+root.geometry("1000x800")
+root.config(bg="skyblue")  # specify background color
+
+# TODO: Fix layout of GUI
+
+
+DEBUG = len(sys.argv) > 1
+
+if DEBUG:
+    currently_loaded_document = Path(
+        "/home/martin/Development/xournalpp_htr/tests/data/2024-07-26_minimal.xopp"
+    )
+else:
+    currently_loaded_document = None
+
+
+I_PAGE = 0
+
+START_DRAWING_BBOX = False
+
+
+BBOX_FIRST_POINT = None
+
+LIST_OF_BBOXES: list[BBox] = []
+
+
+w = tk.Button(root, text="Load document", command=load_document)
+w.place(x=50, y=50)
+
+page_selector_label = tk.Label(root, text="Select page:")
+page_selector_label.place(x=200, y=50)
+
+page_selector_text = tk.Text(
+    root,
+    height=1,
+    width=4,
+    font=40,
+)
+page_selector_text.place(x=280, y=50)
+page_selector_text.insert("1.0", "0")
+
+DRAW_STROKE_BOUNDING_BOX = tk.BooleanVar()
+b = tk.Checkbutton(
+    root, text="Enable DRAW_STROKE_BOUNDING_BOX?", variable=DRAW_STROKE_BOUNDING_BOX
+)
+b.place(x=50, y=120)
+
+button_draw = tk.Button(root, text="Draw document", command=draw_document)
+button_draw.place(x=50, y=90)
+
+status_file = tk.Label(root, text=f"File loaded: {currently_loaded_document}")
+status_file.place(x=0, y=20)
+
+status_bar = tk.Label(root, text="status bar")
+status_bar.place(x=0, y=0)
+
+canvas = tk.Canvas(root, width=500, height=500)
+canvas.place(x=50, y=150)
+canvas.bind("<Button-1>", paint_bbox)
+
+button_draw_bbox = tk.Button(root, text="Draw bbox", command=draw_bbox)
+button_draw_bbox.place(x=200, y=90)
+
+DEFAULT_BBOX_OUTLINE_COLOR = "orange"
+HIGHLIGHTED_BBOX_OUTLINE_COLOR = "red"
+
+
+# create listbox object
+listbox = tk.Listbox(
+    root,
+    height=10,
+    width=25,
+    bg="grey",
+    activestyle="dotbox",
+    font="Helvetica",
+    fg="yellow",
+)
+listbox.place(x=700, y=150)
+# See here for what I want to do: https://tk-tutorial.readthedocs.io/en/latest/listbox/listbox.html#edit-a-listbox-item
+listbox.bind("<<ListboxSelect>>", listbox_select)
+# Another good resource: https://www.geeksforgeeks.org/python-tkinter-listbox-widget/
+
+
+edit_text = tk.Text(root, height=2, width=30, font=40)
+edit_text.place(x=700, y=500)
+
+
+update_text = tk.Button(root, text="Update bbox text", command=update_bbox_text)
+update_text.place(x=700, y=600)
+
+annotator_ID = tk.Text(root, height=2, width=30, font=40)
+annotator_ID.insert(tk.END, "(add annotator ID here)")
+annotator_ID.place(x=800, y=650)
+
+writer_ID = tk.Text(root, height=2, width=30, font=40)
+writer_ID.insert(tk.END, "(add writer ID here)")
+writer_ID.place(x=800, y=700)
+
+repo = git.Repo(search_parent_directories=True)
+sha = repo.head.object.hexsha
+git_commit_hash_label = tk.Label(root, text=f"git commit: {sha}")
+git_commit_hash_label.place(x=500, y=0)
 
 
 export_annotations = tk.Button(root, text="Export annotations", command=export)
