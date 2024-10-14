@@ -4,6 +4,7 @@ import json
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 
@@ -107,6 +108,40 @@ def store_list_of_bboxes(
 
         with open(output_path, mode="w") as f:
             json.dump(storage, f)
+
+    else:
+        raise ValueError(f'"schema_version"={schema_version} not implemented')
+
+
+def load_list_of_bboxes(input_path: Path) -> dict:
+    """TODO: Add test and docstring and type annotations.
+
+    See `store_list_of_bboxes`.
+    """
+
+    with open(input_path, mode="r") as f:
+        data = json.load(f)
+
+    schema_version = data["schema_version"]
+
+    if schema_version == "v1_2024-10-13":
+        result = {
+            "annotator_ID": data["annotator_ID"],
+            "writer_ID": data["writer_ID"],
+            "currently_loaded_document": data["currently_loaded_document"],
+            "page_index": data["page_index"],
+            "schema_version": data["schema_version"],
+            "bboxes": [],
+        }
+
+        for bbox in data["bboxes"]:
+            bbox["capture_date"] = pd.to_datetime(bbox["capture_date"]).to_pydatetime()
+            for bbox_stroke in bbox["bbox_strokes"]:
+                bbox_stroke["x"] = np.array(bbox_stroke["x"])
+                bbox_stroke["y"] = np.array(bbox_stroke["y"])
+            result["bboxes"].append(bbox)
+
+        return result
 
     else:
         raise ValueError(f'"schema_version"={schema_version} not implemented')
