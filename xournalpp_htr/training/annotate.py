@@ -1,9 +1,9 @@
 """This script helps to annotate Xournal++ files."""
 
+import argparse
 import dataclasses
 import datetime
 import json
-import sys
 import tkinter as tk
 import uuid
 from dataclasses import dataclass
@@ -256,13 +256,17 @@ def export():
 # =========
 
 
+parser = argparse.ArgumentParser(prog="annotate helper")
+parser.add_argument("-d", "--debug", action="store_true", help="Enable debug mode.")
+args = vars(parser.parse_args())
+
+DEBUG = args["debug"]
+
 root = tk.Tk()  # create root window
 root.title("Annotate Tool")  # title of the GUI window
 root.geometry("1000x800")
 root.config(bg="skyblue")  # specify background color
 
-
-DEBUG = len(sys.argv) > 1
 
 if DEBUG:
     currently_loaded_document = Path(
