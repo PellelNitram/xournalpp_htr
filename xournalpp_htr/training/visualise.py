@@ -17,6 +17,8 @@ def plot_clustered_document(
 ) -> None:
     """Plots clustered document into axes.
 
+    TODO: explain.
+
     TODO: docstring and type annotations.
     """
 
