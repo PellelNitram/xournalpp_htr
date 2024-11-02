@@ -3,10 +3,7 @@
 import argparse
 import dataclasses
 import datetime
-import json
 import tkinter as tk
-import uuid
-from dataclasses import dataclass
 from pathlib import Path
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
@@ -14,6 +11,7 @@ import git
 import numpy as np
 
 from xournalpp_htr.documents import Stroke, XournalppDocument
+from xournalpp_htr.training.data import BBox
 from xournalpp_htr.training.io import store_list_of_bboxes
 
 # =====
@@ -46,35 +44,6 @@ def draw_a_point(c: tk.Canvas, coord_x: float, coord_y: float, color: str) -> No
     x1, y1 = (coord_x - 1), (coord_y - 1)
     x2, y2 = (coord_x + 1), (coord_y + 1)
     c.create_oval(x1, y1, x2, y2, fill=color)
-
-
-@dataclass
-class BBox:
-    text: str
-    point_1_x: float
-    point_1_y: float
-    point_2_x: float
-    point_2_y: float
-    capture_date: datetime.datetime
-    uuid: str
-    rect_reference: int | None
-    strokes: list[Stroke] | None
-
-    def __str__(self) -> str:
-        return str(self.capture_date)
-
-    def to_json_str(self) -> str:
-        return json.dumps(
-            dataclasses.asdict(self), indent=4, sort_keys=True, default=str
-        )
-
-    def from_json_str(self, json_str: str) -> None:
-        print("from_json_str")
-        pass
-
-    @staticmethod
-    def get_new_uuid() -> str:
-        return str(uuid.uuid4())
 
 
 def draw_document():
