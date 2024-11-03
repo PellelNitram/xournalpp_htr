@@ -289,8 +289,9 @@ canvas = tk.Canvas(root, width=500, height=500)
 canvas.place(x=50, y=150)
 canvas.bind("<Button-1>", paint_bbox)
 
-button_draw_bbox = tk.Button(root, text="Draw bbox", command=draw_bbox)
+button_draw_bbox = tk.Button(root, text="Draw bbox (d)", command=draw_bbox)
 button_draw_bbox.place(x=200, y=90)
+root.bind("d", lambda event: draw_bbox())
 
 DEFAULT_BBOX_OUTLINE_COLOR = "orange"
 HIGHLIGHTED_BBOX_OUTLINE_COLOR = "red"
