@@ -2,4 +2,4 @@
 
 Test :-)
 
-TODO: Make this documentation the central part and adapt README for example like [here](https://github.com/jaredpalmer/formik).
+TODO: Make this documentation the central part and adapt README for example like [here](https://github.com/jaredpalmer/formik). Replicate sections of current README here therefore.
