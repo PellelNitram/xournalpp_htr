@@ -10,16 +10,58 @@ def plot_clustered_document(
     a_ground_truth: mpl.axis.Axis,
     a_predicted: mpl.axis.Axis,
     clustering,
-    annotated_bboxes,
-    DPI,
+    annotated_bboxes: dict,
+    DPI: float,
     df_train: pd.DataFrame,
     a_predicted_title: str,
 ) -> None:
-    """Plots clustered document into axes.
+    """Plot document clustering results by comparing ground truth annotations with predicted clusters.
 
-    TODO: explain.
+    This function creates two subplot visualizations:
+    1. Ground truth: Shows bounding boxes around text regions with their labels
+    2. Predicted: Displays clustered stroke points with centroids
 
-    TODO: docstring and type annotations.
+    :param a_ground_truth: Matplotlib axis for plotting ground truth annotations
+    :type a_ground_truth: mpl.axis.Axis
+    :param a_predicted: Matplotlib axis for plotting predicted clusters
+    :type a_predicted: mpl.axis.Axis
+    :param clustering: Clustering object with labels_ attribute containing cluster assignments
+    :type clustering: object
+    :param annotated_bboxes: Dictionary containing bounding box information with structure::
+
+            {
+                "bboxes": [
+                    {
+                        "point_1_x": float,
+                        "point_1_y": float,
+                        "point_2_x": float,
+                        "point_2_y": float,
+                        "text": str,
+                        "bbox_strokes": [{"x": float, "y": float}, ...]
+                    },
+                    ...
+                ]
+            }
+
+    :type annotated_bboxes: dict
+    :param DPI: Dots per inch for coordinate conversion
+    :type DPI: float
+    :param df_train: DataFrame containing stroke data with columns:
+                    - x: list of x-coordinates for each stroke
+                    - y: list of y-coordinates for each stroke
+                    - x_mean: mean x-coordinate for each stroke
+                    - y_mean: mean y-coordinate for each stroke
+    :type df_train: pd.DataFrame
+    :param a_predicted_title: Title for the predicted clusters subplot
+    :type a_predicted_title: str
+    :return: None - Function modifies the provided matplotlib axes in-place
+    :rtype: None
+
+    :note:
+        - Ground truth visualization includes red bounding boxes with text labels
+        - Predicted visualization shows scattered points for each cluster in different colors
+        - Red points in predicted plot represent cluster centroids (stroke means)
+        - Both plots maintain equal aspect ratio and use matching x/y axis labels
     """
 
     # ===================
