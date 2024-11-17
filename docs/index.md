@@ -98,3 +98,16 @@ Xournal++ HTR strives to bring open-source on-device handwriting recognition to 
 ### Installation
 
 Follow the above installation procedure and replace the step `pip install -r requirements.txt` by both `pip install -r requirements.txt` and `pip install -r requirements_training.txt` to install both the inference and training dependencies.
+
+## Cite
+
+If you are using Xournal++ HTR for your research, I'd appreciate if you could cite it. Use:
+
+```
+@software{Lellep_Xournalpp_HTR,
+  author = {Lellep, Martin},
+  title = {xournalpp_htr},
+  url = {https://github.com/PellelNitram/xournalpp_htr},
+  license = {GPL-2.0},
+}
+```
