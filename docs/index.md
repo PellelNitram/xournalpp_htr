@@ -99,14 +99,6 @@ Xournal++ HTR strives to bring open-source on-device handwriting recognition to 
 
 Follow the above installation procedure and replace the step `pip install -r requirements.txt` by both `pip install -r requirements.txt` and `pip install -r requirements_training.txt` to install both the inference and training dependencies.
 
-## Code quality
-
-We try to keep up code quality as high as practically possible. For that reason, the following steps are implemented:
-
-- Testing. Xournal++ HTR uses `pytest` for implementing unit, regression and integration tests.
-- Linting. Xournal++ HTR uses `ruff` for linting and code best practises. `ruff` is implemented as git pre-commit hook. Since `ruff` as pre-commit hook is configured externally with `pyproject.toml`, you can use the same settings in your IDE if you wish to speed up the process.
-- Formatting. Xournal++ HTR uses `ruff-format` for consistent code formatting. `ruff-format` is implemented as git pre-commit hook. Since `ruff-format` as pre-commit hook is configured externally with `pyproject.toml`, you can use the same settings in your IDE if you wish to speed up the process.
-
 ## Cite
 
 If you are using Xournal++ HTR for your research, I'd appreciate if you could cite it. Use:
