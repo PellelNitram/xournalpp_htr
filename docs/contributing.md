@@ -1,5 +1,7 @@
 # Contributing
 
+Find open issues [here](https://github.com/PellelNitram/xournalpp_htr/issues).
+
 ## Summary
 
 TODO: Add video here.
