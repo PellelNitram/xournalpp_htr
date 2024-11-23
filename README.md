@@ -221,3 +221,5 @@ If you are using Xournal++ HTR for your research, I'd appreciate if you could ci
   license = {GPL-2.0},
 }
 ```
+
+(Also consider starring the project on GitHub.)
