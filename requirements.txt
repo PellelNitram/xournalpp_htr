@@ -7,4 +7,3 @@ lxml
 pymupdf
 tqdm
 pre-commit
-mkdocs
