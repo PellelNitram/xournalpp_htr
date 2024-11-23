@@ -7,3 +7,9 @@ edit_uri: edit/master/docs/
 
 theme:
   name: material
+
+nav:
+  - 'index.md'
+  - 'developing_new_models.md'
+  - 'roadmap.md'
+  - 'contributing.md'
