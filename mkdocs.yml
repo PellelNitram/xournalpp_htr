@@ -5,6 +5,8 @@ repo_name: PellelNitram/xournalpp_htr
 repo_url: https://github.com/PellelNitram/xournalpp_htr
 edit_uri: edit/master/docs/
 
+strict: true
+
 theme:
   name: material
 
