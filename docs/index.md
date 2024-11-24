@@ -16,9 +16,11 @@ Note: Remove this section once done.
 
 <div align="center">
 
-[![YouTube](http://i.ytimg.com/vi/boXm7lPFSRQ/hqdefault.jpg)](https://www.youtube.com/watch?v=boXm7lPFSRQ)
+<iframe width="560" height="315" src="https://www.youtube.com/embed/boXm7lPFSRQ?si=Yg8tLBs-_1BtQKrU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-*([Click on image or here to get to video](https://www.youtube.com/watch?v=boXm7lPFSRQ?utm_source=github&utm_medium=readme&utm_campaign=github_readme).)*
+<br>
+
+<i>(<a href="https://www.youtube.com/watch?v=boXm7lPFSRQ?utm_source=docs&utm_medium=docs&utm_campaign=docs">Click here to get to video on YouTube.</a>)</i>
 
 </div>
 
