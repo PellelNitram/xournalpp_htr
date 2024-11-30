@@ -10,6 +10,9 @@ strict: true
 theme:
   name: material
 
+plugins:
+  - search # necessary for search to work
+
 nav:
   - Introduction: 'index.md'
   - Installation: 'installation.md'
