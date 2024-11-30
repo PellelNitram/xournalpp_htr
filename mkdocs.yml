@@ -12,6 +12,8 @@ theme:
 
 nav:
   - Introduction: 'index.md'
+  - Installation: 'installation.md'
+  - Usage: 'usage.md'
   - Data Collection: 'data_collection.md'
   - Developing New Models: 'developing_new_models.md'
   - Roadmap: 'roadmap.md'
