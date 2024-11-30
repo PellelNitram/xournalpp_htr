@@ -7,3 +7,4 @@ lxml
 pymupdf
 tqdm
 pre-commit
+mkdocs-git-revision-date-localized-plugin
