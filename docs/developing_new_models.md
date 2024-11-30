@@ -12,3 +12,4 @@
 </div>
 
 - I provide dataset and code to experiment w/ new models
+- train both your own bespoke and general models.
