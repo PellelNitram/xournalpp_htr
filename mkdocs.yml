@@ -12,6 +12,11 @@ theme:
 
 plugins:
   - search # necessary for search to work
+  - git-revision-date-localized:
+      timezone: Europe/London
+      locale: en
+      fallback_to_build_date: false
+      enable_creation_date: true
 
 nav:
   - Introduction: 'index.md'
