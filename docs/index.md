@@ -4,13 +4,7 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 
 *Your contributions are greatly appreciated!*
 
-## TODO
-
-Test :-)
-
 TODO: Make this documentation the central part and adapt README for example like [here](https://github.com/jaredpalmer/formik). Replicate sections of current README here therefore.
-
-Note: Remove this section once done.
 
 ## Xournal++ HTR in 90 seconds
 
@@ -24,64 +18,52 @@ Note: Remove this section once done.
 
 </div>
 
-## Installation
+## Why handwritten text recognition for Xournal++?
 
-This project consists of both the inference and training code. Most users will only be interested in the inference part, so that the below only comprises of the inference part that you need to execute the plugin from within Xournal++.
+When moving from physical to digital note taking, one great benefit is searchability. Hence, when starting to use
+digital handwritten notes, those should be searchable as well as to not compromise on the benefits of digital note
+taking. This feature is called [handwritten text recognition](https://en.wikipedia.org/wiki/Handwriting_recognition).
 
-The training part is optional and allows to help to train our own models which improve over time. These installation process is optional and detailed further below.
+The handwritten text recognition feature has been part of many commercial note taking apps for ages.
 
-### Cross-platform
+However, there exists no such handwritten text recognition feature for any open source handwriting application.
 
-Execute the following commands:
+Hence, the goal of Xournal++ HTR is to bring handwritten text recognition to [Xournal++](https://xournalpp.github.io/),
+which is one of the most popular open-source applications to take digital handwritten notes.
 
-1. Create an environment: ``conda create --name xournalpp_htr python=3.10.11``.
-2. Use this environment: ``conda activate xournalpp_htr``.
-3. Install [HTRPipelines](https://github.com/githubharald/HTRPipeline) package using [its installation guide](https://github.com/githubharald/HTRPipeline/tree/master#installation).
-4. Install all dependencies of this package ``pip install -r requirements.txt``.
-4. Install the package in development mode with ``pip install -e .`` (do not forget the dot, '.').
-4. Install pre-commit hooks with: `pre-commit install`.
-5. Move `plugin/` folder content to `${XOURNAL_CONFIG_PATH}/plugins/xournalpp_htr/` with `${XOURNAL_CONFIG_PATH}` being the configuration path of Xournal++, see Xournal++ manual [here](https://xournalpp.github.io/guide/file-locations/).
-6. Edit `config.lua`, setting `_M.python_executable` to your python executable **in the conda environment** and `_M.xournalpp_htr_path` to the absolute path of this repo. See [the example config](https://github.com/PellelNitram/xournalpp_htr/blob/master/plugin/config.lua) for details.
-7. Ensure Xournal++ is on your `PATH`. See [here](https://xournalpp.github.io/guide/file-locations/) for the binary location.
+## Content of these websites
 
-### Linux
+These websites document Xournal++ HTR. In the navigation bar, you can find instructions on
+how to install the project, use the project and more advanced topics like how you can contribute
+code and own models. Many of the documents come with small videos to get you going quicker.
 
-Run `bash INSTALL_LINUX.sh` from repository root directory.
+To assist you in training your own models, Xournal++ HTR comes with many helper functions and
+convenience code infrastructure.
 
-This script also installs the plugin as explained in the last point of the cross-platform installation procedure. The installation of the plugin is performed with `plugin/copy_to_plugin_folder.sh`, which can also be invoked independently of `INSTALL_LINUX.sh` for updating the plugin installation.
+## Cite
 
-### After installation
-
-Confirm that the installation worked by running `make tests-installation` from repository root directory.
-
-## Usage
-
-Details relevant for usage of the plugin:
-
-1. Make sure to save your file beforehand. The plugin will also let you know that you
-   need to save your file first.
-2. After installation, navigate to `Plugin > Xournal++ HTR` to invoke the plugin. Then
-   select a filename and press `Save`. Lastly, wait a wee bit until the process is
-   finished; the Xournal++ UI will block while the plugin applies HTR to your file.
-   If you opened Xournal++ through a command-line, you can see progress bars that show
-   the HTR process in real-time.
-
-Note: Currently, the Xournal++ HTR plugin requires you to use a nightly build of
-Xournal++ because it uses upstream Lua API features that are not yet part of the
-stable build. Using the officially provided Nightly AppImag, see
-[here](https://xournalpp.github.io/installation/linux/), is very convenient.
-The plugin has been tested with the following nightly Linux build of Xournal++:
+If you are using Xournal++ HTR for your research, I'd appreciate if you could cite it. Use:
 
 ```
-xournalpp 1.2.3+dev (583a4e47)
-└──libgtk: 3.24.20
+@software{Lellep_Xournalpp_HTR,
+  author = {Lellep, Martin},
+  title = {xournalpp_htr},
+  url = {https://github.com/PellelNitram/xournalpp_htr},
+  license = {GPL-2.0},
+}
 ```
 
-Details relevant for development of the plugin:
+(Also consider starring the project on GitHub.)
 
-1. Activate environment: ``conda activate xournalpp_htr``. Alternatively use ``source activate_env.sh`` as shortcut.
-2. Use the code.
-3. To update the requirements file: ``pip freeze > requirements.txt``.
+## Funding
+
+TODO: Add a buy me a coffee link.
+
+
+
+
+
+
 
 ## Project description
 
@@ -101,17 +83,62 @@ Xournal++ HTR strives to bring open-source on-device handwriting recognition to 
 
 Follow the above installation procedure and replace the step `pip install -r requirements.txt` by both `pip install -r requirements.txt` and `pip install -r requirements_training.txt` to install both the inference and training dependencies.
 
-## Cite
+## Project design
 
-If you are using Xournal++ HTR for your research, I'd appreciate if you could cite it. Use:
+The design of Xournal++ HTR tries to bridge the gap between both delivering a production ready product and allowing contributors to experiment with new algorithms.
 
+The project design involves a Lua plugin and a Python backend, see the following figure. First, the production ready product is delivered by means of an Xournal++ plugin. The plugin is fully integrated in Xournal++ and calls a Python backend that performs the actual transcription. The Python backend allows selection of various recognition models and is thereby fully extendable with new models.
+
+<div align="center">
+    <img src="docs/images/system_design.jpg" width="50%">
+    <p><i>Design of xournalpp_htr.</i></p>
+</div>
+
+An alternative figure is shown below: (todo: restructure readme)
+
+```mermaid
+sequenceDiagram
+    User in Xpp-->>Xpp HTR Plugin: starts process using currently open file
+    Xpp HTR Lua Plugin -->>Xpp HTR Python Backend: constructs command using CLI
+    Xpp HTR Python Backend -->> Xpp HTR Python Backend: Does OCR & stores PDF
+    Xpp HTR Python Backend-->>User in Xpp: Gives back control to UI
 ```
-@software{Lellep_Xournalpp_HTR,
-  author = {Lellep, Martin},
-  title = {xournalpp_htr},
-  url = {https://github.com/PellelNitram/xournalpp_htr},
-  license = {GPL-2.0},
-}
-```
 
-(Also consider starring the project on GitHub.)
+Developing a usable HTR systems requires experimentation. The project structure is set up to accommodate this need. *Note that ideas on improved project structures are appreciated.*
+
+The experimentation is carried out in terms of "concepts". Each concept explores a different approach to HTR and possibly improves over previous concepts, but not necessarily to allow for freedom in risky experiments. Concept 1 is already implemented and uses a computer vision approach that is explained below.
+
+Future concepts might explore:
+- Retrain computer vision models from concept 1 using native data representation of [Xournal++](https://github.com/xournalpp/xournalpp)
+- Use sequence-to-sequence models to take advantage of native data representation of [Xournal++](https://github.com/xournalpp/xournalpp)
+- Use data augmentation to increase effective size of training data
+- Use of language models to correct for spelling mistakes
+
+### Concept 1
+
+This concept uses computer vision based algorithms to first detect words on a page and then to read those words.
+
+The following shows a video demo on YouTube using real-life handwriting data from a Xournal file:
+
+[![Xournal++ HTR - Concept 1 - Demo](https://img.youtube.com/vi/FGD_O8brGNY/0.jpg)](https://www.youtube.com/watch?v=FGD_O8brGNY)
+
+Despite not being perfect, the main take away is that the performance is surprisingly good given that the underlying algorithm has not been optimised for Xournal++ data at all.
+
+**The performance is sufficiently good to be useful for the Xournal++ user base.**
+
+Feel free to play around with the demo yourself using [this code](https://github.com/PellelNitram/xournalpp_htr/blob/master/scripts/demo_concept_1.sh) after [installing this project](installation.md). The "concept 1" is also what is currently used in the plugin and shown in the [90 seconds demo](https://www.youtube.com/watch?v=boXm7lPFSRQ).
+
+Next steps to improve the performance of the handwritten text recognition even further could be:
+- Re-train the algorithm on Xournal++ specific data, while potentially using data augmentation.
+- Use language model to improve text encoding.
+- Use sequence-to-sequence algorithm that makes use of [Xournal++](https://github.com/xournalpp/xournalpp)'s data format. This translates into using online HTR algorithms.
+
+I would like to acknowledge [Harald Scheidl](https://github.com/githubharald) in this concept as he wrote the underlying algorithms and made them easily usable through [his HTRPipeline repository](https://github.com/githubharald/HTRPipeline) - after all I just feed his algorithm [Xournal++](https://github.com/xournalpp/xournalpp) data in concept 1. [Go check out his great content](https://githubharald.github.io/)!
+
+## Code quality
+
+We try to keep up code quality as high as practically possible. For that reason, the following steps are implemented:
+
+- Testing. Xournal++ HTR uses `pytest` for implementing unit, regression and integration tests.
+- Linting. Xournal++ HTR uses `ruff` for linting and code best practises. `ruff` is implemented as git pre-commit hook. Since `ruff` as pre-commit hook is configured externally with `pyproject.toml`, you can use the same settings in your IDE if you wish to speed up the process.
+- Formatting. Xournal++ HTR uses `ruff-format` for consistent code formatting. `ruff-format` is implemented as git pre-commit hook. Since `ruff-format` as pre-commit hook is configured externally with `pyproject.toml`, you can use the same settings in your IDE if you wish to speed up the process.
