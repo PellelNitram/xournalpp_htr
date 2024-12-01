@@ -13,3 +13,9 @@
 
 - I provide dataset and code to experiment w/ new models
 - train both your own bespoke and general models.
+
+## Training
+
+### Installation
+
+Follow the above installation procedure and replace the step `pip install -r requirements.txt` by both `pip install -r requirements.txt` and `pip install -r requirements_training.txt` to install both the inference and training dependencies.
