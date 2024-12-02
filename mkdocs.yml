@@ -22,6 +22,7 @@ nav:
   - Introduction: 'index.md'
   - Installation: 'installation.md'
   - Usage: 'usage.md'
+  - Developer Guide: 'developer_guide.md'
   - Data Collection: 'data_collection.md'
   - Developing New Models: 'developing_new_models.md'
   - Roadmap: 'roadmap.md'
