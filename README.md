@@ -6,6 +6,7 @@
 [![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/ashleve/lightning-hydra-template/pulls)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![PyTorch Model](https://img.shields.io/badge/PyTorch%20Model-red.svg)](https://github.com/PellelNitram/OnlineHTR)
+[![Documentation](https://img.shields.io/badge/Documentation-green.svg)](https://lellep.xyz/docs/xournalpp_htr/)
 
 Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwriting_recognition) for [Xournal++](https://github.com/xournalpp/xournalpp).
 
