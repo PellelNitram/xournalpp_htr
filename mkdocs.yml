@@ -21,7 +21,7 @@ plugins:
 nav:
   - Introduction: 'index.md'
   - Installation: 'installation.md'
-  - Usage: 'usage.md'
+  - User Guide: 'user_guide.md'
   - Developer Guide: 'developer_guide.md'
   - Data Collection: 'data_collection.md'
   - Developing New Models: 'developing_new_models.md'
