@@ -36,7 +36,9 @@ TODO
 
 ## Contributions
 
-TODO: Link to documentation.
+Visit [this page](https://lellep.xyz/docs/xournalpp_htr/contributing) of the [main documentation](https://lellep.xyz/docs/xournalpp_htr) to learn how to best contribute to this project.
+
+Thanks! :-)
 
 ## Cite
 
