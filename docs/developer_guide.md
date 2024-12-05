@@ -2,6 +2,10 @@
 
 TODO
 
+## Installation
+
+TODO
+
 ## Project design
 
 The design of Xournal++ HTR tries to bridge the gap between both delivering a production ready product and allowing contributors to experiment with new algorithms.
