@@ -26,7 +26,7 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 
 ## Installation
 
-TODO: Link to documentation.
+For installation instructions, visit [this page](https://lellep.xyz/docs/xournalpp_htr/installation/) of [the main documentation](https://lellep.xyz/docs/xournalpp_htr/).
 
 ## Usage
 
