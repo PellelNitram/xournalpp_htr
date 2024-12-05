@@ -30,7 +30,9 @@ For installation instructions, visit [this page](https://lellep.xyz/docs/xournal
 
 ## Usage
 
-TODO: Link to documentation.
+Visit this page to learn how to use this project as a user and visit this page to learn how to use this project as a developer.
+
+TODO
 
 ## Contributions
 
