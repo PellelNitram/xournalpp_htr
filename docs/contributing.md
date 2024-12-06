@@ -1,5 +1,7 @@
 # Contributing
 
+There are multiple ways to contribute to this project. Really, we greatly appreciate any help!
+
 ## Issues on Github
 
 A great way to help out with this project is to check [open issues on Github](https://github.com/PellelNitram/xournalpp_htr/issues)
