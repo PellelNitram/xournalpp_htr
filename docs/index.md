@@ -66,7 +66,3 @@ If you are using Xournal++ HTR for your research, I'd appreciate if you could ci
 ```
 
 (Also consider starring the project on GitHub.)
-
-## Funding
-
-TODO: Add a buy me a coffee link.
