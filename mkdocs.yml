@@ -27,3 +27,10 @@ nav:
     - Data Collection: 'data_collection.md'
     - Developing New Models: 'developing_new_models.md'
   - Contributing: 'contributing.md'
+
+markdown_extensions:
+  - pymdownx.superfences: # To enable mermaid.js charts, see https://squidfunk.github.io/mkdocs-material/reference/diagrams/.
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
