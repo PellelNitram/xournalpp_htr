@@ -20,7 +20,7 @@ plugins:
 
 nav:
   - Introduction: 'index.md'
-  - Getting Started:
+  - Getting Started as User:
     - Installation: 'installation_user.md'
     - User Guide: 'user_guide.md'
   - Getting Started as Developer:
