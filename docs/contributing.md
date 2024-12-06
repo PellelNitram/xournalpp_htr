@@ -1,6 +1,8 @@
 # Contributing
 
-There are multiple ways to contribute to this project. Really, we greatly appreciate any help!
+There are multiple ways to contribute to this project. Below, those ways are explained alongside information on how to best contribute from a codebase point of view.
+
+Really, we greatly appreciate any help!
 
 ## Issues on Github
 
