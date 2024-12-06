@@ -9,14 +9,6 @@ and to try to work on them.
 
 If you need support with those, then please reach out to - we're very happy to help!
 
-## Code quality
-
-We try to keep up code quality as high as practically possible. For that reason, the following steps are implemented:
-
-- Testing. Xournal++ HTR uses `pytest` for unit, regression and integration tests.
-- Linting. Xournal++ HTR uses `ruff` for linting and code best practises. `ruff` is implemented as git pre-commit hook. Since `ruff` as pre-commit hook is configured externally with `pyproject.toml`, you can use the same settings in your IDE (e.g. VSCode) if you wish to speed up the process.
-- Formatting. Xournal++ HTR uses `ruff-format` for consistent code formatting. `ruff-format` is implemented as git pre-commit hook. Since `ruff-format` as pre-commit hook is configured externally with `pyproject.toml`, you can use the same settings in your IDE if you wish to speed up the process.
-
 ## Branching strategy
 
 The following branching strategy is used to keep the `master` branch stable and
@@ -61,3 +53,11 @@ Given this structure, please implement new features as feature branches and
 rebase them onto the `dev` branch prior to sending a pull request to `dev`.
 
 Note: The Github Actions CI/CD pipeline runs on the branches `master` and `dev`.
+
+## Code quality
+
+We try to keep up code quality as high as practically possible. For that reason, the following steps are implemented:
+
+- Testing. Xournal++ HTR uses `pytest` for unit, regression and integration tests.
+- Linting. Xournal++ HTR uses `ruff` for linting and code best practises. `ruff` is implemented as git pre-commit hook. Since `ruff` as pre-commit hook is configured externally with `pyproject.toml`, you can use the same settings in your IDE (e.g. VSCode) if you wish to speed up the process.
+- Formatting. Xournal++ HTR uses `ruff-format` for consistent code formatting. `ruff-format` is implemented as git pre-commit hook. Since `ruff-format` as pre-commit hook is configured externally with `pyproject.toml`, you can use the same settings in your IDE if you wish to speed up the process.
