@@ -26,5 +26,4 @@ nav:
     - Quick Start: 'developer_guide.md'
     - Data Collection: 'data_collection.md'
     - Developing New Models: 'developing_new_models.md'
-  - Roadmap: 'roadmap.md'
   - Contributing: 'contributing.md'
