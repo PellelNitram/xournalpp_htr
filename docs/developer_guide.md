@@ -49,7 +49,7 @@ Despite not being perfect, the main take away is that the performance is surpris
 
 **The performance is sufficiently good to be useful for the Xournal++ user base.**
 
-Feel free to play around with the demo yourself using [this code](https://github.com/PellelNitram/xournalpp_htr/blob/master/scripts/demo_concept_1.sh) after [installing this project](installation.md). The "concept 1" is also what is currently used in the plugin and shown in the [90 seconds demo](https://www.youtube.com/watch?v=boXm7lPFSRQ).
+Feel free to play around with the demo yourself using [this code](https://github.com/PellelNitram/xournalpp_htr/blob/master/scripts/demo_concept_1.sh) after [installing this project](installation_user.md). The "concept 1" is also what is currently used in the plugin and shown in the [90 seconds demo](https://www.youtube.com/watch?v=boXm7lPFSRQ).
 
 Next steps to improve the performance of the handwritten text recognition even further could be:
 - Re-train the algorithm on Xournal++ specific data, while potentially using data augmentation.
