@@ -1,6 +1,6 @@
 # Usage
 
-The usage of the project is fairly simple. First, there is a Python script that performs the actual work. Second, the Lua plugin can be used from within Xournal++ and uses the aforementioned Python script under the hood.
+The usage of the project is fairly simple. First, there is a Python script that performs the actual work & is useful for headless operations like batch processing. Second, and probably much more useful for the average user, the Lua plugin can be used from within Xournal++ and invokes the aforementioned Python script under the hood.
 
 ## The Lua plugin
 
