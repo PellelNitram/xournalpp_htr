@@ -4,6 +4,11 @@ There are multiple ways to contribute to this project. Below, those ways are exp
 
 Really, we greatly appreciate any help!
 
+## Reach out
+
+If you have questions about how to best contribute or the slightest
+interest in contributing, then feel free to reach out to me at any time :-).
+
 ## Issues on Github
 
 A great way to help out with this project is to check [open issues on Github](https://github.com/PellelNitram/xournalpp_htr/issues)
