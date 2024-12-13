@@ -4,19 +4,23 @@ There are multiple ways to contribute to this project. Below, those ways are exp
 
 Really, we greatly appreciate any help!
 
-## Reach out
+## Ways to contribute
+
+### Reach out
 
 If you have questions about how to best contribute or the slightest
 interest in contributing, then feel free to reach out to me at any time :-).
 
-## Issues on Github
+### Issues on Github
 
 A great way to help out with this project is to check [open issues on Github](https://github.com/PellelNitram/xournalpp_htr/issues)
 and to try to work on them.
 
 If you need support with those, then please reach out to - we're very happy to help!
 
-## Branching strategy
+## Things to consider when contributing
+
+### Branching strategy
 
 The following branching strategy is used to keep the `master` branch stable and
 allow for experimentation: `master` > `dev` > `feature branches`. This branching
@@ -61,7 +65,7 @@ rebase them onto the `dev` branch prior to sending a pull request to `dev`.
 
 Note: The Github Actions CI/CD pipeline runs on the branches `master` and `dev`.
 
-## Code quality
+### Code quality
 
 We try to keep up code quality as high as practically possible. For that reason, the following steps are implemented:
 
