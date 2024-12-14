@@ -14,15 +14,15 @@ This script also installs the plugin as explained in the last point of the cross
 
 Execute the following commands:
 
-1. Create an environment: ``conda create --name xournalpp_htr python=3.10.11``.
-2. Use this environment: ``conda activate xournalpp_htr``.
-3. Install [HTRPipelines](https://github.com/githubharald/HTRPipeline) package using [its installation guide](https://github.com/githubharald/HTRPipeline/tree/master#installation).
-4. Install all dependencies of this package ``pip install -r requirements.txt``.
-4. Install the package in development mode with ``pip install -e .`` (do not forget the dot, '.').
-4. Install pre-commit hooks with: `pre-commit install`.
-5. Move `plugin/` folder content to `${XOURNAL_CONFIG_PATH}/plugins/xournalpp_htr/` with `${XOURNAL_CONFIG_PATH}` being the configuration path of Xournal++, see Xournal++ manual [here](https://xournalpp.github.io/guide/file-locations/).
-6. Edit `config.lua`, setting `_M.python_executable` to your python executable **in the conda environment** and `_M.xournalpp_htr_path` to the absolute path of this repo. See the example config for details in `plugin/config.lua`.
-7. Ensure Xournal++ is on your `PATH`. See [here](https://xournalpp.github.io/guide/file-locations/) for the binary location.
+#. Create an environment: ``conda create --name xournalpp_htr python=3.10.11``.
+#. Use this environment: ``conda activate xournalpp_htr``.
+#. Install [HTRPipelines](https://github.com/githubharald/HTRPipeline) package using [its installation guide](https://github.com/githubharald/HTRPipeline/tree/master#installation).
+#. Install all dependencies of this package ``pip install -r requirements.txt``.
+#. Install the package in development mode with ``pip install -e .`` (do not forget the dot, '.').
+#. Install pre-commit hooks with: `pre-commit install`.
+#. Move `plugin/` folder content to `${XOURNAL_CONFIG_PATH}/plugins/xournalpp_htr/` with `${XOURNAL_CONFIG_PATH}` being the configuration path of Xournal++, see Xournal++ manual [here](https://xournalpp.github.io/guide/file-locations/).
+#. Edit `config.lua`, setting `_M.python_executable` to your python executable **in the conda environment** and `_M.xournalpp_htr_path` to the absolute path of this repo. See the example config for details in `plugin/config.lua`.
+#. Ensure Xournal++ is on your `PATH`. See [here](https://xournalpp.github.io/guide/file-locations/) for the binary location.
 
 ## After installation
 
