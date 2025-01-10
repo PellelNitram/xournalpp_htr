@@ -1,0 +1,39 @@
+site_name: Xournal++ HTR
+site_description: Developing handwritten text recognition for Xournal++
+
+repo_name: PellelNitram/xournalpp_htr
+repo_url: https://github.com/PellelNitram/xournalpp_htr
+edit_uri: edit/master/docs/
+
+strict: true
+
+theme:
+  name: material
+
+plugins:
+  - search # necessary for search to work
+  - git-revision-date-localized:
+      timezone: Europe/London
+      locale: en
+      fallback_to_build_date: false
+      enable_creation_date: true
+
+nav:
+  - Introduction: 'index.md'
+  - Getting Started as User:
+    - Installation: 'installation_user.md'
+    - User Guide: 'user_guide.md'
+  - Getting Started as Developer:
+    - Installation: 'installation_developer.md'
+    - Developer Guide: 'developer_guide.md'
+    - Data Collection: 'data_collection.md'
+    - Developing New Models: 'developing_new_models.md'
+  - Contributing: 'contributing.md'
+  - Funding: 'funding.md'
+
+markdown_extensions:
+  - pymdownx.superfences: # To enable mermaid.js charts, see https://squidfunk.github.io/mkdocs-material/reference/diagrams/.
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format

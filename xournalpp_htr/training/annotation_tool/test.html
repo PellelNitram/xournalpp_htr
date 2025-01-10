@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CSV Data Plotter with Annotations</title>
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #plotArea {
+            border: 1px solid #ccc;
+            margin: 20px 0;
+            cursor: crosshair;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        .button {
+            padding: 8px 16px;
+            margin-right: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background: #45a049;
+        }
+        .button.active {
+            background: #357a38;
+        }
+        #annotationsList {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .highlight {
+            background-color: #ffd70040;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        .shortcut {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #ddd;
+            font-size: 0.9em;
+            margin-left: 8px;
+        }
+        .mode-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 4px;
+            display: none;
+            animation: fadeOut 2s forwards;
+            animation-delay: 1s;
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CSV Data Plotter with Annotations</h1>
+        
+        <div class="controls">
+            <input type="file" id="csvFile" accept=".csv" />
+            <button class="button" id="resetZoom">Reset Zoom</button>
+            <button class="button" id="toggleAnnotation">Start Annotation<span class="shortcut">A</span></button>
+            <button class="button" id="clearAnnotations">Clear Annotations</button>
+            <button class="button" id="exportAnnotations">Export Annotations</button>
+        </div>
+        
+        <canvas id="plotArea" width="1000" height="600"></canvas>
+        
+        <div id="annotationsList">
+            <h3>Annotations:</h3>
+            <ul id="annotations"></ul>
+        </div>
+    </div>
+
+    <div id="modeIndicator" class="mode-indicator"></div>
+
+    <script>
+        const canvas = document.getElementById('plotArea');
+        const ctx = canvas.getContext('2d');
+        const modeIndicator = document.getElementById('modeIndicator');
+        let data = [];
+        let annotations = [];
+        let currentAnnotation = [];
+        let isAnnotating = false;
+        let transform = { scale: 1, offsetX: 0, offsetY: 0 };
+        let isDragging = false;
+        let lastX = 0;
+        let lastY = 0;
+        
+        // Keyboard shortcut handling
+        document.addEventListener('keydown', function(e) {
+            // Check if user is not typing in an input field
+            if (document.activeElement.tagName !== 'INPUT') {
+                if (e.key.toLowerCase() === 'a') {
+                    e.preventDefault();
+                    toggleAnnotationMode();
+                }
+            }
+        });
+
+        function toggleAnnotationMode() {
+            isAnnotating = !isAnnotating;
+            const button = document.getElementById('toggleAnnotation');
+            button.classList.toggle('active');
+            
+            // Show mode indicator
+            modeIndicator.style.display = 'block';
+            modeIndicator.style.animation = 'none';
+            modeIndicator.offsetHeight; // Trigger reflow
+            modeIndicator.style.animation = 'fadeOut 2s forwards';
+            modeIndicator.style.animationDelay = '1s';
+            modeIndicator.textContent = isAnnotating ? '✏️ Annotation Mode Enabled' : '✏️ Annotation Mode Disabled';
+            
+            if (!isAnnotating && currentAnnotation.length > 0) {
+                currentAnnotation.push({...currentAnnotation[0]}); // Close the polygon
+                annotations.push([...currentAnnotation]);
+                currentAnnotation = [];
+                updateAnnotationsList();
+                drawPlot();
+            }
+        }
+        
+        // File upload handling
+        document.getElementById('csvFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                const csvData = event.target.result;
+                parseCSV(csvData);
+                resetView();
+                drawPlot();
+            };
+            
+            reader.readAsText(file);
+        });
+        
+        function parseCSV(csvData) {
+            const lines = csvData.split('\n');
+            data = lines.slice(1).map(line => {
+                const [x, y] = line.split(',').map(Number);
+                return { x, y };
+            }).filter(point => !isNaN(point.x) && !isNaN(point.y));
+        }
+        
+        // Transform coordinates
+        function transformPoint(x, y) {
+            return {
+                x: (x - transform.offsetX) * transform.scale,
+                y: (y - transform.offsetY) * transform.scale
+            };
+        }
+        
+        function inverseTransformPoint(x, y) {
+            return {
+                x: x / transform.scale + transform.offsetX,
+                y: y / transform.scale + transform.offsetY
+            };
+        }
+        
+        // Point in polygon detection
+        function isPointInPolygon(point, polygon) {
+            let inside = false;
+            for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+                const xi = polygon[i].x, yi = polygon[i].y;
+                const xj = polygon[j].x, yj = polygon[j].y;
+                
+                const intersect = ((yi > point.y) !== (yj > point.y))
+                    && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+        
+        // Find points within annotations
+        function findPointsInAnnotation(annotation) {
+            return data.filter(point => isPointInPolygon(point, annotation));
+        }
+        
+        // Drawing functions
+        function drawPlot() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw data points
+            data.forEach(point => {
+                const transformed = transformPoint(point.x, point.y);
+                
+                // Check if point is in any annotation
+                const isContained = annotations.some(annotation => 
+                    isPointInPolygon(point, annotation));
+                
+                ctx.fillStyle = isContained ? '#FFA000' : '#2196F3';
+                ctx.beginPath();
+                ctx.arc(transformed.x, transformed.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Draw annotations
+            ctx.strokeStyle = '#FF4081';
+            ctx.lineWidth = 2;
+            
+            annotations.forEach(annotation => {
+                ctx.beginPath();
+                const first = transformPoint(annotation[0].x, annotation[0].y);
+                ctx.moveTo(first.x, first.y);
+                
+                annotation.slice(1).forEach(point => {
+                    const transformed = transformPoint(point.x, point.y);
+                    ctx.lineTo(transformed.x, transformed.y);
+                });
+                ctx.closePath();
+                ctx.stroke();
+            });
+            
+            // Draw current annotation
+            if (currentAnnotation.length > 0) {
+                ctx.beginPath();
+                const first = transformPoint(currentAnnotation[0].x, currentAnnotation[0].y);
+                ctx.moveTo(first.x, first.y);
+                
+                currentAnnotation.slice(1).forEach(point => {
+                    const transformed = transformPoint(point.x, point.y);
+                    ctx.lineTo(transformed.x, transformed.y);
+                });
+                ctx.stroke();
+            }
+
+            // Update cursor style based on mode
+            canvas.style.cursor = isAnnotating ? 'crosshair' : 'grab';
+        }
+        
+        // Zoom and pan handling
+        canvas.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            const zoom = e.deltaY < 0 ? 1.1 : 0.9;
+            
+            const beforeZoom = inverseTransformPoint(mouseX, mouseY);
+            transform.scale *= zoom;
+            const afterZoom = inverseTransformPoint(mouseX, mouseY);
+            
+            transform.offsetX += afterZoom.x - beforeZoom.x;
+            transform.offsetY += afterZoom.y - beforeZoom.y;
+            
+            drawPlot();
+        });
+        
+        canvas.addEventListener('mousedown', function(e) {
+            if (!isAnnotating) {
+                isDragging = true;
+                const rect = canvas.getBoundingClientRect();
+                lastX = e.clientX - rect.left;
+                lastY = e.clientY - rect.top;
+            } else {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                const point = inverseTransformPoint(mouseX, mouseY);
+                currentAnnotation.push(point);
+                drawPlot();
+            }
+        });
+        
+        canvas.addEventListener('mousemove', function(e) {
+            if (isDragging) {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                transform.offsetX -= (mouseX - lastX) / transform.scale;
+                transform.offsetY -= (mouseY - lastY) / transform.scale;
+                
+                lastX = mouseX;
+                lastY = mouseY;
+                
+                drawPlot();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', function() {
+            isDragging = false;
+        });
+        
+        canvas.addEventListener('mouseleave', function() {
+            isDragging = false;
+        });
+        
+        // Annotation controls
+        document.getElementById('toggleAnnotation').addEventListener('click', toggleAnnotationMode);
+        
+        document.getElementById('clearAnnotations').addEventListener('click', function() {
+            annotations = [];
+            currentAnnotation = [];
+            updateAnnotationsList();
+            drawPlot();
+        });
+        
+        document.getElementById('resetZoom').addEventListener('click', resetView);
+        
+        // Export annotations
+        document.getElementById('exportAnnotations').addEventListener('click', exportAnnotations);
+        
+        function exportAnnotations() {
+            const exportData = annotations.map((annotation, index) => {
+                const containedPoints = findPointsInAnnotation(annotation);
+                return {
+                    id: index + 1,
+                    vertices: annotation,
+                    containedPoints: containedPoints
+                };
+            });
+            
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportElem = document.createElement('a');
+            exportElem.setAttribute('href', dataUri);
+            exportElem.setAttribute('download', 'annotations.json');
+            document.body.appendChild(exportElem);
+            exportElem.click();
+            document.body.removeChild(exportElem);
+        }
+        
+        function resetView() {
+            if (data.length === 0) return;
+            
+            const xValues = data.map(p => p.x);
+            const yValues = data.map(p => p.y);
+            
+            const minX = Math.min(...xValues);
+            const maxX = Math.max(...xValues);
+            const minY = Math.min(...yValues);
+            const maxY = Math.max(...yValues);
+            
+            const padding = 50;
+            const scaleX = (canvas.width - 2 * padding) / (maxX - minX);
+            const scaleY = (canvas.height - 2 * padding) / (maxY - minY);
+            
+            transform.scale = Math.min(scaleX, scaleY);
+            transform.offsetX = minX - padding / transform.scale;
+            transform.offsetY = minY - padding / transform.scale;
+            
+            drawPlot();
+        }
+        
+        function updateAnnotationsList() {
+            const list = document.getElementById('annotations');
+            list.innerHTML = '';
+            
+            annotations.forEach((annotation, index) => {
+                const containedPoints = findPointsInAnnotation(annotation);
+                const li = document.createElement('li');
+                li.innerHTML = `Annotation ${index + 1}: ${annotation.length} vertices, <span class="highlight">${containedPoints.length} points contained</span>`;
+                list.appendChild(li);
+            });
+        }
+    </script>
+</body>
+</html>

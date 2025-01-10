@@ -2,6 +2,7 @@ import gzip
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -85,6 +86,52 @@ class Document(ABC):
         plt.close()
 
         return out_path
+
+    def get_min_max_coordinates_per_page(self) -> Dict[int, Dict[str, float]]:
+        """
+        Compute the minimum and maximum x and y coordinate values for each page.
+
+        This method iterates over all pages, and for each page, computes the minimum
+        and maximum x and y values from all strokes present in each layer of the page.
+        The results are stored in a dictionary, with the page index as the key and another
+        dictionary containing min and max values as the value.
+
+        :returns: A dictionary where each key is the index of a page (int) and the
+                  corresponding value is a dictionary containing the min and max
+                  x and y values as follows:
+                    {
+                        "min_x": float,  # Minimum x value for the page
+                        "min_y": float,  # Minimum y value for the page
+                        "max_x": float,  # Maximum x value for the page
+                        "max_y": float   # Maximum y value for the page
+                    }
+        :rtype: Dict[int, Dict[str, float]]
+        """
+        result: Dict[int, Dict[str, float]] = {}
+        for i_page, page in enumerate(self.pages):
+            min_x: float = np.inf
+            min_y: float = np.inf
+            max_x: float = -np.inf
+            max_y: float = -np.inf
+            for layer in page.layers:
+                for stroke in layer.strokes:
+                    if stroke.x.max() > max_x:
+                        max_x = stroke.x.max()
+                    if stroke.y.max() > max_y:
+                        max_y = stroke.y.max()
+                    if stroke.x.min() < min_x:
+                        min_x = stroke.x.min()
+                    if stroke.y.min() < min_y:
+                        min_y = stroke.y.min()
+            result[i_page] = {
+                "min_x": min_x,
+                "min_y": min_y,
+                "max_x": max_x,
+                "max_y": max_y,
+            }
+        return result
+
+    # TODO: Add method to get all strokes on a single page in a list. I use this 2x in `annotate.py`!
 
 
 class XournalDocument(Document):

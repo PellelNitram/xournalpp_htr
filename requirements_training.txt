@@ -1,2 +1,4 @@
 pandas
 jupyter
+gradio
+gitpython

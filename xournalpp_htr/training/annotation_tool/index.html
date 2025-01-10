@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GZ File Uploader</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Upload GZ File</h1>
+        <input type="file" id="fileInput" accept=".gz">
+        <button onclick="readGZFile()">Upload and Read</button>
+        <pre id="output" height="100"></pre> <!-- TODO: make this a status bar -->
+        <canvas id="myCanvas" width="1500" height="2000"></canvas>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

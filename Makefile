@@ -1,7 +1,7 @@
 # TODO: Fill it.
 
 docs:
-	@echo "Not implemented yet!"
+	mkdocs build --clean
 # TODO: Sth like https://numpy.org/doc/stable/reference/generated/numpy.mean.html#numpy.mean
 
 tests-installation:
