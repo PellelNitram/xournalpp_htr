@@ -28,7 +28,7 @@ flowchart LR
     D(
         Introduce
         quality
-        measure
+        measures
     )
     E(
         Graph NN w
@@ -55,22 +55,20 @@ flowchart LR
 
 ### Explanation
 
-There is a myriad of directions this project could go. As user-centric project, the biggest goal is to deliver the best value for the user. This means implementing fancy ML algos (which we totally want!) needs to wait a wee bit.
+This project has many potential directions, with the primary goal of delivering optimal value to users. While we are eager to implement advanced machine learning algorithms, we must first focus on usability improvements.
 
-The main mid-term goal is to make it easier to install the project. Users have told us that the installation process is a burden and too complicated.
+Our main mid-term objective is to simplify the installation process, as users have reported it is too complex.
 
-Explanation of the steps where necessary:
+Explanation of the steps:
 
-- "Reimplement [htr_pipeline](https://github.com/githubharald/HTRPipeline)": Currently, this project uses the great [htr_pipeline](https://github.com/githubharald/HTRPipeline) project to deliver the machine learning part. However, this increases the complexity of the installation process because of the externally hosted model file artifacts. In order to reduce this complexity, we will reimplement the models used in [htr_pipeline](https://github.com/githubharald/HTRPipeline); this is a bit more labour intense b/c there is no license stated in the [htr_pipeline](https://github.com/githubharald/HTRPipeline) repo, which will require us to  reimplement the models ourselves. 
-    - htr_pipeline has no license
-    - status quo of project
-    - helps to learn about training a model for the present online handwriting data problem with existing solution for offline handwriting.
-    - helps to easier install the package
-- "Introduce quality measure":
-    - in order to find the best model, we need to quantify how well a model works.
-    - ideally, this is one metric but if recognition and transcription remain two subsequent tasks, two metrics might be required
-- "Graph NN w [OnlineHTR](https://github.com/PellelNitram/OnlineHTR)":
-    - idea is to use OnlineHTR for transcription and a graph NN for recognition.
-    - This is a model idea to obtain a high-performing recognition model that operates on the online (& thereby native) representation of the handwriting.
-- "Classic algos w [OnlineHTR](https://github.com/PellelNitram/OnlineHTR)":
-    - idea is to use OnlineHTR for transcription and a classical (non data-driven) algo to perform the recognition.
+- **Reimplement [htr_pipeline](https://github.com/githubharald/HTRPipeline):**  
+  We currently use the awesome [htr_pipeline](https://github.com/githubharald/HTRPipeline) by [Harald Scheidl](https://github.com/githubharald) project for machine learning, but its external dependencies complicate installation. To simplify setup and enhance our understanding of model training for (online/offline) handwriting data, we plan to reimplement these models ourselves. There is no license in the original repository so that we cannot copy over the code but need to reimplement ourselves (with inspiration of course).
+
+- **Introduce quality measures:**  
+  To identify the best model, we need to quantify performance. Ideally, one metric will suffice, but two may be necessary if recognition and transcription remain separate tasks.
+
+- **Classic algos w [OnlineHTR](https://github.com/PellelNitram/OnlineHTR):**  
+  The plan is to use [OnlineHTR](https://github.com/PellelNitram/OnlineHTR) for transcription alongside classical (non-data-driven) algorithms for recognition.
+
+- **Graph NN w [OnlineHTR](https://github.com/PellelNitram/OnlineHTR):**  
+  We aim to use [OnlineHTR](https://github.com/PellelNitram/OnlineHTR) for transcription and a graph neural network for recognition. This approach seeks to develop a high-performing model that operates on the native online representation of handwriting.
