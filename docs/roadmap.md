@@ -62,7 +62,10 @@ Our main mid-term objective is to simplify the installation process, as users ha
 Explanation of the steps:
 
 - **Reimplement [htr_pipeline](https://github.com/githubharald/HTRPipeline):**  
-  We currently use the awesome [htr_pipeline](https://github.com/githubharald/HTRPipeline) by [Harald Scheidl](https://github.com/githubharald) project for machine learning, but its external dependencies complicate installation. To simplify setup and enhance our understanding of model training for (online/offline) handwriting data, we plan to reimplement these models ourselves. There is no license in the original repository so that we cannot copy over the code but need to reimplement ourselves (with inspiration of course).
+  We currently use the excellent [htr_pipeline](https://github.com/githubharald/HTRPipeline) by [Harald Scheidl](https://github.com/githubharald) for machine learning, but it being an external dependency complicates installation and them hosting model weights on Dropbox is not suitable for our needs. To address this, we plan to integrate these models directly into our project. Since the original repository lacks a license, we'll implement our own version, drawing inspiration from the existing work. This approach will deliver an easy-to-install product quickly, as we already know the requirements & model details. Additionally, it enhances our understanding of training models for both online and offline handwriting data. With our own models, we'll automate model retrieval and establish a model registry, likely using [Hugging Face](https://huggingface.co/), as part of adhering to MLOps best practices. Experimentation with new algorithms will benefit from the model registry and will occur subsequently, as it is more time-consuming.
+
+- **Make installation easier:**  
+  We aim to make the installation process seamless across platforms, including Linux and Windows, with future support for Mac if access becomes available to us. Implementing a model registry will streamline model management and deployment, aiding future model development and enhancing ease of use while aligning with best practices.
 
 - **Introduce quality measures:**  
   To identify the best model, we need to quantify performance. Ideally, one metric will suffice, but two may be necessary if recognition and transcription remain separate tasks.
