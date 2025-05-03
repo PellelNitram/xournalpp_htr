@@ -4,6 +4,7 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 
 *Your contributions are greatly appreciated!*
 
+REMOVE!
 TODO: Make this documentation the central part and adapt README for example like [here](https://github.com/jaredpalmer/formik). Replicate sections of current README here therefore.
 
 ## Xournal++ HTR in 90 seconds
