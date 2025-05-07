@@ -18,4 +18,4 @@ xournalpp 1.2.3+dev (583a4e47)
 
 ## The Python script
 
-It is located in `xournalpp_htr/run_htr.py` and is features a command line interface that documents the usage of the Python script.
+It is located in `xournalpp_htr/run_htr.py` and it features a command line interface that documents the usage of the Python script.

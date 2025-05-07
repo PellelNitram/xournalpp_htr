@@ -4,9 +4,6 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 
 *Your contributions are greatly appreciated!*
 
-REMOVE!
-TODO: Make this documentation the central part and adapt README for example like [here](https://github.com/jaredpalmer/formik). Replicate sections of current README here therefore.
-
 ## Xournal++ HTR in 90 seconds
 
 <div align="center">
@@ -18,8 +15,6 @@ TODO: Make this documentation the central part and adapt README for example like
 <i>(<a href="https://www.youtube.com/watch?v=boXm7lPFSRQ?utm_source=docs&utm_medium=docs&utm_campaign=docs">Click here to get to video on YouTube.</a>)</i>
 
 </div>
-
-## Why handwritten text recognition for Xournal++?
 
 ## Why Handwritten Text Recognition for Xournal++?
 
@@ -37,10 +32,10 @@ processing.
 
 These websites document Xournal++ HTR. In the navigation bar, you can find instructions on
 how to install the project, use the project and more advanced topics like how you can contribute
-code and own models. Many of the documents come with small videos to get you going quicker.
+code and own models. In the future, many of the documents will come with small videos to get you going quicker.
 
-To assist you in training your own models, Xournal++ HTR comes with many helper functions and
-convenience code infrastructure.
+<!-- To assist you in training your own models, Xournal++ HTR comes with many helper functions and -->
+<!-- convenience code infrastructure. -->
 
 ## Cite
 
@@ -55,4 +50,4 @@ If you are using Xournal++ HTR for your research, I'd appreciate if you could ci
 }
 ```
 
-(Also consider starring the project on GitHub.)
+*(Also please consider starring the project on GitHub.)*

@@ -1,6 +1,6 @@
 # Funding
 
-This project is mostly a solo project and I love to work on it.
+This project is mostly a solo project and I love to work on it (*please [contribute](contributing.md), if you want to - happy to help along the way!*).
 
 However, it is both a large time commitment and requires compute resources for training models.
 
