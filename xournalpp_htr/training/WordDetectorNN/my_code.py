@@ -130,35 +130,34 @@ class MapOrdering:
 def encode(input_size: ImageDimensions, output_size: ImageDimensions, gt):
     f = output_size.height / input_size.height
     gt_map = np.zeros((MapOrdering.NUM_MAPS,) + output_size)
-    print('IMPLEMENT ME!!!!')
-    # for aabb in gt:
-    #     aabb = aabb.scale(f, f)
+    for aabb in gt:
+        aabb = aabb.scale(f, f)
 
-    #     # segmentation map
-    #     aabb_clip = BoundingBox(0, 0, output_size[0] - 1, output_size[1] - 1)
+        # segmentation map
+        aabb_clip = BoundingBox(0, 0, output_size.width - 1, output_size.height - 1)
 
-    #     aabb_word = aabb.scale_around_center(0.5, 0.5).as_type(int).clip(aabb_clip)
-    #     aabb_sur = aabb.as_type(int).clip(aabb_clip)
-    #     # TODO: fix hack to get ints
-    #     gt_map[MapOrdering.SEG_SURROUNDING, int(aabb_sur.y_min):int(aabb_sur.y_max) + 1, int(aabb_sur.x_min):int(aabb_sur.x_max) + 1] = 1
-    #     gt_map[MapOrdering.SEG_SURROUNDING, int(aabb_word.y_min):int(aabb_word.y_max) + 1, int(aabb_word.x_min):int(aabb_word.x_max) + 1] = 0
-    #     gt_map[MapOrdering.SEG_WORD, int(aabb_word.y_min):int(aabb_word.y_max) + 1, int(aabb_word.x_min):int(aabb_word.x_max) + 1] = 1
+        aabb_word = aabb.scale_around_center(0.5, 0.5).as_type(int).clip(aabb_clip)
+        aabb_sur = aabb.as_type(int).clip(aabb_clip)
+        # TODO: fix hack to get ints
+        gt_map[MapOrdering.SEG_SURROUNDING, int(aabb_sur.y_min):int(aabb_sur.y_max) + 1, int(aabb_sur.x_min):int(aabb_sur.x_max) + 1] = 1
+        gt_map[MapOrdering.SEG_SURROUNDING, int(aabb_word.y_min):int(aabb_word.y_max) + 1, int(aabb_word.x_min):int(aabb_word.x_max) + 1] = 0
+        gt_map[MapOrdering.SEG_WORD, int(aabb_word.y_min):int(aabb_word.y_max) + 1, int(aabb_word.x_min):int(aabb_word.x_max) + 1] = 1
 
-    #     # geometry map TODO vectorize
-    #     for x in range(int(aabb_word.x_min), int(aabb_word.x_max) + 1):
-    #         for y in range(int(aabb_word.y_min), int(aabb_word.y_max) + 1):
-    #             gt_map[MapOrdering.GEO_TOP, y, x] = y - aabb.y_min
-    #             gt_map[MapOrdering.GEO_BOTTOM, y, x] = aabb.y_max - y
-    #             gt_map[MapOrdering.GEO_LEFT, y, x] = x - aabb.x_min
-    #             gt_map[MapOrdering.GEO_RIGHT, y, x] = aabb.x_max - x
+        # geometry map TODO vectorize
+        for x in range(int(aabb_word.x_min), int(aabb_word.x_max) + 1):
+            for y in range(int(aabb_word.y_min), int(aabb_word.y_max) + 1):
+                gt_map[MapOrdering.GEO_TOP, y, x] = y - aabb.y_min
+                gt_map[MapOrdering.GEO_BOTTOM, y, x] = aabb.y_max - y
+                gt_map[MapOrdering.GEO_LEFT, y, x] = x - aabb.x_min
+                gt_map[MapOrdering.GEO_RIGHT, y, x] = aabb.x_max - x
 
-    # gt_map[MapOrdering.SEG_BACKGROUND] = np.clip(
-    #     1
-    #     - gt_map[MapOrdering.SEG_WORD]
-    #     - gt_map[MapOrdering.SEG_SURROUNDING],
-    #     0,
-    #     1
-    # )
+    gt_map[MapOrdering.SEG_BACKGROUND] = np.clip(
+        1
+        - gt_map[MapOrdering.SEG_WORD]
+        - gt_map[MapOrdering.SEG_SURROUNDING],
+        0,
+        1
+    )
 
     return gt_map
 
@@ -351,7 +350,13 @@ class IAM_Dataset(Dataset):
             'gt_encoded': gt_encoded,
         }
     
-    def store_element_as_image(self, idx: int, output_path: Path, draw_bboxes: bool = False) -> None:
+    def store_element_as_image(
+            self,
+            idx: int,
+            output_path: Path,
+            draw_bboxes: bool = False,
+            store_gt_encoded: bool = False,
+        ) -> List[Path]:
         """
         Saves a dataset element as an image with bounding boxes drawn on it.
         
@@ -381,10 +386,27 @@ class IAM_Dataset(Dataset):
         
         # Save the image
         cv2.imwrite(str(output_path), img_color)
+        files_to_return = [output_path]
 
         # TODO: Add text there
 
-        # TODO: Add `gt_encoded` here
+        if store_gt_encoded:
+            gt_encoded = element['gt_encoded']
+            for key, value in MapOrdering.__dict__.items():
+                if '__' not in key and key != 'NUM_MAPS':
+                    data = gt_encoded[value].copy()
+                    data_normalised = ((data - data.min()) / (data.max() - data.min()) * 255).astype(np.uint8) # Required for storing as image
+
+                    name = Path(output_path.stem + f'__{key.lower()}' + output_path.suffix)
+                    files_to_return.append(name)
+
+                    # Convert grayscale to BGR for colored bounding boxes
+                    img_color = cv2.cvtColor(data_normalised, cv2.COLOR_GRAY2BGR)
+                    
+                    # Save the image
+                    cv2.imwrite(str(name), img_color)
+
+        return files_to_return
 
 def dummy_transform(img, aabbs):
     return img, aabbs
