@@ -1,6 +1,9 @@
 from typing import Optional
 from pathlib import Path
 from typing import NamedTuple
+import torch
+
+# TODO: how to add w and h in all type annotations and datatype definitions?
 
 
 class ImageDimensions(NamedTuple):
@@ -410,3 +413,43 @@ class IAM_Dataset(Dataset):
 
 def dummy_transform(img, aabbs):
     return img, aabbs
+
+from my_code import IAM_Dataset_Element
+from typing import List, Dict
+from typing import TypedDict
+from my_code import BoundingBox
+
+
+class Dataloader_Element(TypedDict):
+    images: torch.tensor
+    bounding_boxes: List[List[BoundingBox]]
+    gt_encoded: torch.tensor
+
+def custom_collate_fn(batch: List[IAM_Dataset_Element]) -> Dataloader_Element:
+    """
+    Custom collate function to handle IAM_Dataset_Element batches.
+    """
+    
+    batch_images = []
+    batch_gt_encodeds = []
+    batch_bounding_boxes = []
+
+    for sample in batch:
+        image = sample['image']
+        gt_encoded = sample['gt_encoded']
+        bounding_boxes = sample['bounding_boxes']
+        batch_images.append(image[None, ...].astype(np.float32))
+        batch_gt_encodeds.append(gt_encoded.astype(np.float32))
+        batch_bounding_boxes.append(bounding_boxes)
+
+    batch_images = np.stack(batch_images, axis=0)
+    batch_gt_encodeds = np.stack(batch_gt_encodeds, axis=0)
+
+    batch_images = torch.from_numpy(batch_images)
+    batch_gt_encodeds = torch.from_numpy(batch_gt_encodeds)
+    
+    return {
+        'images': batch_images,
+        'gt_encoded': batch_gt_encodeds,
+        'bounding_boxes': batch_bounding_boxes
+    }
