@@ -453,3 +453,11 @@ def custom_collate_fn(batch: List[IAM_Dataset_Element]) -> Dataloader_Element:
         'gt_encoded': batch_gt_encodeds,
         'bounding_boxes': batch_bounding_boxes
     }
+
+def count_parameters(net):
+    total_params = sum(p.numel() for p in net.parameters())
+    trainable_params = sum(p.numel() for p in net.parameters() if p.requires_grad)
+    return {
+        "total_params": total_params,
+        "trainable_params": trainable_params,
+    }
