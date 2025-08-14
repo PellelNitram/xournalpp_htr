@@ -80,9 +80,18 @@ class BoundingBox:
             label=self.label,
         )
 
-    # def area(self):
-    #     """Return the area of the bounding box."""
-    #     return max(0.0, self.x_max - self.x_min) * max(0.0, self.y_max - self.y_min)
+    def area(self):
+        """Return the area of the bounding box."""
+        return max(0.0, self.x_max - self.x_min) * max(0.0, self.y_max - self.y_min)
+
+    def enlarge_to_int_grid(self) -> BoundingBox:
+        return BoundingBox(
+            x_min=np.floor(self.x_min),
+            y_min=np.floor(self.y_min),
+            x_max=np.ceil(self.x_max),
+            y_max=np.ceil(self.y_max),
+            label=self.label,
+        )
 
     # def intersect(self, other):
     #     """Return the intersection area with another bounding box."""
@@ -163,6 +172,62 @@ def encode(input_size: ImageDimensions, output_size: ImageDimensions, gt):
     )
 
     return gt_map
+
+def subsample(idx, max_num):
+    """restrict fg indices to a maximum number"""
+    f = len(idx[0]) / max_num
+    if f > 1:
+        a = np.asarray([idx[0][int(j * f)] for j in range(max_num)], np.int64)
+        b = np.asarray([idx[1][int(j * f)] for j in range(max_num)], np.int64)
+        idx = (a, b)
+    return idx
+
+def fg_by_threshold(thres, max_num=None):
+    """all pixels above threshold are fg pixels, optionally limited to a maximum number"""
+
+    def func(seg_map):
+        idx = np.where(seg_map > thres)
+        if max_num is not None:
+            idx = subsample(idx, max_num)
+        return idx
+
+    return func
+
+def fg_by_cc(thres, max_num):
+    """take a maximum number of pixels per connected component, but at least 3 (->DBSCAN minPts)"""
+
+    def func(seg_map):
+        seg_mask = (seg_map > thres).astype(np.uint8)
+        num_labels, label_img = cv2.connectedComponents(seg_mask, connectivity=4)
+        max_num_per_cc = max(max_num // (num_labels + 1), 3)  # at least 3 because of DBSCAN clustering
+
+        all_idx = [np.empty(0, np.int64), np.empty(0, np.int64)]
+        for curr_label in range(1, num_labels):
+            curr_idx = np.where(label_img == curr_label)
+            curr_idx = subsample(curr_idx, max_num_per_cc)
+            all_idx[0] = np.append(all_idx[0], curr_idx[0])
+            all_idx[1] = np.append(all_idx[1], curr_idx[1])
+        return tuple(all_idx)
+
+    return func
+
+def decode(nn_prediction, scale=1.0, comp_fg=fg_by_threshold(0.5)) -> List[BoundingBox]:
+    idx = comp_fg(nn_prediction[MapOrdering.SEG_WORD])
+    nn_prediction_masked = nn_prediction[..., idx[0], idx[1]]
+    bounding_boxes = []
+    for yc, xc, pred in zip(idx[0], idx[1], nn_prediction_masked.T):
+        t = pred[MapOrdering.GEO_TOP]
+        b = pred[MapOrdering.GEO_BOTTOM]
+        l = pred[MapOrdering.GEO_LEFT]
+        r = pred[MapOrdering.GEO_RIGHT]
+        bbox = BoundingBox(
+            x_min=xc - l,
+            x_max=xc + r,
+            y_min=yc - t,
+            y_max=yc + b
+        )
+        bounding_boxes.append(bbox.scale(scale, scale))
+    return bounding_boxes
 
 class IAM_Dataset_Element(TypedDict):
     image: np.ndarray
@@ -461,3 +526,129 @@ def count_parameters(net):
         "total_params": total_params,
         "trainable_params": trainable_params,
     }
+
+from collections import defaultdict
+
+import numpy as np
+from sklearn.cluster import DBSCAN
+
+
+def compute_iou(ra, rb):
+    """intersection over union of two axis aligned rectangles ra and rb"""
+    if ra.x_max < rb.x_min or rb.x_max < ra.x_min or ra.y_max < rb.y_min or rb.y_max < ra.y_min:
+        return 0
+
+    l = max(ra.x_min, rb.x_min)
+    r = min(ra.x_max, rb.x_max)
+    t = max(ra.y_min, rb.y_min)
+    b = min(ra.y_max, rb.y_max)
+
+    intersection = (r - l) * (b - t)
+    union = ra.area() + rb.area() - intersection
+
+    iou = intersection / union
+    return iou
+
+def compute_dist_mat(aabbs):
+    """Jaccard distance matrix of all pairs of aabbs"""
+    num_aabbs = len(aabbs)
+
+    dists = np.zeros((num_aabbs, num_aabbs))
+    for i in range(num_aabbs):
+        for j in range(num_aabbs):
+            if j > i:
+                break
+
+            dists[i, j] = dists[j, i] = 1 - compute_iou(aabbs[i], aabbs[j])
+
+    return dists
+
+def cluster_aabbs(aabbs):
+    """cluster aabbs using DBSCAN and the Jaccard distance between bounding boxes"""
+    if len(aabbs) < 2:
+        return aabbs
+
+    dists = compute_dist_mat(aabbs)
+    clustering = DBSCAN(eps=0.7, min_samples=3, metric='precomputed').fit(dists)
+
+    clusters = defaultdict(list)
+    for i, c in enumerate(clustering.labels_):
+        if c == -1:
+            continue
+        clusters[c].append(aabbs[i])
+
+    res_aabbs = []
+    for curr_cluster in clusters.values():
+        xmin = np.median([aabb.x_min for aabb in curr_cluster])
+        xmax = np.median([aabb.x_max for aabb in curr_cluster])
+        ymin = np.median([aabb.y_min for aabb in curr_cluster])
+        ymax = np.median([aabb.y_max for aabb in curr_cluster])
+        res_aabbs.append(BoundingBox(x_min=xmin, x_max=xmax, y_min=ymin, y_max=ymax))
+
+    return res_aabbs
+
+def compute_dist_mat_2(aabbs1, aabbs2):
+    """Jaccard distance matrix of all pairs of aabbs from lists aabbs1 and aabbs2"""
+    num_aabbs1 = len(aabbs1)
+    num_aabbs2 = len(aabbs2)
+
+    dists = np.zeros((num_aabbs1, num_aabbs2))
+    for i in range(num_aabbs1):
+        for j in range(num_aabbs2):
+            dists[i, j] = 1 - compute_iou(aabbs1[i], aabbs2[j])
+
+    return dists
+
+def binary_classification_metrics(gt_aabbs, pred_aabbs):
+    iou_thres = 0.7
+
+    ious = 1 - compute_dist_mat_2(gt_aabbs, pred_aabbs)
+    match_counter = (ious > iou_thres).astype(int)
+    gt_counter = np.sum(match_counter, axis=1)
+    pred_counter = np.sum(match_counter, axis=0)
+
+    tp = np.count_nonzero(pred_counter == 1)
+    fp = np.count_nonzero(pred_counter == 0)
+    fn = np.count_nonzero(gt_counter == 0)
+
+    return {
+        'tp': tp,
+        'fp': fp,
+        'fn': fn,
+    }
+
+def draw_bboxes_on_image(
+    img: np.ndarray,
+    aabbs: List[BoundingBox],
+) -> np.ndarray:
+    """
+    Draws bounding boxes on an image.
+
+    Args:
+        img (np.ndarray): The image on which to draw the bounding boxes.
+        aabbs (List[BoundingBox]): List of bounding boxes to draw.
+
+    Returns:
+        np.ndarray: The image with drawn bounding boxes.
+    """
+    img = ((img + 0.5) * 255).astype(np.uint8)
+    img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+
+    for aabb in aabbs:
+        aabb = aabb.enlarge_to_int_grid().as_type(int) # TODO: as_type doesn't work, grr
+
+        cv2.rectangle(
+            img,
+            (
+                int(aabb.x_min),
+                int(aabb.y_min),
+            ),
+            (
+                int(aabb.x_max),
+                int(aabb.y_max),
+            ),
+            (255, 0, 255),
+            2
+        )
+
+    return img
