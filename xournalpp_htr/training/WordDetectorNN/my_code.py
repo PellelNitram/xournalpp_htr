@@ -634,9 +634,7 @@ def draw_bboxes_on_image(
     Returns:
         np.ndarray: The image with drawn bounding boxes.
     """
-    print(img.min(), img.max(), img.dtype, img.shape) # TODO: Issue here b/c of dataloading and trafos!!!!
-    raise Exception('alarm, issue here b/c of dataloading and trafos!')
-    img = ((img + 0.5) * 255).astype(np.uint8)
+    img = ((img + 0.5) * 255).astype(np.uint8) # Reverse normalization
     img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
     for aabb in aabbs:
