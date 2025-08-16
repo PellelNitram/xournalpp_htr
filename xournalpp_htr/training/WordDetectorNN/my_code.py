@@ -4,6 +4,7 @@ from typing import NamedTuple
 import torch
 from torchvision.models.resnet import BasicBlock, ResNet
 import torch.nn as nn
+import torch.nn.functional as F
 
 # TODO: how to add w and h in all type annotations and datatype definitions?
 
@@ -748,3 +749,81 @@ class ModifiedResNet18(ResNet):
 
     def forward(self, x: torch.Tensor):
         return self._forward_impl(x)
+
+
+def compute_scale_down(input_size, output_size):
+    """compute scale down factor of neural network, given input and output size"""
+    return output_size[0] / input_size[0]
+
+
+class UpscaleAndConcatLayer(torch.nn.Module):
+    """
+    take small map with cx channels
+    upscale to size of large map (s*s)
+    concat large map with cy channels and upscaled small map
+    apply conv and output map with cz channels
+    """
+
+    def __init__(self, cx, cy, cz):
+        super(UpscaleAndConcatLayer, self).__init__()
+        self.conv = torch.nn.Conv2d(cx + cy, cz, 3, padding=1)
+
+    def forward(self, x, y, s):
+        x = F.interpolate(x, s)
+        z = torch.cat((x, y), 1)
+        z = F.relu(self.conv(z))
+        return z
+
+
+class WordDetectorNet(torch.nn.Module):
+    input_size = (448, 448)
+    output_size = (224, 224)
+    scale_down = compute_scale_down(input_size, output_size)
+
+    def __init__(self):
+        super(WordDetectorNet, self).__init__()
+
+        # Use the modified ResNet18 for feature extraction
+        self.backbone = ModifiedResNet18()
+        # All weights in the backbone will be randomly initialized.
+
+        self.up1 = UpscaleAndConcatLayer(512, 256, 256)  # input//16
+        self.up2 = UpscaleAndConcatLayer(256, 128, 128)  # input//8
+        self.up3 = UpscaleAndConcatLayer(128, 64, 64)  # input//4
+        self.up4 = UpscaleAndConcatLayer(64, 64, 32)  # input//2
+
+        self.conv1 = torch.nn.Conv2d(32, MapOrdering.NUM_MAPS, 3, 1, padding=1)
+
+    @staticmethod
+    def scale_shape(s, f):
+        assert s[0] % f == 0 and s[1] % f == 0
+        return s[0] // f, s[1] // f
+
+    def output_activation(self, x, apply_softmax):
+        if apply_softmax:
+            seg = torch.softmax(
+                x[:, MapOrdering.SEG_WORD : MapOrdering.SEG_BACKGROUND + 1], dim=1
+            )
+        else:
+            seg = x[:, MapOrdering.SEG_WORD : MapOrdering.SEG_BACKGROUND + 1]
+        geo = torch.sigmoid(x[:, MapOrdering.GEO_TOP :]) * self.input_size[0] # TODO: Understand this
+        y = torch.cat([seg, geo], dim=1)
+        return y
+
+    def forward(self, x, apply_softmax=False):
+        s = x.shape[2:]  # Original image shape HxW
+        bb5, bb4, bb3, bb2, bb1 = self.backbone(x)
+
+        y = self.up1(bb5, bb4, self.scale_shape(s, 16))
+        # up2 takes y (H/16, 256ch) and bb3 (H/8, 128ch). Upscales y to H/8. Output: H/8, 128ch.
+        y = self.up2(y, bb3, self.scale_shape(s, 8))
+        # up3 takes y (H/8, 128ch) and bb2 (H/4, 64ch). Upscales y to H/4. Output: H/4, 64ch.
+        y = self.up3(y, bb2, self.scale_shape(s, 4))
+        # up4 takes y (H/4, 64ch) and bb1 (H/2, 64ch). Upscales y to H/2. Output: H/2, 32ch.
+        y = self.up4(y, bb1, self.scale_shape(s, 2))
+
+        y = self.conv1(
+            y
+        )  # Final convolution to get NUM_MAPS channels. Output: H/2, NUM_MAPS ch.
+
+        return self.output_activation(y, apply_softmax)
