@@ -827,3 +827,11 @@ class WordDetectorNet(torch.nn.Module):
         )  # Final convolution to get NUM_MAPS channels. Output: H/2, NUM_MAPS ch.
 
         return self.output_activation(y, apply_softmax)
+
+# ==========
+# Transforms
+# ==========
+
+def normalize_image_transform(image, bounding_boxes):
+    image_new = (image / 255.0) - 0.5
+    return image_new, bounding_boxes
