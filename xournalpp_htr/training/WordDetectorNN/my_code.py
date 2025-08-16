@@ -87,7 +87,7 @@ class BoundingBox:
         """Return the area of the bounding box."""
         return max(0.0, self.x_max - self.x_min) * max(0.0, self.y_max - self.y_min)
 
-    def enlarge_to_int_grid(self) -> BoundingBox:
+    def enlarge_to_int_grid(self) -> "BoundingBox":
         return BoundingBox(
             x_min=np.floor(self.x_min),
             y_min=np.floor(self.y_min),
