@@ -2,6 +2,8 @@ from typing import Optional
 from pathlib import Path
 from typing import NamedTuple
 import torch
+from torchvision.models.resnet import BasicBlock, ResNet
+import torch.nn as nn
 
 # TODO: how to add w and h in all type annotations and datatype definitions?
 
@@ -692,3 +694,57 @@ def compute_loss(y, gt_map):
     # total loss is simply the sum of both losses
     loss = loss_seg + loss_aabb
     return loss
+
+# If you were using Bottleneck for other ResNet versions:
+# from torchvision.models.resnet import ResNet, BasicBlock, Bottleneck
+
+
+class ModifiedResNet18(ResNet):
+    def __init__(self, **kwargs):
+        # Initialize with BasicBlock and standard ResNet-18 layers
+        # num_classes is irrelevant here as we won't use the fc layer
+        super().__init__(BasicBlock, [2, 2, 2, 2], num_classes=1000, **kwargs)
+
+        # 1. Modify the first convolutional layer for 1-channel (grayscale) input
+        # Original resnet.conv1 is Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        # We need Conv2d(1, 64, ...)
+        original_conv1 = self.conv1
+        self.conv1 = nn.Conv2d(
+            1,
+            original_conv1.out_channels,
+            kernel_size=original_conv1.kernel_size,
+            stride=original_conv1.stride,
+            padding=original_conv1.padding,
+            bias=False,
+        )  # bias is False in original ResNet conv1
+
+        # Optional: If you wanted to initialize weights similarly to torchvision:
+        # nn.init.kaiming_normal_(self.conv1.weight, mode='fan_out', nonlinearity='relu')
+        # However, if you load custom pretrained weights for the whole model later,
+        # this specific initialization might be overwritten.
+
+        # We don't need the final fully connected layer for feature extraction
+        del self.fc
+        # self.avgpool is also not strictly needed for the U-Net style features,
+        # but it doesn't hurt to keep it if not used. You could 'del self.avgpool' too.
+
+    def _forward_impl(self, x: torch.Tensor):
+        # This is largely copied from torchvision.models.resnet.ResNet._forward_impl
+        # but modified to return intermediate features.
+
+        # See note [TorchScript super()]
+        x = self.conv1(x)
+        x = self.bn1(x)
+        out1 = self.relu(x)  # Corresponds to bb1 in WordDetectorNet (before maxpool)
+        x = self.maxpool(out1)
+
+        out2 = self.layer1(x)  # Corresponds to bb2
+        out3 = self.layer2(out2)  # Corresponds to bb3
+        out4 = self.layer3(out3)  # Corresponds to bb4
+        out5 = self.layer4(out4)  # Corresponds to bb5
+
+        # WordDetectorNet expects (bb5, bb4, bb3, bb2, bb1)
+        return out5, out4, out3, out2, out1
+
+    def forward(self, x: torch.Tensor):
+        return self._forward_impl(x)
