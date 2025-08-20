@@ -838,3 +838,72 @@ class WordDetectorNet(torch.nn.Module):
 def normalize_image_transform(image, bounding_boxes):
     image_new = (image / 255.0) - 0.5
     return image_new, bounding_boxes
+
+# =========
+# Inference
+# =========
+
+def run_image_through_network(
+        image_grayscale: np.ndarray,
+        model_path: Path=Path('best_model.pth'),
+    ) -> List[BoundingBox]:
+
+    # ================
+    # Configure system
+    # ================
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    # ==========
+    # Load model
+    # ==========
+
+    model = WordDetectorNet()  # instantiate your model
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.to(device)
+    model.eval()
+
+    # ==============
+    # Pre processing
+    # ==============
+
+    image_gray_rescaled = cv2.resize(image_grayscale, WordDetectorNet.input_size)
+
+    image_grayscale_transformed, _ = normalize_image_transform(image_gray_rescaled, None) # Only works w/ current transformation setup
+
+    image_grayscale_transformed = image_grayscale_transformed.astype(np.float32)
+    
+    image_grayscale_transformed = torch.from_numpy(image_grayscale_transformed[None, None, :, :]).to(device)
+
+    # =========
+    # Inference
+    # =========
+
+    with torch.no_grad():
+        output_image = model(image_grayscale_transformed, apply_softmax=True)
+
+    assert output_image[:, MapOrdering.SEG_WORD:MapOrdering.SEG_BACKGROUND+1, :, :].min() >= 0.0
+    assert output_image[:, MapOrdering.SEG_WORD:MapOrdering.SEG_BACKGROUND+1, :, :].max() <= 1.0
+
+    output_image = output_image.to('cpu').numpy()
+
+    output_image = output_image[0, :, :, :]
+
+    # ===============
+    # Post processing
+    # ===============
+
+    decoded_aabbs = decode(
+        output_image,
+        scale=WordDetectorNet.input_size[0] / WordDetectorNet.output_size[0],
+        comp_fg=fg_by_cc(thres=0.5, max_num=1000),
+    )
+    model_input_image = image_grayscale_transformed[0, 0, :, :].to('cpu').numpy()
+    h, w = model_input_image.shape
+    aabbs = [aabb.clip(BoundingBox(0, 0, w - 1, h - 1)) for aabb in decoded_aabbs]  # bounding box must be inside input img
+    clustered_aabbs = cluster_aabbs(aabbs)
+
+    return {
+        'aabbs': clustered_aabbs,
+        'model_input_image': model_input_image,
+    }
