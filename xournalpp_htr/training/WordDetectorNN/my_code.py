@@ -411,7 +411,7 @@ class IAM_Dataset(Dataset):
         image = self.img_cache[idx]
         bounding_boxes = self.gt_cache[idx]
         if self.transform:
-            print('[INFO] transformation applied')
+            # print('[INFO] transformation applied')
             image, bounding_boxes = self.transform(image, bounding_boxes)
         gt_encoded = encode(self.input_size, self.output_size, bounding_boxes)
         return {
