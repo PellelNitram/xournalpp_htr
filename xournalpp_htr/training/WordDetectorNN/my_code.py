@@ -623,6 +623,7 @@ def binary_classification_metrics(gt_aabbs, pred_aabbs):
 def draw_bboxes_on_image(
     img: np.ndarray,
     aabbs: List[BoundingBox],
+    denormalise: bool=True,
 ) -> np.ndarray:
     """
     Draws bounding boxes on an image.
@@ -634,8 +635,12 @@ def draw_bboxes_on_image(
     Returns:
         np.ndarray: The image with drawn bounding boxes.
     """
-    img = ((img + 0.5) * 255).astype(np.uint8) # Reverse normalization
-    img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+    img = img.copy()
+    if denormalise:
+        img = ((img + 0.5) * 255).astype(np.uint8) # Reverse normalization
+    is_grayscale = len(img.shape) == 2 # Otherwise the image is interpreted as BGR b/c we use cv2
+    if is_grayscale:
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
     for aabb in aabbs:
         aabb = aabb.enlarge_to_int_grid().as_type(int) # TODO: as_type doesn't work, grr
@@ -650,7 +655,7 @@ def draw_bboxes_on_image(
                 int(aabb.x_max),
                 int(aabb.y_max),
             ),
-            (255, 0, 255),
+            (0, 0, 255), # Red
             2
         )
 
