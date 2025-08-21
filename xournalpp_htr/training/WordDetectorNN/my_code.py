@@ -96,6 +96,14 @@ class BoundingBox:
             label=self.label,
         )
 
+    def enlarge(self, margin_x: float, margin_y: float) -> "BoundingBox":
+        return BoundingBox(
+            x_min=self.x_min-margin_x,
+            x_max=self.x_max+margin_x,
+            y_min=self.y_min-margin_y,
+            y_max=self.y_max+margin_y,
+        )
+
     # def intersect(self, other):
     #     """Return the intersection area with another bounding box."""
     #     x_min = max(self.x_min, other.x_min)
