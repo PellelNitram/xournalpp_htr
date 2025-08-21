@@ -4,45 +4,32 @@ import gradio as gr
 import numpy as np
 
 from pathlib import Path
-from my_code import WordDetectorNet
 import cv2
 
+from my_code import draw_bboxes_on_image
+from my_code import run_image_through_network
 
-# ========
-# Settings
-# ========
 
-model_path = Path('best_model.pth') # later, replace w/ cli argument
+def process_image(
+        image: np.ndarray, # Is (H, W, 3) uint8 RGB; return needs to be the same
+    ) -> np.ndarray:
 
-# ================
-# Configure system
-# ================
+    image_BGR = cv2.cvtColor(image.copy(), cv2.COLOR_RGB2BGR)
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    image_gray = cv2.cvtColor(image_BGR, cv2.COLOR_BGR2GRAY)
 
-# ==========
-# Load model
-# ==========
+    # Inference
+    result = run_image_through_network(
+        image_grayscale=image_gray,
+        model_path=Path('best_model.pth'),
+    )
 
-model = WordDetectorNet()  # instantiate your model
-model.load_state_dict(torch.load(model_path, map_location='cpu'))
-model.eval()
+    # Post processing
+    scaling_factors = np.array(image_gray.shape) / np.array(result['model_input_image'].shape)
+    bboxes_scaled = [ aabb.scale(*scaling_factors[::-1]) for aabb in result['aabbs'] ]
+    vis_scaled = draw_bboxes_on_image(image_BGR, bboxes_scaled, denormalise=False)
 
-# =========
-# Gradio UI
-# =========
-
-def process_image(image):
-    print('type(image):', type(image))
-    print('image.shape:', image.shape)
-    print('image.dtype:', image.dtype)
-    # Save the original RGB image
-    # np.save('uploaded_image_rgb.npy', image)
-    # Convert RGB to grayscale using OpenCV
-    # grayscale = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    # Save the grayscale image
-    # np.save('uploaded_image_grayscale.npy', grayscale)
-    return image
+    return cv2.cvtColor(vis_scaled, cv2.COLOR_BGR2RGB)
 
 demo = gr.Interface(
     fn=process_image,
