@@ -1,4 +1,5 @@
 import argparse
+import json
 from pathlib import Path
 
 import torch
@@ -49,6 +50,7 @@ def get_dataloaders(
     batch_size: int,
     shuffle_data_loader: bool,
     num_workers: int,
+    output_path: Path,
 ) -> dict:
 
     # -- datasets --
@@ -82,6 +84,13 @@ def get_dataloaders(
 
     train_indices = indices[:split]
     val_indices = indices[split:]
+
+    with open(output_path / 'dataset_split_indices.json', 'w') as f:
+        split_indices = {
+            'train': train_indices,
+            'val': val_indices,
+        }
+        json.dump(split_indices, f, indent=4)
 
     train_subset = Subset(train_dataset, train_indices)
     val_subset = Subset(val_dataset, val_indices)
@@ -278,6 +287,7 @@ def main(args: dict):
         batch_size=args['batch_size'],
         shuffle_data_loader=args['shuffle_data_loader'],
         num_workers=args['num_workers'],
+        output_path=args['output_path'],
     )
 
     train_network(
