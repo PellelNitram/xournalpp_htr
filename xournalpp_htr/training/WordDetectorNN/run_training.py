@@ -242,6 +242,16 @@ def train_network(
                 best_val_f1 = f1
                 torch.save(net.state_dict(), output_path / 'best_model.pth')
                 patience_counter = 0
+                with open(output_path / 'best_model.json', 'w') as f:
+                    json.dump(
+                        {
+                            'epoch': epoch,
+                            'global_step': global_step,
+                            'f1': best_val_f1,
+                        },
+                        f,
+                        indent=4,
+                    )
             else:
                 patience_counter += 1
 
