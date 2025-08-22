@@ -1,4 +1,5 @@
 from typing import Optional
+import json
 from pathlib import Path
 from typing import NamedTuple
 import torch
@@ -915,3 +916,10 @@ def run_image_through_network(
         'aabbs': clustered_aabbs,
         'model_input_image': model_input_image,
     }
+
+class CustomEncoder(json.JSONEncoder):
+    """This is to make non-standard items serialisable for `json.dump(s)`."""
+    def default(self, obj):
+        if isinstance(obj, Path): # Store `Path` objects
+            return str(obj)
+        return super().default(obj)
