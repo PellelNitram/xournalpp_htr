@@ -24,6 +24,7 @@ from my_code import ModifiedResNet18
 from my_code import WordDetectorNet
 from my_code import compute_loss
 from my_code import normalize_image_transform
+from my_code import CustomEncoder
 
 
 global_step = 0 # Fix this and remove global step property!
@@ -283,6 +284,14 @@ def train_network(
 def main(args: dict):
 
     args['output_path'].mkdir(exist_ok=True, parents=True)
+
+    with open(args['output_path'] / 'args.json', 'w') as f:
+        json.dump(
+            args,
+            f,
+            indent=4,
+            cls=CustomEncoder,
+        )
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
