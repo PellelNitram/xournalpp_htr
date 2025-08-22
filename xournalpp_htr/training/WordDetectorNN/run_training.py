@@ -231,7 +231,7 @@ def train_network(
             if f1 > best_val_f1:
                 print(f"New best F1 score: {best_val_f1:.4f} -> {f1:.4f}, saving model.")
                 best_val_f1 = f1
-                torch.save(net.state_dict(), 'best_model.pth')
+                torch.save(net.state_dict(), output_path / 'best_model.pth')
                 patience_counter = 0
             else:
                 patience_counter += 1
