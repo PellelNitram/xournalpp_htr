@@ -31,7 +31,6 @@ def parse_args() -> dict:
     return {
         'learning_rate': 0.001,
         'val_epoch': 1,
-        'summary_writer_path': Path.home() / 'summary_writer_path',
         'epoch_max': 3,
         'patience_max': 50,
         'data_path': Path.home() / 'Development/WordDetectorNN/data/train',
@@ -39,6 +38,7 @@ def parse_args() -> dict:
         'shuffle_data_loader': True,
         'batch_size': 32,
         'num_workers': 1,
+        'output_path': Path('test_output_path'), # Doesn't have to exist bc it's created
     }
 
 def get_dataloaders(
@@ -197,7 +197,7 @@ def train(net, optimizer, loader, writer, device):
         global_step += 1
 
 def train_network(
-    summary_writer_path: Path,
+    output_path: Path,
     device: str,
     learning_rate: float,
     batch_size: int,
@@ -209,7 +209,7 @@ def train_network(
     input_size,
     output_size,
 ):
-    writer = SummaryWriter(summary_writer_path)
+    writer = SummaryWriter(output_path / 'summary_writer')
 
     net = WordDetectorNet()
     net.to(device)
@@ -262,6 +262,8 @@ def train_network(
     # TODO: Store result of training in a file, e.g., JSON or YAML.
 
 def main(args: dict):
+
+    args['output_path'].mkdir(exist_ok=True, parents=True)
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -279,7 +281,7 @@ def main(args: dict):
     )
 
     train_network(
-        summary_writer_path=args['summary_writer_path'],
+        output_path=args['output_path'],
         device=device,
         learning_rate=args['learning_rate'],
         batch_size=args['batch_size'],
