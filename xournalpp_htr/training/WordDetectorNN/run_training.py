@@ -45,8 +45,6 @@ def parse_args() -> dict:
 
 def get_dataloaders(
     data_path: Path,
-    input_size,
-    output_size,
     percent_train_data: int,
     batch_size: int,
     shuffle_data_loader: bool,
@@ -63,15 +61,15 @@ def get_dataloaders(
 
     train_dataset = IAM_Dataset(
         root_dir=data_path,
-        input_size=input_size,
-        output_size=output_size,
+        input_size=WordDetectorNet.input_size_ImageDimensions,
+        output_size=WordDetectorNet.output_size_ImageDimensions,
         force_rebuild_cache=True,
         transform=train_transform,
     )
     val_dataset = IAM_Dataset(
         root_dir=data_path,
-        input_size=input_size,
-        output_size=output_size,
+        input_size=WordDetectorNet.input_size_ImageDimensions,
+        output_size=WordDetectorNet.output_size_ImageDimensions,
         force_rebuild_cache=True,
         transform=val_transform,
     )
@@ -216,8 +214,6 @@ def train_network(
     epoch_max: int,
     patience_max: int,
     val_epoch: int,
-    input_size,
-    output_size,
 ):
     writer = SummaryWriter(output_path / 'summary_writer')
 
@@ -236,7 +232,7 @@ def train_network(
         print(f'Epoch: {epoch}')
         train(net, optimizer, dataloader_train, writer, device)
         if epoch % val_epoch == 0:
-            f1 = validate(net, dataloader_val, writer, device, input_size, output_size)
+            f1 = validate(net, dataloader_val, writer, device, WordDetectorNet.input_size_ImageDimensions, WordDetectorNet.output_size_ImageDimensions)
 
             if f1 > best_val_f1:
                 print(f"New best F1 score: {best_val_f1:.4f} -> {f1:.4f}, saving model.")
@@ -295,13 +291,8 @@ def main(args: dict):
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    input_size = ImageDimensions(width=448, height=448)
-    output_size = ImageDimensions(width=224, height=224)
-
     dataloaders = get_dataloaders(
         data_path=args['data_path'],
-        input_size=input_size,
-        output_size=output_size,
         percent_train_data=args['percent_train_data'],
         batch_size=args['batch_size'],
         shuffle_data_loader=args['shuffle_data_loader'],
@@ -319,8 +310,6 @@ def main(args: dict):
         epoch_max=args['epoch_max'],
         patience_max=args['patience_max'],
         val_epoch=args['val_epoch'],
-        input_size=input_size,
-        output_size=output_size,
     )
 
 if __name__ == '__main__':
