@@ -265,7 +265,6 @@ class IAM_Dataset(Dataset):
 
     _GT_DIR_NAME = 'gt'
     _IMG_DIR_NAME = 'img'
-    _CACHE_FILENAME = 'dataset_cache.pickle'
     _IMG_EXT = '.png'
     _GT_EXT = '*.xml'
 
@@ -276,6 +275,7 @@ class IAM_Dataset(Dataset):
         output_size: ImageDimensions,
         force_rebuild_cache: bool = False,
         transform = None,
+        cache_path: Path = Path('dataset_cache.pickle'),
     ):
         """
         Initializes the dataset. Checks for a cache file first. If it doesn't
@@ -303,7 +303,6 @@ class IAM_Dataset(Dataset):
         self.gt_cache: List[List[BoundingBox]] = []
         self.filename_cache: List[str] = []
 
-        cache_path = self.root_dir / self._CACHE_FILENAME
         if cache_path.exists() and not force_rebuild_cache:
             print(f"Loading cached data from {cache_path}...")
             self._load_from_cache(cache_path)
