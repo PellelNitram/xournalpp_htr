@@ -14,7 +14,7 @@ BASE_PATH=experiments
 
 # Question: General hyperparameter tuning
 
-EPOCH_MAX=3
+EPOCH_MAX=200
 
 for LEARNING_RATE in 0.0005 0.001 0.002
 do
