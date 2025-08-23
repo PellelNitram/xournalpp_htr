@@ -226,6 +226,8 @@ def train_network(
     epoch_max: int,
     patience_max: int,
     val_epoch: int,
+    seed_split: int,
+    seed_model: int,
 ):
     writer = SummaryWriter(output_path / 'summary_writer')
 
@@ -276,7 +278,8 @@ def train_network(
         {
             'learning_rate': learning_rate,
             'batch_size': batch_size,
-            # TODO: Add seed in order to be able to run multiple seeds
+            'seed_split': seed_split,
+            'seed_model': seed_model,
         },
         {
             'best_val_f1': best_val_f1,
@@ -328,6 +331,8 @@ def main(args: dict):
         epoch_max=args['epoch_max'],
         patience_max=args['patience_max'],
         val_epoch=args['val_epoch'],
+        seed_split=args['seed_split'],
+        seed_model=args['seed_model'],
     )
 
 if __name__ == '__main__':
