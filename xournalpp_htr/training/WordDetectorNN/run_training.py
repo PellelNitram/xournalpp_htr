@@ -30,11 +30,11 @@ from my_code import CustomEncoder
 from my_code import get_git_commit_hash
 
 
-global_step = 0 # Fix this and remove global step property!
+global_step = 0 # TODO: Make global step non-global as it's very bad practise.
 
 def parse_args() -> dict:
     parser = argparse.ArgumentParser(
-        description="Training configuration for WordDetectorNN",
+        description="Train a WordDetectorNet model.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
@@ -154,7 +154,7 @@ def get_dataloaders(
         batch_size=batch_size,
         shuffle=shuffle_data_loader,
         num_workers=num_workers,
-        collate_fn=custom_collate_fn,  # or custom_collate_fn_with_padding
+        collate_fn=custom_collate_fn,
         pin_memory=True  # For faster GPU transfer
     )
 
@@ -163,7 +163,7 @@ def get_dataloaders(
         batch_size=batch_size,
         shuffle=False, # no need to shuffle validation data and otherwise images break
         num_workers=num_workers,
-        collate_fn=custom_collate_fn,  # or custom_collate_fn_with_padding
+        collate_fn=custom_collate_fn,
         pin_memory=True  # For faster GPU transfer
     )
 
@@ -316,6 +316,7 @@ def train_network(
             'batch_size': batch_size,
             'seed_split': seed_split,
             'seed_model': seed_model,
+            'patience_max': patience_max,
         },
         {
             'best_val_f1': best_val_f1,
@@ -325,8 +326,6 @@ def train_network(
     writer.close()
 
     # TODO: Later, replace all print statements w/ proper logging statements.
-
-    # TODO: Store result of training in a file, e.g., JSON or YAML.
 
 def main(args: dict):
 
