@@ -2,6 +2,7 @@ import argparse
 import json
 from pathlib import Path
 import random
+import time
 
 import torch
 from torch.utils.data import Subset
@@ -317,6 +318,7 @@ def main(args: dict):
         random_seed=args['seed_model'],
     )
 
+    t0 = time.time()
     dataloaders = get_dataloaders(
         data_path=args['data_path'],
         percent_train_data=args['percent_train_data'],
@@ -326,7 +328,9 @@ def main(args: dict):
         output_path=args['output_path'],
         cache_path=args['cache_path'],
     )
+    dataloaders_time = time.time() - t0
 
+    t0 = time.time()
     train_network(
         output_path=args['output_path'],
         device=device,
@@ -340,11 +344,23 @@ def main(args: dict):
         seed_split=args['seed_split'],
         seed_model=args['seed_model'],
     )
+    training_time = time.time() - t0
 
     with open(args['output_path'] / 'git_commit_hash.json', 'w') as f:
         json.dump(
             {
                 'git_commit_hash': get_git_commit_hash(),
+            },
+            f,
+            indent=4,
+            cls=CustomEncoder,
+        )
+
+    with open(args['output_path'] / 'times.json', 'w') as f:
+        json.dump(
+            {
+                'dataloaders': dataloaders_time,
+                'training': training_time,
             },
             f,
             indent=4,
