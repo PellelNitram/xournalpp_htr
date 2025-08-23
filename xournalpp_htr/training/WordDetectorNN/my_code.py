@@ -790,6 +790,9 @@ class UpscaleAndConcatLayer(torch.nn.Module):
 class WordDetectorNet(torch.nn.Module):
     input_size = (448, 448)
     output_size = (224, 224)
+    # v-- TODO: It's a hack to keep both. I do so now b/c I don't know the order (also, doesn't matter b/c same values)
+    input_size_ImageDimensions: ImageDimensions = ImageDimensions(width=448, height=448)
+    output_size_ImageDimensions: ImageDimensions = ImageDimensions(width=224, height=224)
     scale_down = compute_scale_down(input_size, output_size)
 
     def __init__(self):
