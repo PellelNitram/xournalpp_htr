@@ -1,6 +1,7 @@
 import argparse
 import json
 from pathlib import Path
+import random
 
 import torch
 from torch.utils.data import Subset
@@ -41,7 +42,19 @@ def parse_args() -> dict:
         'batch_size': 32,
         'num_workers': 1,
         'output_path': Path('test_output_path'), # Doesn't have to exist bc it's created
+        'seed_split': 42,
+        'seed_model': 1337,
     }
+
+def seed_everything(numpy_seed=42, torch_seed=1234, random_seed=7):
+    random.seed(random_seed)
+    np.random.seed(numpy_seed)
+    torch.manual_seed(torch_seed)
+    torch.cuda.manual_seed(torch_seed)
+    torch.cuda.manual_seed_all(torch_seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    print(f"Seeds set -> random: {random_seed}, numpy: {numpy_seed}, torch: {torch_seed}")
 
 def get_dataloaders(
     data_path: Path,
@@ -77,7 +90,6 @@ def get_dataloaders(
     assert len(train_dataset) == len(val_dataset)
 
     indices = list(range(len(train_dataset)))
-    np.random.seed(42)
     np.random.shuffle(indices)
     split = int(percent_train_data / 100 * len(indices))
 
@@ -290,6 +302,12 @@ def main(args: dict):
         )
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+    seed_everything(
+        numpy_seed=args['seed_split'],
+        torch_seed=args['seed_model'],
+        random_seed=args['seed_model'],
+    )
 
     dataloaders = get_dataloaders(
         data_path=args['data_path'],
