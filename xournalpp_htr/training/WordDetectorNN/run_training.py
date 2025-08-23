@@ -33,21 +33,51 @@ from my_code import get_git_commit_hash
 global_step = 0 # Fix this and remove global step property!
 
 def parse_args() -> dict:
-    return {
-        'learning_rate': 0.001,
-        'val_epoch': 1,
-        'epoch_max': 3,
-        'patience_max': 50,
-        'data_path': Path.home() / 'Development/WordDetectorNN/data/train',
-        'percent_train_data': 80,
-        'shuffle_data_loader': True,
-        'batch_size': 32,
-        'num_workers': 1,
-        'output_path': Path('test_output_path'), # Doesn't have to exist bc it's created
-        'seed_split': 42,
-        'seed_model': 1337,
-        'cache_path': Path.home() / 'dataset_cache.pickle',
-    }
+    parser = argparse.ArgumentParser(
+        description="Training configuration for WordDetectorNN",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    training_group = parser.add_argument_group("Training Settings")
+    training_group.add_argument("--learning_rate", type=float, default=0.001,
+                                help="Learning rate for optimizer")
+    training_group.add_argument("--val_epoch", type=int, default=1,
+                                help="Validation frequency in epochs")
+    training_group.add_argument("--epoch_max", type=int, default=3,
+                                help="Maximum number of epochs")
+    training_group.add_argument("--patience_max", type=int, default=50,
+                                help="Early stopping patience")
+    training_group.add_argument("--batch_size", type=int, default=32,
+                                help="Batch size")
+    training_group.add_argument("--num_workers", type=int, default=1,
+                                help="Number of data loader workers")
+
+    data_group = parser.add_argument_group("Data Settings")
+    data_group.add_argument("--data_path", type=Path,
+                            default=Path.home() / "Development/WordDetectorNN/data/train",
+                            help="Path to training data")
+    data_group.add_argument("--percent_train_data", type=int, default=80,
+                            help="Percentage of data used for training")
+    data_group.add_argument("--no-shuffle-data-loader", dest="shuffle_data_loader",
+                            action="store_false",
+                            help="Disable shuffling of data loader (default: enabled)")
+    parser.set_defaults(shuffle_data_loader=True)
+    data_group.add_argument("--cache_path", type=Path,
+                            default=Path.home() / "dataset_cache.pickle",
+                            help="Path to dataset cache file")
+
+    seed_group = parser.add_argument_group("Reproducibility Settings")
+    seed_group.add_argument("--seed_split", type=int, default=42,
+                            help="Random seed for dataset splitting")
+    seed_group.add_argument("--seed_model", type=int, default=1337,
+                            help="Random seed for model initialization")
+
+    output_group = parser.add_argument_group("Output Settings")
+    output_group.add_argument("--output_path", type=Path, default=Path("test_output_path"),
+                              help="Output directory (will be created if it doesn't exist)")
+
+    args = parser.parse_args()
+    return vars(args)
 
 def seed_everything(numpy_seed=42, torch_seed=1234, random_seed=7):
     random.seed(random_seed)
