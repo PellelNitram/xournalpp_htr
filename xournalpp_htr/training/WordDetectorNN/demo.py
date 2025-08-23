@@ -1,14 +1,24 @@
-import torch
-
-import gradio as gr
-import numpy as np
-
 from pathlib import Path
 import cv2
+import argparse
+
+import torch
+import gradio as gr
+import numpy as np
 
 from my_code import draw_bboxes_on_image
 from my_code import run_image_through_network
 
+
+parser = argparse.ArgumentParser(
+        description="Train a WordDetectorNet model.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+parser.add_argument("--model_path", type=Path, required=True,
+                    help="Path to trained model.")
+args = vars(parser.parse_args())
+
+model_path = args['model_path']
 
 def process_image(
         image: np.ndarray, # Is (H, W, 3) uint8 RGB; return needs to be the same
@@ -24,7 +34,7 @@ def process_image(
     # Inference
     result = run_image_through_network(
         image_grayscale=image_gray,
-        model_path=Path('best_model.pth'),
+        model_path=model_path,
     )
 
     # Post processing
