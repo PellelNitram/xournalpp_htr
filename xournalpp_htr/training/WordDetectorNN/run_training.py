@@ -44,6 +44,7 @@ def parse_args() -> dict:
         'output_path': Path('test_output_path'), # Doesn't have to exist bc it's created
         'seed_split': 42,
         'seed_model': 1337,
+        'cache_path': Path.home() / 'dataset_cache.pickle',
     }
 
 def seed_everything(numpy_seed=42, torch_seed=1234, random_seed=7):
@@ -63,6 +64,7 @@ def get_dataloaders(
     shuffle_data_loader: bool,
     num_workers: int,
     output_path: Path,
+    cache_path: Path,
 ) -> dict:
 
     # -- datasets --
@@ -76,15 +78,17 @@ def get_dataloaders(
         root_dir=data_path,
         input_size=WordDetectorNet.input_size_ImageDimensions,
         output_size=WordDetectorNet.output_size_ImageDimensions,
-        force_rebuild_cache=True,
+        force_rebuild_cache=False,
         transform=train_transform,
+        cache_path=cache_path,
     )
     val_dataset = IAM_Dataset(
         root_dir=data_path,
         input_size=WordDetectorNet.input_size_ImageDimensions,
         output_size=WordDetectorNet.output_size_ImageDimensions,
-        force_rebuild_cache=True,
+        force_rebuild_cache=False,
         transform=val_transform,
+        cache_path=cache_path,
     )
 
     assert len(train_dataset) == len(val_dataset)
@@ -319,6 +323,7 @@ def main(args: dict):
         shuffle_data_loader=args['shuffle_data_loader'],
         num_workers=args['num_workers'],
         output_path=args['output_path'],
+        cache_path=args['cache_path'],
     )
 
     train_network(
