@@ -6,6 +6,7 @@ import torch
 from torchvision.models.resnet import BasicBlock, ResNet
 import torch.nn as nn
 import torch.nn.functional as F
+from git import Repo
 
 # TODO: how to add w and h in all type annotations and datatype definitions?
 
@@ -925,3 +926,19 @@ class CustomEncoder(json.JSONEncoder):
         if isinstance(obj, Path): # Store `Path` objects
             return str(obj)
         return super().default(obj)
+
+def get_git_commit_hash(repo_path: Path = Path("."), short: bool = False) -> str:
+    """
+    Get the current Git commit hash using GitPython.
+    
+    :param repo_path: Path to the Git repository (default: current directory).
+    :param short: Whether to return the short hash.
+    :return: Commit hash string, or None if unavailable.
+    """
+    try:
+        repo = Repo(repo_path, search_parent_directories=True)
+        commit_hash: str = repo.head.commit.hexsha
+        return commit_hash[:7] if short else commit_hash
+    except Exception as e:
+        print(f"Error while getting git commit hash from {repo_path}: {e}")
+        return '-1'
