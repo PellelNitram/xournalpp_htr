@@ -26,6 +26,7 @@ from my_code import WordDetectorNet
 from my_code import compute_loss
 from my_code import normalize_image_transform
 from my_code import CustomEncoder
+from my_code import get_git_commit_hash
 
 
 global_step = 0 # Fix this and remove global step property!
@@ -339,6 +340,16 @@ def main(args: dict):
         seed_split=args['seed_split'],
         seed_model=args['seed_model'],
     )
+
+    with open(args['output_path'] / 'git_commit_hash.json', 'w') as f:
+        json.dump(
+            {
+                'git_commit_hash': get_git_commit_hash(),
+            },
+            f,
+            indent=4,
+            cls=CustomEncoder,
+        )
 
 if __name__ == '__main__':
     args = parse_args()
