@@ -545,7 +545,7 @@ import numpy as np
 from sklearn.cluster import DBSCAN
 
 
-def compute_iou(ra, rb):
+def compute_iou(ra: BoundingBox, rb: BoundingBox) -> float:
     """intersection over union of two axis aligned rectangles ra and rb"""
     if ra.x_max < rb.x_min or rb.x_max < ra.x_min or ra.y_max < rb.y_min or rb.y_max < ra.y_min:
         return 0
@@ -561,7 +561,7 @@ def compute_iou(ra, rb):
     iou = intersection / union
     return iou
 
-def compute_dist_mat(aabbs):
+def compute_dist_mat(aabbs: List[BoundingBox]) -> np.ndarray:
     """Jaccard distance matrix of all pairs of aabbs"""
     num_aabbs = len(aabbs)
 
@@ -575,7 +575,7 @@ def compute_dist_mat(aabbs):
 
     return dists
 
-def cluster_aabbs(aabbs):
+def cluster_aabbs(aabbs: List[BoundingBox]) -> List[BoundingBox]:
     """cluster aabbs using DBSCAN and the Jaccard distance between bounding boxes"""
     if len(aabbs) < 2:
         return aabbs
@@ -599,7 +599,7 @@ def cluster_aabbs(aabbs):
 
     return res_aabbs
 
-def compute_dist_mat_2(aabbs1, aabbs2):
+def compute_dist_mat_2(aabbs1: List[BoundingBox], aabbs2: List[BoundingBox]) -> np.ndarray:
     """Jaccard distance matrix of all pairs of aabbs from lists aabbs1 and aabbs2"""
     num_aabbs1 = len(aabbs1)
     num_aabbs2 = len(aabbs2)
@@ -611,7 +611,7 @@ def compute_dist_mat_2(aabbs1, aabbs2):
 
     return dists
 
-def binary_classification_metrics(gt_aabbs, pred_aabbs):
+def binary_classification_metrics(gt_aabbs: List[BoundingBox], pred_aabbs: List[BoundingBox]) -> dict:
     iou_thres = 0.7
 
     ious = 1 - compute_dist_mat_2(gt_aabbs, pred_aabbs)
