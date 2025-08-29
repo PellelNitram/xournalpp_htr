@@ -65,8 +65,17 @@ demo = gr.Interface(
         )
     ],
     outputs=gr.Image(type="numpy", label="Input image with detected words superimposed."),
-    title="WordDetectorNN",
-    description="Upload an image of handwritten text. Adjust the margin to add additional margin to the detected bounding boxes."
+    title="WordDetectorNN: Handwritten Word Detection",
+    description="Detect handwritten words in your images. Upload an image of handwritten text, adjust the margin slider (start at 0) and see bounding boxes appear around each detected word.",
+    article="""
+    ### About this project
+    This demo is part of **[Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr)**, an effort to bring handwritten text recognition to [Xournal++](https://github.com/xournalpp/xournalpp).
+
+    The original WordDetectorNN model was invented and implemented by **Harald Scheidl** in his [WordDetectorNN repository](https://github.com/githubharald/WordDetectorNN).  
+    I’ve re-implemented it with some PyTorch best practices and shared it here on Hugging Face. Thanks Harald for the great implementation!
+
+    Hope everyone enjoys experimenting with it! 🙂
+    """,
 )
 
 demo.launch()
