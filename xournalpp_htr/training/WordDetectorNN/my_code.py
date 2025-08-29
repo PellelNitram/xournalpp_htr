@@ -1,4 +1,6 @@
 from typing import Optional
+from typing import List, Tuple
+import urllib.request
 import json
 from pathlib import Path
 from typing import NamedTuple
@@ -937,3 +939,13 @@ def get_git_commit_hash(repo_path: Path = Path("."), short: bool = False) -> str
     except Exception as e:
         print(f"Error while getting git commit hash from {repo_path}: {e}")
         return '-1'
+
+def url_exists(url: str) -> bool:
+    """Check if a URL exists using a HEAD request."""
+    try:
+        req = urllib.request.Request(url, method="HEAD")
+        with urllib.request.urlopen(req, timeout=5) as response:
+            return response.status == 200
+    except Exception as e:
+        print(e)
+        return False
