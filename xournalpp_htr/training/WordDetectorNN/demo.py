@@ -8,6 +8,7 @@ import numpy as np
 
 from my_code import draw_bboxes_on_image
 from my_code import run_image_through_network
+from my_code import get_example_list
 
 
 parser = argparse.ArgumentParser(
@@ -76,6 +77,8 @@ demo = gr.Interface(
 
     Hope everyone enjoys experimenting with it! 🙂
     """,
+    examples=get_example_list(),
+    cache_examples=True,
 )
 
 demo.launch()
