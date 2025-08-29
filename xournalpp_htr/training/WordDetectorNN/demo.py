@@ -16,9 +16,12 @@ parser = argparse.ArgumentParser(
     )
 parser.add_argument("--model_path", type=Path, required=True,
                     help="Path to trained model.")
+parser.add_argument("--force_cpu", action="store_true",
+                    help="Force running on CPU if enabled.")
 args = vars(parser.parse_args())
 
 model_path = args['model_path']
+force_cpu = args['force_cpu']
 
 def process_image(
         image: np.ndarray, # Is (H, W, 3) uint8 RGB; return needs to be the same
@@ -31,10 +34,15 @@ def process_image(
 
     image_gray = cv2.cvtColor(image_BGR, cv2.COLOR_BGR2GRAY)
 
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    if force_cpu:
+        device = 'cpu'
+
     # Inference
     result = run_image_through_network(
         image_grayscale=image_gray,
         model_path=model_path,
+        device=device,
     )
 
     # Post processing
