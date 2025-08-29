@@ -949,3 +949,17 @@ def url_exists(url: str) -> bool:
     except Exception as e:
         print(e)
         return False
+
+def get_example_list() -> List[List]:
+    """Only return examples that still exist online."""
+    links_to_images = [
+        'https://raw.githubusercontent.com/githubharald/WordDetectorNN/master/data/test/cvl.jpg',
+        'https://raw.githubusercontent.com/githubharald/WordDetectorNN/master/data/test/random.jpg',
+        'https://raw.githubusercontent.com/githubharald/WordDetectorNN/master/data/test/bentham.jpg',
+    ]
+    result = []
+    for link in links_to_images:
+        image_exists = url_exists(link)
+        if image_exists:
+            result.append([link, 0])
+    return result
