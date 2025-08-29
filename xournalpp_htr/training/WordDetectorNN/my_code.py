@@ -858,15 +858,10 @@ def normalize_image_transform(image, bounding_boxes):
 def run_image_through_network(
         image_grayscale: np.ndarray,
         model_path: Path=Path('best_model.pth'),
+        device: str='cuda',
     ) -> List[BoundingBox]:
 
-    # ================
-    # Configure system
-    # ================
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    # ==========
     # Load model
     # ==========
 
