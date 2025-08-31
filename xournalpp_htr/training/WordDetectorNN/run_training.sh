@@ -6,7 +6,7 @@ set -e # To catch all errors
 # Settings
 # ========
 
-BASE_PATH=experiments
+BASE_PATH=${HOME}/experiments
 
 # ============
 # Experiment 1
