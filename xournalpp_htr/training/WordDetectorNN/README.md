@@ -37,6 +37,8 @@ The decision to keep this as a standalone subfolder (rather than integrating it 
 
 ## Installation
 
+*(TODO: Check that this is correct next time I train.)*
+
 1. `uv init --no-workspace`
 2. `uv venv`
 3. `uv sync`; by the way, here is a [useful tutorial](https://docs.astral.sh/uv/guides/integration/pytorch/#installing-pytorch) on how to install pytorch w/ uv.
