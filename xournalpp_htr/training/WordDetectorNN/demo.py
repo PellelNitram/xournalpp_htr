@@ -15,14 +15,16 @@ parser = argparse.ArgumentParser(
         description="Train a WordDetectorNet model.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-parser.add_argument("--model_path", type=Path, required=True,
-                    help="Path to trained model.")
-parser.add_argument("--force_cpu", action="store_true",
-                    help="Force running on CPU if enabled.")
+parser.add_argument("--model_path", type=Path, default=Path('best_model.pth'),
+                    help="Path to trained pth model.")
+parser.add_argument("--device", type=str, choices=["cpu", "auto"], default="cpu",
+                    help="Selects the device. \"auto\" selects GPU if available.")
 args = vars(parser.parse_args())
 
 model_path = args['model_path']
-force_cpu = args['force_cpu']
+device_selection = args['device']
+
+print(f'Used args: {args}')
 
 def process_image(
         image: np.ndarray, # Is (H, W, 3) uint8 RGB; return needs to be the same
@@ -35,8 +37,9 @@ def process_image(
 
     image_gray = cv2.cvtColor(image_BGR, cv2.COLOR_BGR2GRAY)
 
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    if force_cpu:
+    if device_selection == 'auto':
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    else:
         device = 'cpu'
 
     # Inference
