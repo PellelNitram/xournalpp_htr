@@ -1,6 +1,14 @@
 # Training WordDetectorNN
 
-This subfolder contains the training code and resources for training the WordDetectorNN.
+This subfolder contains the standalone training code and resources for training the WordDetectorNN model.
+The [WordDetectorNN](https://github.com/githubharald/WordDetectorNN) model was originally created by
+[Harald Scheidl](https://github.com/githubharald/WordDetectorNN) & this work here just reimplements it
+with some best practises to later integrate into a Xournal++ HTR pipeline.
+
+## Deployment as Hugging Face Space
+
+This is currently done as manual process. In the future, it is worth to use a Docker HF space to gain
+finer grained control about the deployment process and to automate it.
 
 ## Project Structure
 
