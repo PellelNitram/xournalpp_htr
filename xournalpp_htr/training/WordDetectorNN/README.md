@@ -33,6 +33,8 @@ The decision to keep this as a standalone subfolder (rather than integrating it 
 ## Current Status
 
 Everything from the original WordDetectorNN model has been reimplemented except for training data augmentations.
+It is a reasonable idea to implement these training data augmentations in the future. After this is done, the
+betham sample should be checked again for correctness as this example fails horrible currently.
 
 This folder remains independent from the main code base until WordDetectorNN becomes part of a pipeline and, before
 that, Xournal++ HTR can be installed both for users and developers properly.
@@ -48,5 +50,14 @@ After successful model training, integration work will include:
 
 The model implemented and trained here is currently deployed as HF Gradio Space [here](https://huggingface.co/spaces/PellelNitram/xournalpp_htr_WordDetectorNN).
 
-The deployment to htere is currently done as manual process. In the future, it is worth to use a Docker HF space to gain
+The deployment to there is currently done as manual process. The files are copied to the Space manually.
+
+In the future, it is worth to use a Docker HF space to gain
 finer grained control about the deployment process and to automate it.
+
+## Outlook
+
+Considerations for when the model is integrated into a pipeline:
+
+- Train using data augmentations.
+- Use PIL images everywhere instead of numpy to keep track of channel order.
