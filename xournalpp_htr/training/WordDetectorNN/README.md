@@ -1,3 +1,14 @@
+---
+title: Xournal++ HTR WordDetectorNN
+emoji: 📄
+colorFrom: purple
+colorTo: indigo
+sdk: gradio
+sdk_version: 5.44.1
+app_file: demo.py
+pinned: false
+---
+
 # Training WordDetectorNN
 
 [🤗 demo](https://huggingface.co/spaces/PellelNitram/xournalpp_htr_WordDetectorNN)
