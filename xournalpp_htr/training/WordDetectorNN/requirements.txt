@@ -1,0 +1,8 @@
+# For HF Gradio Space
+torch
+torchvision
+numpy
+scikit-learn
+tqdm
+opencv-python
+gitpython
