@@ -1,3 +1,4 @@
+import argparse
 import subprocess
 from pathlib import Path
 
@@ -51,3 +52,53 @@ def export_to_pdf_with_xournalpp(input_file: Path, output_file: Path) -> None:
         )
 
     return output_file
+
+
+def parse_arguments(cli_string: None | str = None):
+    """Parse arguments from command line."""
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "-if",
+        "--input-file",
+        type=lambda p: Path(p).absolute(),
+        required=True,
+        help="Path to the input Xournal or Xournal++ file.",
+    )
+    parser.add_argument(
+        "-of",
+        "--output-file",
+        type=lambda p: Path(p).absolute(),
+        required=True,
+        help="Path to the output PDF file.",
+    )
+    # v-- TODO: Make optional
+    parser.add_argument(
+        "-m",
+        "--model",
+        type=str,
+        required=False,
+        default="2024-07-18_htr_pipeline",
+        help="The model to use for handwriting recognition.",
+    )  # TODO: Introduce dummy model called "test_lua_to_python"; TODO: Register models somehow to allow choice keyword here; also add "none"; default to latest model
+    parser.add_argument(
+        "-pid",
+        "--prediction-image-dir",
+        type=lambda p: Path(p).absolute(),
+        required=False,
+        help="If provided, images of the pages with overlaid "
+        "predictions are stored in the provided folder. "
+        "Useful for debugging purposes.",
+    )
+    parser.add_argument(
+        "-sp",
+        "--show-predictions",
+        action="store_true",
+        help="Store the predictions and bounding boxes "
+        "visibly in the output file if enabled. "
+        "Useful for debugging purposes. "
+        "Otherwise only store invisible text.",
+    )
+    args = vars(parser.parse_args(cli_string.split() if cli_string else None))
+    return args
