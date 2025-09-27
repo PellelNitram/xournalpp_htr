@@ -1,11 +1,29 @@
 import argparse
+import os
+from datetime import datetime, timezone
 from pathlib import Path
+from uuid import uuid4
 
 import cv2
 import gradio as gr
 import numpy as np
 import torch
-from my_code import draw_bboxes_on_image, get_example_list, run_image_through_network
+from dotenv import load_dotenv
+from my_code import (
+    draw_bboxes_on_image,
+    get_example_list,
+    run_image_through_network,
+    save_event,
+)
+
+load_dotenv()
+
+DEMO = os.getenv("DEMO") == "1"
+SB_URL = os.getenv("SB_URL")
+SB_KEY = os.getenv("SB_KEY")
+SB_BUCKET_NAME = os.getenv("SB_BUCKET_NAME")
+SB_SCHEMA_NAME = os.getenv("SB_SCHEMA_NAME")
+SB_TABLE_NAME = os.getenv("SB_TABLE_NAME")
 
 parser = argparse.ArgumentParser(
     description="Train a WordDetectorNet model.",
@@ -35,6 +53,7 @@ print(f"Used args: {args}")
 def process_image(
     image: np.ndarray,  # Is (H, W, 3) uint8 RGB; return needs to be the same
     margin: float,
+    donate_data: bool,
 ) -> np.ndarray:
     margin = int(margin)
 
@@ -64,6 +83,21 @@ def process_image(
     ]
     vis_scaled = draw_bboxes_on_image(image_BGR, bboxes_scaled, denormalise=False)
 
+    save_event(
+        {
+            "timestamp": datetime.now(timezone.utc),
+            "demo": DEMO,
+            "donate_data": donate_data,
+            "uuid": uuid4(),
+            "image": image,
+        },
+        SB_URL=SB_URL,
+        SB_KEY=SB_KEY,
+        SB_SCHEMA_NAME=SB_SCHEMA_NAME,
+        SB_TABLE_NAME=SB_TABLE_NAME,
+        SB_BUCKET_NAME=SB_BUCKET_NAME,
+    )
+
     return cv2.cvtColor(vis_scaled, cv2.COLOR_BGR2RGB)
 
 
@@ -74,24 +108,28 @@ demo = gr.Interface(
         gr.Slider(
             minimum=0,
             maximum=100,
-            value=0,  # Default value
+            value=0,
             step=1,
             label="Margin",
+        ),
+        gr.Checkbox(
+            value=False,
+            label="Donate Data",
+            info="By checking this box, you agree to share your uploaded image to help improve our open-source models. Donated data will be open source and freely available as dataset.",
         ),
     ],
     outputs=gr.Image(
         type="numpy", label="Input image with detected words superimposed."
     ),
     title="WordDetectorNN: Handwritten Word Detection",
-    description="Detect handwritten words in your images. Upload an image of handwritten text, adjust the margin slider (start at 0) and see bounding boxes appear around each detected word.",
+    description="Detect handwritten words in images. Upload an image, adjust the margin slider, and see bounding boxes around detected words.",
     article="""
     ### About this project
-    This demo is part of **[Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr)**, an effort to bring handwritten text recognition to [Xournal++](https://github.com/xournalpp/xournalpp).
+    This demo is part of **[Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr)**, an open-source effort to bring handwritten text recognition to [Xournal++](https://github.com/xournalpp/xournalpp).
 
-    The original WordDetectorNN model was invented and implemented by **Harald Scheidl** in his [WordDetectorNN repository](https://github.com/githubharald/WordDetectorNN).
-    I’ve re-implemented it with some PyTorch best practices and shared it here on Hugging Face. Thanks Harald for the great implementation!
+    The original WordDetectorNN model was created by **Harald Scheidl** in his [WordDetectorNN repository](https://github.com/githubharald/WordDetectorNN). This project re-implements it with PyTorch best practices. Thanks Harald for the great work and inspiration!
 
-    Hope everyone enjoys experimenting with it! 🙂
+    Donated data will contribute to an open-source dataset for the community. Thank you for supporting open-source innovation!
     """,
     examples=get_example_list(),
     cache_examples=True,
