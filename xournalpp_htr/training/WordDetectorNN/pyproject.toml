@@ -5,8 +5,11 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "gitpython>=3.1.45",
+    "gradio>=5.47.2",
     "jupyter>=1.1.1",
     "opencv-python>=4.12.0.88",
+    "scikit-learn>=1.7.2",
     "tensorboard>=2.20.0",
     "torch>=2.7.1",
     "torchaudio>=2.7.1",
