@@ -68,6 +68,40 @@ The deployment to there is currently done as manual process. The files are copie
 In the future, it is worth to use a Docker HF space to gain
 finer grained control about the deployment process and to automate it.
 
+## SupaBase database commands
+
+Create the events table:
+
+```sql
+create table word_detector_net.hf_space_events (
+  id bigserial primary key,
+  timestamp timestamptz not null,
+  demo boolean not null,
+  uuid text not null,
+  donate_data bool not null,
+  contains_image bool not null
+);
+```
+
+Create bucket:
+
+```
+WordDetectorNN_hf_space_images
+```
+
+Configure table:
+
+```
+-- Schema access
+grant usage on schema word_detector_net to service_role;
+
+-- Table access
+grant insert, select on table word_detector_net.hf_space_events to service_role;
+
+-- Sequence access for autoincrement IDs
+grant usage, select, update on sequence word_detector_net.hf_space_events_id_seq to service_role;
+```
+
 ## Outlook
 
 Considerations for when the model is integrated into a pipeline:
