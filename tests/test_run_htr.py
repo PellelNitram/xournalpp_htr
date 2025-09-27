@@ -3,7 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from xournalpp_htr.run_htr import export_xournalpp_to_pdf_with_htr, parse_arguments
+from xournalpp_htr.pipeline import export_xournalpp_to_pdf_with_htr
+from xournalpp_htr.run_htr import parse_arguments
 
 
 @pytest.fixture
