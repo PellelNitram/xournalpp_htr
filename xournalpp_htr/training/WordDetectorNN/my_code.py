@@ -1,3 +1,4 @@
+import io
 import json
 import pickle
 import urllib.request
@@ -13,6 +14,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from git import Repo
 from sklearn.cluster import DBSCAN
+from supabase import Client, create_client
 from torch.utils.data import Dataset
 from torchvision.models.resnet import BasicBlock, ResNet
 from tqdm import tqdm
@@ -1044,3 +1046,46 @@ def get_example_list() -> List[List]:
         if image_exists:
             result.append([link, 0, False])
     return result
+
+
+def save_event(
+    data: dict,
+    SB_URL: str,
+    SB_KEY: str,
+    SB_SCHEMA_NAME: str,
+    SB_TABLE_NAME: str,
+    SB_BUCKET_NAME: str,
+):
+    supabase: Client = create_client(SB_URL, SB_KEY)
+
+    uid = str(data["uuid"])
+    contains_image = data.get("image") is not None
+
+    if contains_image and data["donate_data"]:
+        arr = data["image"]
+        if not isinstance(arr, np.ndarray):
+            raise ValueError("Image must be a numpy array!")
+
+        # Save NumPy array into .npy format in memory
+        buf = io.BytesIO()
+        np.save(buf, arr)
+        buf.seek(0)
+
+        # Upload to Supabase Storage (pass actual bytes, not BytesIO)
+        filename = f"{uid}.npy"
+        supabase.storage.from_(SB_BUCKET_NAME).upload(
+            filename,
+            buf.getvalue(),
+            {"content-type": "application/octet-stream"},
+        )
+
+    # Insert metadata row
+    row = {
+        "timestamp": data["timestamp"].isoformat(),
+        "demo": data["demo"],
+        "uuid": uid,
+        "donate_data": data["donate_data"],
+        "contains_image": contains_image,
+    }
+
+    supabase.schema(SB_SCHEMA_NAME).table(SB_TABLE_NAME).insert(row).execute()
