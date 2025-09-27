@@ -1,14 +1,21 @@
-from typing import Optional
-from typing import List, Tuple
-import urllib.request
 import json
+import pickle
+import urllib.request
+import xml.etree.ElementTree as ET
+from collections import defaultdict
 from pathlib import Path
-from typing import NamedTuple
+from typing import List, NamedTuple, Optional, Tuple, TypedDict
+
+import cv2
+import numpy as np
 import torch
-from torchvision.models.resnet import BasicBlock, ResNet
 import torch.nn as nn
 import torch.nn.functional as F
 from git import Repo
+from sklearn.cluster import DBSCAN
+from torch.utils.data import Dataset
+from torchvision.models.resnet import BasicBlock, ResNet
+from tqdm import tqdm
 
 # TODO: how to add w and h in all type annotations and datatype definitions?
 
@@ -17,8 +24,16 @@ class ImageDimensions(NamedTuple):
     height: int
     width: int
 
+
 class BoundingBox:
-    def __init__(self, x_min: float, y_min: float, x_max: float, y_max: float, label: Optional[str] = None):
+    def __init__(
+        self,
+        x_min: float,
+        y_min: float,
+        x_max: float,
+        y_max: float,
+        label: Optional[str] = None,
+    ):
         """
         Initialize a bounding box.
         (x_min, y_min): top-left corner
@@ -34,7 +49,7 @@ class BoundingBox:
         self.x_max = float(x_max)
         self.y_max = float(y_max)
         self.label: Optional[str] = label
-        
+
     def translate(self, dx: float, dy: float) -> "BoundingBox":
         """Translate the bounding box by (dx, dy)."""
         bbox_translated = BoundingBox(
@@ -102,10 +117,10 @@ class BoundingBox:
 
     def enlarge(self, margin_x: float, margin_y: float) -> "BoundingBox":
         return BoundingBox(
-            x_min=self.x_min-margin_x,
-            x_max=self.x_max+margin_x,
-            y_min=self.y_min-margin_y,
-            y_max=self.y_max+margin_y,
+            x_min=self.x_min - margin_x,
+            x_max=self.x_max + margin_x,
+            y_min=self.y_min - margin_y,
+            y_max=self.y_max + margin_y,
         )
 
     # def intersect(self, other):
@@ -129,22 +144,15 @@ class BoundingBox:
     def __repr__(self) -> str:
         return f"BoundingBox(x_min={self.x_min}, y_min={self.y_min}, x_max={self.x_max}, y_max={self.y_max}, label={self.label})"
 
-import pickle
-import xml.etree.ElementTree as ET
-from typing import List, Tuple
-from typing import TypedDict
-
-import cv2
-import numpy as np
-from torch.utils.data import Dataset
-from tqdm import tqdm
 
 # TODO later: Replace print with logging.
 # TODO: deal w/ height and width better & relate to x and y - do that once I know things are working
 
+
 # TODO: Rename
 class MapOrdering:
     """order of the maps encoding the aabbs around the words"""
+
     SEG_WORD = 0
     SEG_SURROUNDING = 1
     SEG_BACKGROUND = 2
@@ -153,6 +161,7 @@ class MapOrdering:
     GEO_LEFT = 5
     GEO_RIGHT = 6
     NUM_MAPS = 7
+
 
 def encode(input_size: ImageDimensions, output_size: ImageDimensions, gt):
     f = output_size.height / input_size.height
@@ -166,9 +175,21 @@ def encode(input_size: ImageDimensions, output_size: ImageDimensions, gt):
         aabb_word = aabb.scale_around_center(0.5, 0.5).as_type(int).clip(aabb_clip)
         aabb_sur = aabb.as_type(int).clip(aabb_clip)
         # TODO: fix hack to get ints
-        gt_map[MapOrdering.SEG_SURROUNDING, int(aabb_sur.y_min):int(aabb_sur.y_max) + 1, int(aabb_sur.x_min):int(aabb_sur.x_max) + 1] = 1
-        gt_map[MapOrdering.SEG_SURROUNDING, int(aabb_word.y_min):int(aabb_word.y_max) + 1, int(aabb_word.x_min):int(aabb_word.x_max) + 1] = 0
-        gt_map[MapOrdering.SEG_WORD, int(aabb_word.y_min):int(aabb_word.y_max) + 1, int(aabb_word.x_min):int(aabb_word.x_max) + 1] = 1
+        gt_map[
+            MapOrdering.SEG_SURROUNDING,
+            int(aabb_sur.y_min) : int(aabb_sur.y_max) + 1,
+            int(aabb_sur.x_min) : int(aabb_sur.x_max) + 1,
+        ] = 1
+        gt_map[
+            MapOrdering.SEG_SURROUNDING,
+            int(aabb_word.y_min) : int(aabb_word.y_max) + 1,
+            int(aabb_word.x_min) : int(aabb_word.x_max) + 1,
+        ] = 0
+        gt_map[
+            MapOrdering.SEG_WORD,
+            int(aabb_word.y_min) : int(aabb_word.y_max) + 1,
+            int(aabb_word.x_min) : int(aabb_word.x_max) + 1,
+        ] = 1
 
         # geometry map TODO vectorize
         for x in range(int(aabb_word.x_min), int(aabb_word.x_max) + 1):
@@ -179,14 +200,11 @@ def encode(input_size: ImageDimensions, output_size: ImageDimensions, gt):
                 gt_map[MapOrdering.GEO_RIGHT, y, x] = aabb.x_max - x
 
     gt_map[MapOrdering.SEG_BACKGROUND] = np.clip(
-        1
-        - gt_map[MapOrdering.SEG_WORD]
-        - gt_map[MapOrdering.SEG_SURROUNDING],
-        0,
-        1
+        1 - gt_map[MapOrdering.SEG_WORD] - gt_map[MapOrdering.SEG_SURROUNDING], 0, 1
     )
 
     return gt_map
+
 
 def subsample(idx, max_num):
     """restrict fg indices to a maximum number"""
@@ -196,6 +214,7 @@ def subsample(idx, max_num):
         b = np.asarray([idx[1][int(j * f)] for j in range(max_num)], np.int64)
         idx = (a, b)
     return idx
+
 
 def fg_by_threshold(thres, max_num=None):
     """all pixels above threshold are fg pixels, optionally limited to a maximum number"""
@@ -208,13 +227,16 @@ def fg_by_threshold(thres, max_num=None):
 
     return func
 
+
 def fg_by_cc(thres, max_num):
     """take a maximum number of pixels per connected component, but at least 3 (->DBSCAN minPts)"""
 
     def func(seg_map):
         seg_mask = (seg_map > thres).astype(np.uint8)
         num_labels, label_img = cv2.connectedComponents(seg_mask, connectivity=4)
-        max_num_per_cc = max(max_num // (num_labels + 1), 3)  # at least 3 because of DBSCAN clustering
+        max_num_per_cc = max(
+            max_num // (num_labels + 1), 3
+        )  # at least 3 because of DBSCAN clustering
 
         all_idx = [np.empty(0, np.int64), np.empty(0, np.int64)]
         for curr_label in range(1, num_labels):
@@ -226,29 +248,27 @@ def fg_by_cc(thres, max_num):
 
     return func
 
-def decode(nn_prediction, scale=1.0, comp_fg=fg_by_threshold(0.5)) -> List[BoundingBox]:
+
+def decode(nn_prediction, scale=1.0, comp_fg=fg_by_threshold(0.5)) -> List[BoundingBox]:  # noqa: B008
     idx = comp_fg(nn_prediction[MapOrdering.SEG_WORD])
     nn_prediction_masked = nn_prediction[..., idx[0], idx[1]]
     bounding_boxes = []
     for yc, xc, pred in zip(idx[0], idx[1], nn_prediction_masked.T):
         t = pred[MapOrdering.GEO_TOP]
         b = pred[MapOrdering.GEO_BOTTOM]
-        l = pred[MapOrdering.GEO_LEFT]
+        l = pred[MapOrdering.GEO_LEFT]  # noqa: E741
         r = pred[MapOrdering.GEO_RIGHT]
-        bbox = BoundingBox(
-            x_min=xc - l,
-            x_max=xc + r,
-            y_min=yc - t,
-            y_max=yc + b
-        )
+        bbox = BoundingBox(x_min=xc - l, x_max=xc + r, y_min=yc - t, y_max=yc + b)
         bounding_boxes.append(bbox.scale(scale, scale))
     return bounding_boxes
+
 
 class IAM_Dataset_Element(TypedDict):
     image: np.ndarray
     bounding_boxes: List[BoundingBox]
     filename: str
     gt_encoded: np.ndarray
+
 
 class IAM_Dataset(Dataset):
     """
@@ -266,10 +286,10 @@ class IAM_Dataset(Dataset):
 
     # TODO: Has potential to be reworked in one IAM_Ds and one based on top of that to transform to dataset used in this modeling approach and therefore DataLoader; can be done later once I know things work
 
-    _GT_DIR_NAME = 'gt'
-    _IMG_DIR_NAME = 'img'
-    _IMG_EXT = '.png'
-    _GT_EXT = '*.xml'
+    _GT_DIR_NAME = "gt"
+    _IMG_DIR_NAME = "img"
+    _IMG_EXT = ".png"
+    _GT_EXT = "*.xml"
 
     def __init__(
         self,
@@ -277,8 +297,8 @@ class IAM_Dataset(Dataset):
         input_size: ImageDimensions,
         output_size: ImageDimensions,
         force_rebuild_cache: bool = False,
-        transform = None,
-        cache_path: Path = Path('dataset_cache.pickle'),
+        transform=None,
+        cache_path: Path = Path("dataset_cache.pickle"),
     ):
         """
         Initializes the dataset. Checks for a cache file first. If it doesn't
@@ -300,7 +320,10 @@ class IAM_Dataset(Dataset):
         self.output_height = output_size.height
         self.transform = transform
 
-        assert self.output_width / self.input_width == self.output_height / self.input_height, 'Input and output need to have same aspect ratio' # Same aspect ratio
+        assert (
+            self.output_width / self.input_width
+            == self.output_height / self.input_height
+        ), "Input and output need to have same aspect ratio"  # Same aspect ratio
 
         self.img_cache: List[np.ndarray] = []
         self.gt_cache: List[List[BoundingBox]] = []
@@ -315,7 +338,7 @@ class IAM_Dataset(Dataset):
 
     def _load_from_cache(self, cache_path: Path):
         """Loads pre-processed data from a pickle file."""
-        with open(cache_path, 'rb') as f:
+        with open(cache_path, "rb") as f:
             self.img_cache, self.gt_cache, self.filename_cache = pickle.load(f)
 
     def _preprocess_and_cache(self, cache_path: Path):
@@ -346,10 +369,9 @@ class IAM_Dataset(Dataset):
             self.filename_cache.append(fn_gt.stem)
 
         print(f"Preprocessing complete. Saving cache to {cache_path}...")
-        with open(cache_path, 'wb') as f:
+        with open(cache_path, "wb") as f:
             pickle.dump([self.img_cache, self.gt_cache, self.filename_cache], f)
         print("Cache saved successfully.")
-
 
     def _parse_gt(self, fn_gt: Path) -> List[BoundingBox]:
         """Parses an XML ground truth file to get word bounding boxes."""
@@ -358,30 +380,32 @@ class IAM_Dataset(Dataset):
         aabbs = []
 
         for line in root.findall("./handwritten-part/line"):
-            for word in line.findall('./word'):
-                x_min, x_max, y_min, y_max = float('inf'), 0, float('inf'), 0
-                components = word.findall('./cmp')
+            for word in line.findall("./word"):
+                x_min, x_max, y_min, y_max = float("inf"), 0, float("inf"), 0
+                components = word.findall("./cmp")
                 if not components:
                     continue
 
                 for cmp in components:
-                    x = float(cmp.attrib['x'])
-                    y = float(cmp.attrib['y'])
-                    w = float(cmp.attrib['width'])
-                    h = float(cmp.attrib['height'])
+                    x = float(cmp.attrib["x"])
+                    y = float(cmp.attrib["y"])
+                    w = float(cmp.attrib["width"])
+                    h = float(cmp.attrib["height"])
                     x_min = min(x_min, x)
                     x_max = max(x_max, x + w)
                     y_min = min(y_min, y)
                     y_max = max(y_max, y + h)
-                
-                text = word.attrib['text']
-                
+
+                text = word.attrib["text"]
+
                 # Scale coordinates to match the initially scaled image
                 aabb = BoundingBox(x_min, y_min, x_max, y_max, text)
                 aabbs.append(aabb)
         return aabbs
 
-    def _crop_page_to_content(self, img: np.ndarray, gt: List[BoundingBox]) -> Tuple[np.ndarray, List[BoundingBox]]:
+    def _crop_page_to_content(
+        self, img: np.ndarray, gt: List[BoundingBox]
+    ) -> Tuple[np.ndarray, List[BoundingBox]]:
         """Crops the image to the bounding box containing all words."""
         x_min = min(aabb.x_min for aabb in gt)
         x_max = max(aabb.x_max for aabb in gt)
@@ -389,10 +413,14 @@ class IAM_Dataset(Dataset):
         y_max = max(aabb.y_max for aabb in gt)
 
         gt_crop = [aabb.translate(-x_min, -y_min) for aabb in gt]
-        img_crop = img[int(y_min):int(y_max), int(x_min):int(x_max)] # TODO: Round correctly as opposed to just int'ing
+        img_crop = img[
+            int(y_min) : int(y_max), int(x_min) : int(x_max)
+        ]  # TODO: Round correctly as opposed to just int'ing
         return img_crop, gt_crop
 
-    def _adjust_to_input_size(self, img: np.ndarray, gt: List[BoundingBox]) -> Tuple[np.ndarray, List[BoundingBox]]:
+    def _adjust_to_input_size(
+        self, img: np.ndarray, gt: List[BoundingBox]
+    ) -> Tuple[np.ndarray, List[BoundingBox]]:
         """Resizes the image and AABBs to the final network input size."""
         h, w = img.shape
         # print(f'incoming image: {h=} {w=}') # TODO: Use logging here.
@@ -400,7 +428,9 @@ class IAM_Dataset(Dataset):
         sy = self.input_height / h
         # print(f'scaling factors: {sx=} {sy=}') # TODO: Use logging here.
         gt_resized = [aabb.scale(sx, sy) for aabb in gt]
-        img_resized = cv2.resize(img, dsize=(self.input_width, self.input_height)) # cv2 uses (w, h)
+        img_resized = cv2.resize(
+            img, dsize=(self.input_width, self.input_height)
+        )  # cv2 uses (w, h)
         return img_resized, gt_resized
 
     def __len__(self) -> int:
@@ -426,34 +456,34 @@ class IAM_Dataset(Dataset):
             image, bounding_boxes = self.transform(image, bounding_boxes)
         gt_encoded = encode(self.input_size, self.output_size, bounding_boxes)
         return {
-            'image': image,
-            'bounding_boxes': bounding_boxes,
-            'filename': self.filename_cache[idx],
-            'gt_encoded': gt_encoded,
+            "image": image,
+            "bounding_boxes": bounding_boxes,
+            "filename": self.filename_cache[idx],
+            "gt_encoded": gt_encoded,
         }
-    
+
     def store_element_as_image(
-            self,
-            idx: int,
-            output_path: Path,
-            draw_bboxes: bool = False,
-            store_gt_encoded: bool = False,
-        ) -> List[Path]:
+        self,
+        idx: int,
+        output_path: Path,
+        draw_bboxes: bool = False,
+        store_gt_encoded: bool = False,
+    ) -> List[Path]:
         """
         Saves a dataset element as an image with bounding boxes drawn on it.
-        
+
         Args:
             idx (int): The index of the dataset element to save.
             output_path (Path): The path where the image should be saved.
         """
         # Get the element
         element = self[idx]
-        img = element['image'].copy()  # Copy to avoid modifying the cached image
-        bboxes = element['bounding_boxes']
-        
+        img = element["image"].copy()  # Copy to avoid modifying the cached image
+        bboxes = element["bounding_boxes"]
+
         # Convert grayscale to BGR for colored bounding boxes
         img_color = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-        
+
         # Draw bounding boxes
         if draw_bboxes:
             for bbox in bboxes:
@@ -462,10 +492,10 @@ class IAM_Dataset(Dataset):
                 y_min = int(bbox.y_min)
                 x_max = int(bbox.x_max)
                 y_max = int(bbox.y_max)
-                
+
                 # Draw rectangle (green color, thickness=2)
                 cv2.rectangle(img_color, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
-        
+
         # Save the image
         cv2.imwrite(str(output_path), img_color)
         files_to_return = [output_path]
@@ -473,30 +503,30 @@ class IAM_Dataset(Dataset):
         # TODO: Add text there
 
         if store_gt_encoded:
-            gt_encoded = element['gt_encoded']
+            gt_encoded = element["gt_encoded"]
             for key, value in MapOrdering.__dict__.items():
-                if '__' not in key and key != 'NUM_MAPS':
+                if "__" not in key and key != "NUM_MAPS":
                     data = gt_encoded[value].copy()
-                    data_normalised = ((data - data.min()) / (data.max() - data.min()) * 255).astype(np.uint8) # Required for storing as image
+                    data_normalised = (
+                        (data - data.min()) / (data.max() - data.min()) * 255
+                    ).astype(np.uint8)  # Required for storing as image
 
-                    name = Path(output_path.stem + f'__{key.lower()}' + output_path.suffix)
+                    name = Path(
+                        output_path.stem + f"__{key.lower()}" + output_path.suffix
+                    )
                     files_to_return.append(name)
 
                     # Convert grayscale to BGR for colored bounding boxes
                     img_color = cv2.cvtColor(data_normalised, cv2.COLOR_GRAY2BGR)
-                    
+
                     # Save the image
                     cv2.imwrite(str(name), img_color)
 
         return files_to_return
 
+
 def dummy_transform(img, aabbs):
     return img, aabbs
-
-from my_code import IAM_Dataset_Element
-from typing import List, Dict
-from typing import TypedDict
-from my_code import BoundingBox
 
 
 class Dataloader_Element(TypedDict):
@@ -504,19 +534,20 @@ class Dataloader_Element(TypedDict):
     bounding_boxes: List[List[BoundingBox]]
     gt_encoded: torch.tensor
 
+
 def custom_collate_fn(batch: List[IAM_Dataset_Element]) -> Dataloader_Element:
     """
     Custom collate function to handle IAM_Dataset_Element batches.
     """
-    
+
     batch_images = []
     batch_gt_encodeds = []
     batch_bounding_boxes = []
 
     for sample in batch:
-        image = sample['image']
-        gt_encoded = sample['gt_encoded']
-        bounding_boxes = sample['bounding_boxes']
+        image = sample["image"]
+        gt_encoded = sample["gt_encoded"]
+        bounding_boxes = sample["bounding_boxes"]
         batch_images.append(image[None, ...].astype(np.float32))
         batch_gt_encodeds.append(gt_encoded.astype(np.float32))
         batch_bounding_boxes.append(bounding_boxes)
@@ -526,12 +557,13 @@ def custom_collate_fn(batch: List[IAM_Dataset_Element]) -> Dataloader_Element:
 
     batch_images = torch.from_numpy(batch_images)
     batch_gt_encodeds = torch.from_numpy(batch_gt_encodeds)
-    
+
     return {
-        'images': batch_images,
-        'gt_encoded': batch_gt_encodeds,
-        'bounding_boxes': batch_bounding_boxes
+        "images": batch_images,
+        "gt_encoded": batch_gt_encodeds,
+        "bounding_boxes": batch_bounding_boxes,
     }
+
 
 def count_parameters(net):
     total_params = sum(p.numel() for p in net.parameters())
@@ -541,18 +573,18 @@ def count_parameters(net):
         "trainable_params": trainable_params,
     }
 
-from collections import defaultdict
-
-import numpy as np
-from sklearn.cluster import DBSCAN
-
 
 def compute_iou(ra: BoundingBox, rb: BoundingBox) -> float:
     """intersection over union of two axis aligned rectangles ra and rb"""
-    if ra.x_max < rb.x_min or rb.x_max < ra.x_min or ra.y_max < rb.y_min or rb.y_max < ra.y_min:
+    if (
+        ra.x_max < rb.x_min
+        or rb.x_max < ra.x_min
+        or ra.y_max < rb.y_min
+        or rb.y_max < ra.y_min
+    ):
         return 0
 
-    l = max(ra.x_min, rb.x_min)
+    l = max(ra.x_min, rb.x_min)  # noqa: E741
     r = min(ra.x_max, rb.x_max)
     t = max(ra.y_min, rb.y_min)
     b = min(ra.y_max, rb.y_max)
@@ -562,6 +594,7 @@ def compute_iou(ra: BoundingBox, rb: BoundingBox) -> float:
 
     iou = intersection / union
     return iou
+
 
 def compute_dist_mat(aabbs: List[BoundingBox]) -> np.ndarray:
     """Jaccard distance matrix of all pairs of aabbs"""
@@ -577,13 +610,14 @@ def compute_dist_mat(aabbs: List[BoundingBox]) -> np.ndarray:
 
     return dists
 
+
 def cluster_aabbs(aabbs: List[BoundingBox]) -> List[BoundingBox]:
     """cluster aabbs using DBSCAN and the Jaccard distance between bounding boxes"""
     if len(aabbs) < 2:
         return aabbs
 
     dists = compute_dist_mat(aabbs)
-    clustering = DBSCAN(eps=0.7, min_samples=3, metric='precomputed').fit(dists)
+    clustering = DBSCAN(eps=0.7, min_samples=3, metric="precomputed").fit(dists)
 
     clusters = defaultdict(list)
     for i, c in enumerate(clustering.labels_):
@@ -601,7 +635,10 @@ def cluster_aabbs(aabbs: List[BoundingBox]) -> List[BoundingBox]:
 
     return res_aabbs
 
-def compute_dist_mat_2(aabbs1: List[BoundingBox], aabbs2: List[BoundingBox]) -> np.ndarray:
+
+def compute_dist_mat_2(
+    aabbs1: List[BoundingBox], aabbs2: List[BoundingBox]
+) -> np.ndarray:
     """Jaccard distance matrix of all pairs of aabbs from lists aabbs1 and aabbs2"""
     num_aabbs1 = len(aabbs1)
     num_aabbs2 = len(aabbs2)
@@ -613,7 +650,10 @@ def compute_dist_mat_2(aabbs1: List[BoundingBox], aabbs2: List[BoundingBox]) -> 
 
     return dists
 
-def binary_classification_metrics(gt_aabbs: List[BoundingBox], pred_aabbs: List[BoundingBox]) -> dict:
+
+def binary_classification_metrics(
+    gt_aabbs: List[BoundingBox], pred_aabbs: List[BoundingBox]
+) -> dict:
     iou_thres = 0.7
 
     ious = 1 - compute_dist_mat_2(gt_aabbs, pred_aabbs)
@@ -626,15 +666,16 @@ def binary_classification_metrics(gt_aabbs: List[BoundingBox], pred_aabbs: List[
     fn = np.count_nonzero(gt_counter == 0)
 
     return {
-        'tp': tp,
-        'fp': fp,
-        'fn': fn,
+        "tp": tp,
+        "fp": fp,
+        "fn": fn,
     }
+
 
 def draw_bboxes_on_image(
     img: np.ndarray,
     aabbs: List[BoundingBox],
-    denormalise: bool=True,
+    denormalise: bool = True,
 ) -> np.ndarray:
     """
     Draws bounding boxes on an image.
@@ -648,13 +689,17 @@ def draw_bboxes_on_image(
     """
     img = img.copy()
     if denormalise:
-        img = ((img + 0.5) * 255).astype(np.uint8) # Reverse normalization
-    is_grayscale = len(img.shape) == 2 # Otherwise the image is interpreted as BGR b/c we use cv2
+        img = ((img + 0.5) * 255).astype(np.uint8)  # Reverse normalization
+    is_grayscale = (
+        len(img.shape) == 2
+    )  # Otherwise the image is interpreted as BGR b/c we use cv2
     if is_grayscale:
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
     for aabb in aabbs:
-        aabb = aabb.enlarge_to_int_grid().as_type(int) # TODO: as_type doesn't work, grr
+        aabb = aabb.enlarge_to_int_grid().as_type(
+            int
+        )  # TODO: as_type doesn't work, grr
 
         cv2.rectangle(
             img,
@@ -666,26 +711,30 @@ def draw_bboxes_on_image(
                 int(aabb.x_max),
                 int(aabb.y_max),
             ),
-            (0, 0, 255), # Red
-            2
+            (0, 0, 255),  # Red
+            2,
         )
 
     return img
 
-def compute_loss(y, gt_map):
 
+def compute_loss(y, gt_map):
     # TODO: refactoring possibility: compute area, can be used 2 to 3 times
     # TODO: add weights in loss and hyperparameter-tune them
 
     # 1. segmentation loss
-    target_labels = torch.argmax(gt_map[:, MapOrdering.SEG_WORD:MapOrdering.SEG_BACKGROUND + 1], dim=1)
-    loss_seg = F.cross_entropy(y[:, MapOrdering.SEG_WORD:MapOrdering.SEG_BACKGROUND + 1], target_labels)
+    target_labels = torch.argmax(
+        gt_map[:, MapOrdering.SEG_WORD : MapOrdering.SEG_BACKGROUND + 1], dim=1
+    )
+    loss_seg = F.cross_entropy(
+        y[:, MapOrdering.SEG_WORD : MapOrdering.SEG_BACKGROUND + 1], target_labels
+    )
 
     # 2. geometry loss
     # distances to all sides of aabb
     t = torch.minimum(y[:, MapOrdering.GEO_TOP], gt_map[:, MapOrdering.GEO_TOP])
     b = torch.minimum(y[:, MapOrdering.GEO_BOTTOM], gt_map[:, MapOrdering.GEO_BOTTOM])
-    l = torch.minimum(y[:, MapOrdering.GEO_LEFT], gt_map[:, MapOrdering.GEO_LEFT])
+    l = torch.minimum(y[:, MapOrdering.GEO_LEFT], gt_map[:, MapOrdering.GEO_LEFT])  # noqa: E741
     r = torch.minimum(y[:, MapOrdering.GEO_RIGHT], gt_map[:, MapOrdering.GEO_RIGHT])
 
     # area of predicted aabb
@@ -694,8 +743,12 @@ def compute_loss(y, gt_map):
     area1 = y_width * y_height
 
     # area of gt aabb
-    gt_width = gt_map[:, MapOrdering.GEO_LEFT, ...] + gt_map[:, MapOrdering.GEO_RIGHT, ...]
-    gt_height = gt_map[:, MapOrdering.GEO_TOP, ...] + gt_map[:, MapOrdering.GEO_BOTTOM, ...]
+    gt_width = (
+        gt_map[:, MapOrdering.GEO_LEFT, ...] + gt_map[:, MapOrdering.GEO_RIGHT, ...]
+    )
+    gt_height = (
+        gt_map[:, MapOrdering.GEO_TOP, ...] + gt_map[:, MapOrdering.GEO_BOTTOM, ...]
+    )
     area2 = gt_width * gt_height
 
     # compute intersection over union
@@ -709,6 +762,7 @@ def compute_loss(y, gt_map):
     # total loss is simply the sum of both losses
     loss = loss_seg + loss_aabb
     return loss
+
 
 # If you were using Bottleneck for other ResNet versions:
 # from torchvision.models.resnet import ResNet, BasicBlock, Bottleneck
@@ -794,7 +848,9 @@ class WordDetectorNet(torch.nn.Module):
     output_size = (224, 224)
     # v-- TODO: It's a hack to keep both. I do so now b/c I don't know the order (also, doesn't matter b/c same values)
     input_size_ImageDimensions: ImageDimensions = ImageDimensions(width=448, height=448)
-    output_size_ImageDimensions: ImageDimensions = ImageDimensions(width=224, height=224)
+    output_size_ImageDimensions: ImageDimensions = ImageDimensions(
+        width=224, height=224
+    )
     scale_down = compute_scale_down(input_size, output_size)
 
     def __init__(self):
@@ -823,7 +879,9 @@ class WordDetectorNet(torch.nn.Module):
             )
         else:
             seg = x[:, MapOrdering.SEG_WORD : MapOrdering.SEG_BACKGROUND + 1]
-        geo = torch.sigmoid(x[:, MapOrdering.GEO_TOP :]) * self.input_size[0] # TODO: Understand this
+        geo = (
+            torch.sigmoid(x[:, MapOrdering.GEO_TOP :]) * self.input_size[0]
+        )  # TODO: Understand this
         y = torch.cat([seg, geo], dim=1)
         return y
 
@@ -845,25 +903,27 @@ class WordDetectorNet(torch.nn.Module):
 
         return self.output_activation(y, apply_softmax)
 
+
 # ==========
 # Transforms
 # ==========
+
 
 def normalize_image_transform(image, bounding_boxes):
     image_new = (image / 255.0) - 0.5
     return image_new, bounding_boxes
 
+
 # =========
 # Inference
 # =========
 
+
 def run_image_through_network(
-        image_grayscale: np.ndarray,
-        model_path: Path=Path('best_model.pth'),
-        device: str='cuda',
-    ) -> List[BoundingBox]:
-
-
+    image_grayscale: np.ndarray,
+    model_path: Path = Path("best_model.pth"),
+    device: str = "cuda",
+) -> List[BoundingBox]:
     # Load model
     # ==========
 
@@ -878,11 +938,15 @@ def run_image_through_network(
 
     image_gray_rescaled = cv2.resize(image_grayscale, WordDetectorNet.input_size)
 
-    image_grayscale_transformed, _ = normalize_image_transform(image_gray_rescaled, None) # Only works w/ current transformation setup
+    image_grayscale_transformed, _ = normalize_image_transform(
+        image_gray_rescaled, None
+    )  # Only works w/ current transformation setup
 
     image_grayscale_transformed = image_grayscale_transformed.astype(np.float32)
-    
-    image_grayscale_transformed = torch.from_numpy(image_grayscale_transformed[None, None, :, :]).to(device)
+
+    image_grayscale_transformed = torch.from_numpy(
+        image_grayscale_transformed[None, None, :, :]
+    ).to(device)
 
     # =========
     # Inference
@@ -891,10 +955,20 @@ def run_image_through_network(
     with torch.no_grad():
         output_image = model(image_grayscale_transformed, apply_softmax=True)
 
-    assert output_image[:, MapOrdering.SEG_WORD:MapOrdering.SEG_BACKGROUND+1, :, :].min() >= 0.0
-    assert output_image[:, MapOrdering.SEG_WORD:MapOrdering.SEG_BACKGROUND+1, :, :].max() <= 1.0
+    assert (
+        output_image[
+            :, MapOrdering.SEG_WORD : MapOrdering.SEG_BACKGROUND + 1, :, :
+        ].min()
+        >= 0.0
+    )
+    assert (
+        output_image[
+            :, MapOrdering.SEG_WORD : MapOrdering.SEG_BACKGROUND + 1, :, :
+        ].max()
+        <= 1.0
+    )
 
-    output_image = output_image.to('cpu').numpy()
+    output_image = output_image.to("cpu").numpy()
 
     output_image = output_image[0, :, :, :]
 
@@ -907,27 +981,32 @@ def run_image_through_network(
         scale=WordDetectorNet.input_size[0] / WordDetectorNet.output_size[0],
         comp_fg=fg_by_cc(thres=0.5, max_num=1000),
     )
-    model_input_image = image_grayscale_transformed[0, 0, :, :].to('cpu').numpy()
+    model_input_image = image_grayscale_transformed[0, 0, :, :].to("cpu").numpy()
     h, w = model_input_image.shape
-    aabbs = [aabb.clip(BoundingBox(0, 0, w - 1, h - 1)) for aabb in decoded_aabbs]  # bounding box must be inside input img
+    aabbs = [
+        aabb.clip(BoundingBox(0, 0, w - 1, h - 1)) for aabb in decoded_aabbs
+    ]  # bounding box must be inside input img
     clustered_aabbs = cluster_aabbs(aabbs)
 
     return {
-        'aabbs': clustered_aabbs,
-        'model_input_image': model_input_image,
+        "aabbs": clustered_aabbs,
+        "model_input_image": model_input_image,
     }
+
 
 class CustomEncoder(json.JSONEncoder):
     """This is to make non-standard items serialisable for `json.dump(s)`."""
+
     def default(self, obj):
-        if isinstance(obj, Path): # Store `Path` objects
+        if isinstance(obj, Path):  # Store `Path` objects
             return str(obj)
         return super().default(obj)
+
 
 def get_git_commit_hash(repo_path: Path = Path("."), short: bool = False) -> str:
     """
     Get the current Git commit hash using GitPython.
-    
+
     :param repo_path: Path to the Git repository (default: current directory).
     :param short: Whether to return the short hash.
     :return: Commit hash string, or None if unavailable.
@@ -938,7 +1017,8 @@ def get_git_commit_hash(repo_path: Path = Path("."), short: bool = False) -> str
         return commit_hash[:7] if short else commit_hash
     except Exception as e:
         print(f"Error while getting git commit hash from {repo_path}: {e}")
-        return '-1'
+        return "-1"
+
 
 def url_exists(url: str) -> bool:
     """Check if a URL exists using a HEAD request."""
@@ -950,16 +1030,17 @@ def url_exists(url: str) -> bool:
         print(e)
         return False
 
+
 def get_example_list() -> List[List]:
     """Only return examples that still exist online."""
     links_to_images = [
-        'https://raw.githubusercontent.com/githubharald/WordDetectorNN/master/data/test/cvl.jpg',
-        'https://raw.githubusercontent.com/githubharald/WordDetectorNN/master/data/test/random.jpg',
-        'https://raw.githubusercontent.com/githubharald/WordDetectorNN/master/data/test/bentham.jpg',
+        "https://raw.githubusercontent.com/githubharald/WordDetectorNN/master/data/test/cvl.jpg",
+        "https://raw.githubusercontent.com/githubharald/WordDetectorNN/master/data/test/random.jpg",
+        "https://raw.githubusercontent.com/githubharald/WordDetectorNN/master/data/test/bentham.jpg",
     ]
     result = []
     for link in links_to_images:
         image_exists = url_exists(link)
         if image_exists:
-            result.append([link, 0])
+            result.append([link, 0, False])
     return result
