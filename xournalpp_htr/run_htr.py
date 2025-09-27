@@ -6,7 +6,7 @@ from xournalpp_htr.utils import export_to_pdf_with_xournalpp, parse_arguments
 from xournalpp_htr.xio import get_temporary_filename, write_predictions_to_PDF
 
 
-def main(args: dict) -> None:
+def export_xournalpp_to_pdf_with_htr(args: dict) -> None:
     """Main function that performs HTR.
 
     This function exports an Xournal(++) file to a PDF file, performs Handwritten Text Recognition (HTR) on the file using
@@ -70,4 +70,4 @@ def main(args: dict) -> None:
 
 if __name__ == "__main__":
     args = parse_arguments()
-    main(args)
+    export_xournalpp_to_pdf_with_htr(args)

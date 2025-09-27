@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from xournalpp_htr.run_htr import main, parse_arguments
+from xournalpp_htr.run_htr import export_xournalpp_to_pdf_with_htr, parse_arguments
 
 
 @pytest.fixture
@@ -107,4 +107,4 @@ def test_main(get_path_to_minimal_test_data: Path, tmp_path: Path) -> None:
         "show_predictions": False,
     }
 
-    main(args)
+    export_xournalpp_to_pdf_with_htr(args)
