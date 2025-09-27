@@ -46,6 +46,8 @@ def export_to_pdf_with_xournalpp(input_file: Path, output_file: Path) -> None:
     file_existing_fail = not output_file.exists()
 
     if return_code_fail or stdout_fail or file_existing_fail:
-        raise RuntimeError("PDF export failed")
+        raise RuntimeError(
+            f"PDF export failed: {return_code_fail=}, {stdout_fail=}, {file_existing_fail=}"
+        )
 
     return output_file
