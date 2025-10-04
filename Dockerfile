@@ -32,11 +32,11 @@ COPY . .
 RUN bash INSTALL_HF_DOCKER_SPACE.sh
 
 # Expose the port Gradio will run on inside Hugging Face Spaces
-# EXPOSE 7860
+EXPOSE 7860
 
 # Command to run Gradio app
 # Hugging Face Spaces will set PORT env var, so we use it
-# CMD ["python", "app.py"]
+CMD ["python", "scripts/demo.py"]
 
 
 
