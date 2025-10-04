@@ -28,6 +28,9 @@ WORKDIR /app
 # Copy application code
 COPY . .
 
+# Run the INSTALL_HF_DOCKER_SPACE.sh script
+RUN bash INSTALL_HF_DOCKER_SPACE.sh
+
 # Expose the port Gradio will run on inside Hugging Face Spaces
 # EXPOSE 7860
 
