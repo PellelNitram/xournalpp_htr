@@ -1,8 +1,9 @@
+# Based on `INSTALL_LINUX.sh` file.
+
 # ========
 # SETTINGS
 # ========
 
-ENVIRONMENT_NAME="xournalpp_htr"
 HTR_PIPELINE_PATH="external/htr_pipeline"
 
 # ================
@@ -32,19 +33,11 @@ CURRENT_DIR=$(pwd)
 
 rm -rf ${HTR_PIPELINE_PATH}
 
-eval "$(conda shell.bash hook)" # enable `conda activate`, see
-                                # https://stackoverflow.com/a/56155771
-
-conda create --name ${ENVIRONMENT_NAME} python=3.10.11 -y
-conda activate ${ENVIRONMENT_NAME}
 install_htr_pipeline
 cd ${CURRENT_DIR}
 pip install -r requirements.txt
+pip install gradio # TODO: Move to optional package in `pyproject.toml` once I use this setup.
 pip install -e .
-pre-commit install
-
-cd plugin
-bash copy_to_plugin_folder.sh
 
 # ========
 # Feedback
@@ -56,7 +49,4 @@ echo "==========================================="
 echo "==========================================="
 echo
 echo "Installation complete"
-echo
-echo "Activate environment with:"
-echo "\"conda activate ${ENVIRONMENT_NAME}\""
 echo
