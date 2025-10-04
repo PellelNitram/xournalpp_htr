@@ -1,0 +1,12 @@
+# Ignore local data and virtual environments
+data/
+.venv/
+
+# Common extras you probably don't want in the image
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.git
+.gitignore
