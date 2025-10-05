@@ -2,12 +2,16 @@ import os
 
 import gradio as gr
 
+from xournalpp_htr.documents import Stroke
+
 # TODO: Add gradio demo here.
 # - it needs to run locally
 # - it needs to run in a docker container that's compatible w/ huggingface space
 
 
 def greet(name):
+    s = Stroke  # Just for testing import
+    print(s)
     return f"Hello, {name}!"
 
 
