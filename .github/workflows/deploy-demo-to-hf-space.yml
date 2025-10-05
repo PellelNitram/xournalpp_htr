@@ -34,6 +34,7 @@ jobs:
           cd hf-space
           git config --global user.email "konten.ma.le@gmail.com"
           git config --global user.name "Martin L (GitHub Actions)"
+          mv README_HF.md README.md
           git add .
           git commit -m "Automated deployment from GitHub"
           git push
