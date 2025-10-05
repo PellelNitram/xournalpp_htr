@@ -1,0 +1,41 @@
+name: Deploy to Hugging Face Space
+
+on:
+  push:
+    branches:
+      - main  # Deploy whenever changes are pushed to the main branch
+      - 29-deploy-demo-automatically-to-huggingface-docker-space # For debugging only.
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Install Git LFS (required for Hugging Face Spaces)
+      - name: Install Git LFS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git-lfs
+          git lfs install
+
+      # Step 3: Clone the Hugging Face Space
+      - name: Clone Hugging Face Space
+        run: |
+          git clone https://huggingface.co/spaces/PellelNitram/xournalpp_htr__staging hf-space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+
+      # Step 4: Sync files from GitHub repo to Hugging Face Space
+      - name: Sync files to Hugging Face Space
+        run: |
+          rsync -av --exclude='.git' --exclude='.github' --exclude='.env' ./ hf-space/
+          cd hf-space
+          git add .
+          git commit -m "Automated deployment from GitHub"
+          git push
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
