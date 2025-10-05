@@ -25,9 +25,7 @@ jobs:
       # Step 3: Clone the Hugging Face Space
       - name: Clone Hugging Face Space
         run: |
-          git clone https://huggingface.co/spaces/PellelNitram/xournalpp_htr__staging hf-space
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          git clone https://user:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/PellelNitram/xournalpp_htr__staging hf-space
 
       # Step 4: Sync files from GitHub repo to Hugging Face Space
       - name: Sync files to Hugging Face Space
