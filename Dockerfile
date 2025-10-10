@@ -21,6 +21,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create and set working directory
 WORKDIR /app
 
+# Create temp_code_mount folder
+RUN mkdir -p /temp_code_mount
+
 # Install Python dependencies early for caching
 # COPY requirements.txt .
 # RUN pip install --no-cache-dir -r requirements.txt
