@@ -33,6 +33,8 @@ COPY . .
 
 # Run the INSTALL_HF_DOCKER_SPACE.sh script
 RUN bash INSTALL_HF_DOCKER_SPACE.sh
+RUN pip install matplotlib bs4
+# ^- that should not be necessary!! TODO!!
 
 # Expose the port Gradio will run on inside Hugging Face Spaces
 EXPOSE 7860
