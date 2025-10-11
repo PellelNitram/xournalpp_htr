@@ -1,10 +1,8 @@
 import gradio as gr
 from PIL import Image
 import os
-
-# --- Create a directory for downloads ---
-if not os.path.exists("downloads"):
-    os.makedirs("downloads")
+import tempfile
+import uuid
 
 # --- Image Processing Functions ---
 
@@ -26,13 +24,19 @@ def rotate_image(image_path):
         # Must return two values for the two outputs (viewer and state)
         return rotated_img, rotated_img
 
-def save_for_download(image):
+def save_for_download(image, session_id):
     """Saves the image to a file and returns the path."""
     if image is None:
         return None
 
-    # Define a file path for the downloaded image
-    download_path = "downloads/rotated_image.png"
+    # Create a user-specific directory in temp
+    user_downloads_dir = os.path.join(tempfile.gettempdir(), "downloads", session_id)
+    os.makedirs(user_downloads_dir, exist_ok=True)
+    
+    # Create a unique filename to avoid conflicts
+    unique_filename = f"rotated_image_{uuid.uuid4().hex[:8]}.png"
+    download_path = os.path.join(user_downloads_dir, unique_filename)
+    
     image.save(download_path)
     return download_path
 
@@ -45,6 +49,9 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         Upload a PNG file, then use the buttons below to manipulate it.
         """
     )
+
+    # Create a unique session ID for this user session
+    session_id = gr.State(value=lambda: str(uuid.uuid4()))
 
     # Hidden state components to store image data between button clicks
     original_image_state = gr.State()
@@ -101,7 +108,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     # save it to a file, and provide the file path to the download component.
     download_btn.click(
         fn=save_for_download,
-        inputs=rotated_image_state,
+        inputs=[rotated_image_state, session_id],
         outputs=download_file_output
     )
 
