@@ -45,7 +45,15 @@ def save_for_download(image, session_id):
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
     gr.Markdown(
         """
-        # Image Flipper and Rotator
+        # Xournal++ HTR Demo
+
+        This is an online demo of the [Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr) project, which strives to bring modern handwritten
+        text recognition to open-source handwritten note softwares like [Xournal++](https://xournalpp.github.io/).
+
+        While [Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr) is natively built to be running locally, this demo deploys it online for easier usage
+        and the possibility to donate data for improving the underlying machine learning models.
+
+        EXPLAIN this online demo in context of offline Xournal++ HTR abmitions, maybe w/ video?
         Upload a PNG file, then use the buttons below to manipulate it.
         """
     )
