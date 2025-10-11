@@ -21,6 +21,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create and set working directory
 WORKDIR /app
 
+# Create temp_code_mount folder
+RUN mkdir -p /temp_code_mount
+
 # Install Python dependencies early for caching
 # COPY requirements.txt .
 # RUN pip install --no-cache-dir -r requirements.txt
@@ -30,6 +33,8 @@ COPY . .
 
 # Run the INSTALL_HF_DOCKER_SPACE.sh script
 RUN bash INSTALL_HF_DOCKER_SPACE.sh
+RUN pip install matplotlib bs4
+# ^- that should not be necessary!! TODO!!
 
 # Expose the port Gradio will run on inside Hugging Face Spaces
 EXPOSE 7860
