@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main  # Deploy whenever changes are pushed to the main branch
-      - 29-deploy-demo-automatically-to-huggingface-docker-space # For debugging only.
 
 jobs:
   deploy:
