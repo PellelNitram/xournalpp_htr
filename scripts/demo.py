@@ -1,90 +1,113 @@
 import gradio as gr
-import numpy as np
+from PIL import Image
 import os
 
-# This is a placeholder for your actual handwriting recognition model.
-# The input 'image' is a NumPy array from the Image component.
-def recognize_handwriting(image):
-    """
-    Placeholder function to simulate handwriting recognition.
-    
-    Args:
-        image (np.ndarray): The image data from the Gradio Image component.
-                            It's a NumPy array, where None means no image was provided.
-    
-    Returns:
-        str: A string with the "recognized" text.
-    """
+# --- Create a directory for downloads ---
+if not os.path.exists("downloads"):
+    os.makedirs("downloads")
+
+# --- Image Processing Functions ---
+
+def flip_image(image_path):
+    """Flips the input image horizontally."""
+    if image_path is None:
+        return None
+    # Open the image from the file path before processing
+    with Image.open(image_path) as image:
+        return image.transpose(Image.FLIP_LEFT_RIGHT)
+
+def rotate_image(image_path):
+    """Rotates the input image 90 degrees counter-clockwise."""
+    if image_path is None:
+        return None, None
+    # Open the image from the file path before processing
+    with Image.open(image_path) as image:
+        rotated_img = image.rotate(90, expand=True)
+        # Must return two values for the two outputs (viewer and state)
+        return rotated_img, rotated_img
+
+def save_for_download(image):
+    """Saves the image to a file and returns the path."""
     if image is None:
-        return "Please load an image first!"
-    
-    # In a real application, you would process the image here:
-    # 1. Preprocess the image (resize, normalize, binarize, etc.).
-    # 2. Feed it into your HTR model.
-    # 3. Get the predicted text from the model's output.
-    print(f"Received image of shape: {image.shape}")
-    
-    # For now, we'll just return a dummy response.
-    return "This is a placeholder for the recognized text."
+        return None
 
-def load_random_image():
-    """
-    Generates a random noisy image to simulate loading an image file.
-    """
-    # Create a random image (height, width, channels)
-    random_image = np.random.randint(0, 256, size=(200, 600, 3), dtype=np.uint8)
-    # Also return an empty string to clear the output text box upon loading a new image
-    return random_image, ""
+    # Define a file path for the downloaded image
+    download_path = "downloads/rotated_image.png"
+    image.save(download_path)
+    return download_path
 
+# --- Gradio UI Layout ---
 
-# --- Gradio Interface Definition ---
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
     gr.Markdown(
         """
-        # Xournal++ Handwriting Recognition
-        Click "Load Random Image" to get a new image, then click "Recognize".
+        # Image Flipper and Rotator
+        Upload a PNG file, then use the buttons below to manipulate it.
         """
     )
-    
-    with gr.Row(equal_height=True):
-        # Input component: An image display
-        with gr.Column(scale=2):
-            image_display = gr.Image(
-                label="Input Image",
-                show_label=True,
-                type="numpy"
-            )
-        
-        # Output and actions column
-        with gr.Column(scale=1):
-            output_text = gr.Textbox(
-                label="Recognized Text",
-                show_label=True,
-                interactive=False, # User should not edit the output
-                lines=5,
-                placeholder="Recognition result will appear here..."
-            )
-            load_button = gr.Button("Load Random Image", variant="secondary")
-            recognize_button = gr.Button("Recognize", variant="primary")
-            
-    # Connect the buttons to the functions
-    load_button.click(
-        fn=load_random_image, 
-        inputs=None, 
-        outputs=[image_display, output_text]
-    )
-    
-    recognize_button.click(
-        fn=recognize_handwriting, 
-        inputs=image_display, 
-        outputs=output_text
+
+    # Hidden state components to store image data between button clicks
+    original_image_state = gr.State()
+    rotated_image_state = gr.State()
+
+    # 1. Upload Button
+    upload_button = gr.UploadButton(
+        "Click to Upload a PNG File",
+        file_types=["image"],
+        file_count="single"
     )
 
+    with gr.Row():
+        # 2. Image Viewers
+        image_viewer_1 = gr.Image(label="Flipped Image Viewer", interactive=False, height=350)
+        image_viewer_2 = gr.Image(label="Rotated Image Viewer", interactive=False, height=350)
+
+    with gr.Row():
+        # 3. Action Buttons
+        flip_btn = gr.Button("Show Flipped Image")
+        rotate_btn = gr.Button("Show Rotated Image")
+
+    # 4. Download Button and File Output
+    download_btn = gr.Button("Download Rotated Image")
+    download_file_output = gr.File(label="Download Link")
+
+
+    # --- Event Handlers ---
+
+    # When a user uploads a file, store its path in the 'original_image_state'
+    # The output of UploadButton is a temporary file path
+    upload_button.upload(
+        lambda file: file,
+        inputs=upload_button,
+        outputs=original_image_state
+    )
+
+    # When the 'flip' button is clicked, process the original image and show it in viewer 1
+    flip_btn.click(
+        fn=flip_image,
+        inputs=original_image_state,
+        outputs=image_viewer_1
+    )
+
+    # When the 'rotate' button is clicked, process the original image, show it in viewer 2,
+    # and also save the result to the 'rotated_image_state' for downloading later.
+    rotate_btn.click(
+        fn=rotate_image,
+        inputs=original_image_state,
+        outputs=[image_viewer_2, rotated_image_state]
+    )
+
+    # When the 'download' button is clicked, take the image from 'rotated_image_state',
+    # save it to a file, and provide the file path to the download component.
+    download_btn.click(
+        fn=save_for_download,
+        inputs=rotated_image_state,
+        outputs=download_file_output
+    )
+
+
 if __name__ == "__main__":
-    # Use the PORT environment variable if available (for Hugging Face Spaces), otherwise default to 7860
-    port = int(os.environ.get("PORT", 7860))
-    
-    # Launch the Gradio app
+    port = int(os.environ.get("PORT", 7860))  # Use HF-provided port or fallback
     demo.launch(server_name="0.0.0.0", server_port=port)
 
 
