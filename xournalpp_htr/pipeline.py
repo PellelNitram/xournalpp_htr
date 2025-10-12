@@ -60,3 +60,6 @@ def export_xournalpp_to_pdf_with_htr(args: dict) -> None:
     )
 
     print("xournalpp_htr: Done!")
+
+def apply_htr_in_gradio_demo():
+    pass
