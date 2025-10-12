@@ -6,25 +6,33 @@ import uuid
 
 # --- Image Processing Functions ---
 
-def flip_image(image_path):
+def document_to_image_of_first_page(document_path):
     """Flips the input image horizontally."""
-    if image_path is None:
+    if document_path is None:
         return None
-    # Open the image from the file path before processing
-    with Image.open(image_path) as image:
+    # TODO:
+    # 1. Use `xournalpp` to render file into PDF
+    # 2. Load first page into image and return; check how to load into page
+    with Image.open(document_path) as image:
         return image.transpose(Image.FLIP_LEFT_RIGHT)
 
-def rotate_image(image_path):
+def document_to_HTR_document_and_image_of_first_page(document_path):
     """Rotates the input image 90 degrees counter-clockwise."""
-    if image_path is None:
+    if document_path is None:
         return None, None
-    # Open the image from the file path before processing
-    with Image.open(image_path) as image:
+    # TODO:
+    # 1. Render document into HTR'd document
+    #   - Either write `apply_htr_in_gradio_demo` function or use
+    #     `export_xournalpp_to_pdf_with_htr`; probably the former
+    # 2. Load first page of HTR'd document into image
+    # 3. Return both image and full HTR'd document for display and
+    #    download, respectively
+    with Image.open(document_path) as image:
         rotated_img = image.rotate(90, expand=True)
         # Must return two values for the two outputs (viewer and state)
         return rotated_img, rotated_img
 
-def save_for_download(image, session_id):
+def save_HTR_document_for_download(image, session_id):
     """Saves the image to a file and returns the path."""
     if image is None:
         return None
@@ -58,14 +66,11 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         """
     )
 
-    # Create a unique session ID for this user session
     session_id = gr.State(value=lambda: str(uuid.uuid4()))
 
-    # Hidden state components to store image data between button clicks
     original_image_state = gr.State()
     rotated_image_state = gr.State()
 
-    # 1. Upload Button
     upload_button = gr.UploadButton(
         "Click to Upload a PNG File",
         file_types=["image"],
@@ -73,51 +78,40 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     )
 
     with gr.Row():
-        # 2. Image Viewers
-        image_viewer_1 = gr.Image(label="Flipped Image Viewer", interactive=False, height=350)
-        image_viewer_2 = gr.Image(label="Rotated Image Viewer", interactive=False, height=350)
+        image_viewer_1 = gr.Image(label="Original document", interactive=False, height=350)
+        image_viewer_2 = gr.Image(label="HTR'd document", interactive=False, height=350)
 
     with gr.Row():
-        # 3. Action Buttons
-        flip_btn = gr.Button("Show Flipped Image")
-        rotate_btn = gr.Button("Show Rotated Image")
+        button_1 = gr.Button("Show Flipped Image")
+        button_2 = gr.Button("Show Rotated Image")
 
-    # 4. Download Button and File Output
-    download_btn = gr.Button("Download Rotated Image")
-    download_file_output = gr.File(label="Download Link")
-
+    button_download = gr.Button("Download Rotated Image")
+    file_output = gr.File(label="Download Link")
 
     # --- Event Handlers ---
 
-    # When a user uploads a file, store its path in the 'original_image_state'
-    # The output of UploadButton is a temporary file path
     upload_button.upload(
         lambda file: file,
         inputs=upload_button,
         outputs=original_image_state
     )
 
-    # When the 'flip' button is clicked, process the original image and show it in viewer 1
-    flip_btn.click(
-        fn=flip_image,
+    button_1.click(
+        fn=document_to_image_of_first_page,
         inputs=original_image_state,
         outputs=image_viewer_1
     )
 
-    # When the 'rotate' button is clicked, process the original image, show it in viewer 2,
-    # and also save the result to the 'rotated_image_state' for downloading later.
-    rotate_btn.click(
-        fn=rotate_image,
+    button_2.click(
+        fn=document_to_HTR_document_and_image_of_first_page,
         inputs=original_image_state,
         outputs=[image_viewer_2, rotated_image_state]
     )
 
-    # When the 'download' button is clicked, take the image from 'rotated_image_state',
-    # save it to a file, and provide the file path to the download component.
-    download_btn.click(
-        fn=save_for_download,
+    button_download.click(
+        fn=save_HTR_document_for_download,
         inputs=[rotated_image_state, session_id],
-        outputs=download_file_output
+        outputs=file_output
     )
 
 
