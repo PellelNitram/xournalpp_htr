@@ -1,9 +1,13 @@
 import os
 import tempfile
 import uuid
+from pathlib import Path
 
 import gradio as gr
+from pdf2image import convert_from_path
 from PIL import Image
+
+from xournalpp_htr.utils import export_to_pdf_with_xournalpp
 
 # --- Image Processing Functions ---
 
@@ -12,11 +16,14 @@ def document_to_image_of_first_page(document_path):
     """Flips the input image horizontally."""
     if document_path is None:
         return None
-    # TODO:
-    # 1. Use `xournalpp` to render file into PDF
-    # 2. Load first page into image and return; check how to load into page
-    with Image.open(document_path) as image:
-        return image.transpose(Image.FLIP_LEFT_RIGHT)
+    output_path = Path("/tmp/out.pdf")  # TODO: use path that is not hardcoded
+    export_to_pdf_with_xournalpp(
+        Path(document_path),
+        output_path,
+    )
+    images = convert_from_path(output_path, first_page=1, last_page=1)
+    first_page = images[0]
+    return first_page
 
 
 def document_to_HTR_document_and_image_of_first_page(document_path):
