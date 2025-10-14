@@ -1,10 +1,12 @@
-import gradio as gr
-from PIL import Image
 import os
 import tempfile
 import uuid
 
+import gradio as gr
+from PIL import Image
+
 # --- Image Processing Functions ---
+
 
 def document_to_image_of_first_page(document_path):
     """Flips the input image horizontally."""
@@ -15,6 +17,7 @@ def document_to_image_of_first_page(document_path):
     # 2. Load first page into image and return; check how to load into page
     with Image.open(document_path) as image:
         return image.transpose(Image.FLIP_LEFT_RIGHT)
+
 
 def document_to_HTR_document_and_image_of_first_page(document_path):
     """Rotates the input image 90 degrees counter-clockwise."""
@@ -32,6 +35,7 @@ def document_to_HTR_document_and_image_of_first_page(document_path):
         # Must return two values for the two outputs (viewer and state)
         return rotated_img, rotated_img
 
+
 def save_HTR_document_for_download(image, session_id):
     """Saves the image to a file and returns the path."""
     if image is None:
@@ -40,13 +44,14 @@ def save_HTR_document_for_download(image, session_id):
     # Create a user-specific directory in temp
     user_downloads_dir = os.path.join(tempfile.gettempdir(), "downloads", session_id)
     os.makedirs(user_downloads_dir, exist_ok=True)
-    
+
     # Create a unique filename to avoid conflicts
     unique_filename = f"rotated_image_{uuid.uuid4().hex[:8]}.png"
     download_path = os.path.join(user_downloads_dir, unique_filename)
-    
+
     image.save(download_path)
     return download_path
+
 
 # --- Gradio UI Layout ---
 
@@ -72,13 +77,13 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     rotated_image_state = gr.State()
 
     upload_button = gr.UploadButton(
-        "Click to Upload a PNG File",
-        file_types=["image"],
-        file_count="single"
+        "Click to Upload a PNG File", file_types=["image"], file_count="single"
     )
 
     with gr.Row():
-        image_viewer_1 = gr.Image(label="Original document", interactive=False, height=350)
+        image_viewer_1 = gr.Image(
+            label="Original document", interactive=False, height=350
+        )
         image_viewer_2 = gr.Image(label="HTR'd document", interactive=False, height=350)
 
     with gr.Row():
@@ -91,37 +96,31 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     # --- Event Handlers ---
 
     upload_button.upload(
-        lambda file: file,
-        inputs=upload_button,
-        outputs=original_image_state
+        lambda file: file, inputs=upload_button, outputs=original_image_state
     )
 
     button_1.click(
         fn=document_to_image_of_first_page,
         inputs=original_image_state,
-        outputs=image_viewer_1
+        outputs=image_viewer_1,
     )
 
     button_2.click(
         fn=document_to_HTR_document_and_image_of_first_page,
         inputs=original_image_state,
-        outputs=[image_viewer_2, rotated_image_state]
+        outputs=[image_viewer_2, rotated_image_state],
     )
 
     button_download.click(
         fn=save_HTR_document_for_download,
         inputs=[rotated_image_state, session_id],
-        outputs=file_output
+        outputs=file_output,
     )
 
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 7860))  # Use HF-provided port or fallback
     demo.launch(server_name="0.0.0.0", server_port=port)
-
-
-
-
 
 
 # import os
