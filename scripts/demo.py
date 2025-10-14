@@ -77,7 +77,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     rotated_image_state = gr.State()
 
     upload_button = gr.UploadButton(
-        "Click to Upload a PNG File", file_types=["image"], file_count="single"
+        "Click to Upload an XOJ File", file_types=[".xoj"], file_count="single"
     )
 
     with gr.Row():
