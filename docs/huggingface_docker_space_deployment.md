@@ -7,6 +7,8 @@
     - Start docker container: `docker run -it -p 7860:7860 -v $(pwd):/temp_code_mount --entrypoint bash xournalpp_htr`
     - Call Python code inside the container: `python /temp_code_mount/scripts/demo.py`
 
+Generally, tidy up Docker caches with `docker system prune` if your system is full.
+
 ## looking into adding xournalpp to the image b/c i need that for the prediction (to convert xoj/xopp to pdf):
 
 now cross compiled on M4
