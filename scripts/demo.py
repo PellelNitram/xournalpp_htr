@@ -5,9 +5,11 @@ from pathlib import Path
 
 import gradio as gr
 from pdf2image import convert_from_path
-from PIL import Image
 
+from xournalpp_htr.documents import get_document
+from xournalpp_htr.models import compute_predictions
 from xournalpp_htr.utils import export_to_pdf_with_xournalpp
+from xournalpp_htr.xio import write_predictions_to_PDF
 
 # --- Image Processing Functions ---
 
@@ -30,17 +32,22 @@ def document_to_HTR_document_and_image_of_first_page(document_path):
     """Rotates the input image 90 degrees counter-clockwise."""
     if document_path is None:
         return None, None
-    # TODO:
-    # 1. Render document into HTR'd document
-    #   - Either write `apply_htr_in_gradio_demo` function or use
-    #     `export_xournalpp_to_pdf_with_htr`; probably the former
-    # 2. Load first page of HTR'd document into image
-    # 3. Return both image and full HTR'd document for display and
-    #    download, respectively
-    with Image.open(document_path) as image:
-        rotated_img = image.rotate(90, expand=True)
-        # Must return two values for the two outputs (viewer and state)
-        return rotated_img, rotated_img
+    document_path = Path(document_path)
+    output_path = Path("/tmp/out.pdf")  # TODO: use path that is not hardcoded
+    output_path_final = Path("/tmp/out_htr.pdf")  # TODO: use path that is not hardcoded
+    document = get_document(document_path)
+    predictions = compute_predictions(
+        model_name="2024-07-18_htr_pipeline", document=document
+    )
+    write_predictions_to_PDF(
+        output_path,
+        output_path_final,
+        predictions,
+        debug_htr=True,
+    )  # TODO: make it a generator to track progress externally like here.
+    images = convert_from_path(output_path_final, first_page=1, last_page=1)
+    first_page = images[0]
+    return first_page, first_page
 
 
 def save_HTR_document_for_download(image, session_id):
