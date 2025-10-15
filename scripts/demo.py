@@ -1,4 +1,5 @@
 import os
+import tempfile
 import uuid
 from pathlib import Path
 
@@ -13,11 +14,23 @@ from xournalpp_htr.xio import write_predictions_to_PDF
 # --- Image Processing Functions ---
 
 
-def document_to_image_of_first_page(document_path):
+def get_temporary_directory() -> Path:
+    return Path(tempfile.gettempdir())
+
+
+def get_path_of_exported_pdf(session_id: str) -> Path:
+    return get_temporary_directory() / f"{session_id}_input_as_pdf.pdf"
+
+
+def get_path_of_pdf_with_htr(session_id: str) -> Path:
+    return get_temporary_directory() / f"{session_id}_pdf_with_htr.pdf"
+
+
+def document_to_image_of_first_page(document_path, session_id):
     """Flips the input image horizontally."""
     if document_path is None:
         return None
-    output_path = Path("/tmp/out.pdf")  # TODO: use path that is not hardcoded
+    output_path = get_path_of_exported_pdf(session_id)
     export_to_pdf_with_xournalpp(
         Path(document_path),
         output_path,
@@ -27,33 +40,33 @@ def document_to_image_of_first_page(document_path):
     return first_page
 
 
-def document_to_HTR_document_and_image_of_first_page(document_path):
+def document_to_HTR_document_and_image_of_first_page(document_path, session_id):
     """Rotates the input image 90 degrees counter-clockwise."""
     if document_path is None:
         return None
     document_path = Path(document_path)
-    output_path = Path("/tmp/out.pdf")  # TODO: use path that is not hardcoded
-    output_path_final = Path("/tmp/out_htr.pdf")  # TODO: use path that is not hardcoded
+    input_as_pdf_path = get_path_of_exported_pdf(session_id)
+    pdf_with_htr = get_path_of_pdf_with_htr(session_id)
     document = get_document(document_path)
     predictions = compute_predictions(
         model_name="2024-07-18_htr_pipeline", document=document
     )
     write_predictions_to_PDF(
-        output_path,
-        output_path_final,
+        input_as_pdf_path,
+        pdf_with_htr,
         predictions,
         debug_htr=True,
     )  # TODO: make it a generator to track progress externally like here.
-    images = convert_from_path(output_path_final, first_page=1, last_page=1)
+    images = convert_from_path(pdf_with_htr, first_page=1, last_page=1)
     first_page = images[0]
     return first_page
 
 
 def save_HTR_document_for_download(session_id):
-    path = Path("/tmp/out_htr.pdf")  # TODO: use path that is not hardcoded
-    if not path.exists():
+    pdf_with_htr = get_path_of_pdf_with_htr(session_id)
+    if not pdf_with_htr.exists():
         return None
-    return str(path)
+    return str(pdf_with_htr)
 
 
 # --- Gradio UI Layout ---
@@ -103,13 +116,13 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
 
     button_1.click(
         fn=document_to_image_of_first_page,
-        inputs=original_image_state,
+        inputs=[original_image_state, session_id],
         outputs=image_viewer_1,
     )
 
     button_2.click(
         fn=document_to_HTR_document_and_image_of_first_page,
-        inputs=original_image_state,
+        inputs=[original_image_state, session_id],
         outputs=image_viewer_2,
     )
 
