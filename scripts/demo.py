@@ -80,11 +80,16 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         This is an online demo of the [Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr) project, which strives to bring modern handwritten
         text recognition to open-source handwritten note softwares like [Xournal++](https://xournalpp.github.io/).
 
-        While [Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr) is natively built to be running locally, this demo deploys it online for easier usage
-        and the possibility to donate data for improving the underlying machine learning models.
+        While [Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr) is natively built to be running locally, this demo deploys it online so you
+        can try it out without any installation. We do not collect any personal data (see [source code of this demo](https://github.com/PellelNitram/xournalpp_htr/blob/master/scripts/demo.py))
+        but allow you to donate your data if you want so that we can build better underlying machine learning models for all of us (all open-source, of course!).
 
-        EXPLAIN this online demo in context of offline Xournal++ HTR abmitions, maybe w/ video?
-        Upload a PNG file, then use the buttons below to manipulate it.
+        Note that the HTR results are not yet perfect. This is an ongoing project and we are actively working on improving the models.
+        Currently, we are constrained by the limited amount of publicly available training data and by our working time (this is a hobby project next to our day jobs).
+
+        The "we" in the paragraphs above is currently really only me, [Martin Lellep](https://lellep.xyz/?utm_campaign=xppGradioDemo), the main developer of Xournal++ HTR. I really love to work on
+        [Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr)! If you think this project is valuable and want to express your gratitute, then please feel free to [buy me a virtual coffee here](https://ko-fi.com/martin_l)
+        so that I can buy more GPU power for training models and continue to let the GPUs go brrr :-).
         """
     )
 
@@ -104,14 +109,16 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         image_viewer_1 = gr.Image(
             label="Original document", interactive=False, height=350
         )
-        image_viewer_2 = gr.Image(label="HTR'd document", interactive=False, height=350)
+        image_viewer_2 = gr.Image(
+            label="Document with HTR", interactive=False, height=350
+        )
 
     with gr.Row():
-        button_1 = gr.Button("Show Flipped Image")
-        button_2 = gr.Button("Show Rotated Image")
+        button_1 = gr.Button("1. Export to PDF and Show First Page")
+        button_2 = gr.Button("2. Compute PDF with HTR and Show First Page")
 
-    button_download = gr.Button("Download Rotated Image")
-    file_output = gr.File(label="Download Link")
+    button_download = gr.Button("3. Download PDF with HTR")
+    file_output = gr.File(label="Download PDF with HTR")
 
     # --- Event Handlers ---
 
