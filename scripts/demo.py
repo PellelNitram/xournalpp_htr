@@ -75,7 +75,7 @@ def save_HTR_document_for_download(session_id):
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
     gr.Markdown(
         """
-        # Xournal++ HTR Demo
+        # [Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr) Demo
 
         This is an online demo of the [Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr) project, which strives to bring modern handwritten
         text recognition to open-source handwritten note softwares like [Xournal++](https://xournalpp.github.io/).
