@@ -1,5 +1,4 @@
 import os
-import tempfile
 import uuid
 from pathlib import Path
 
@@ -50,21 +49,11 @@ def document_to_HTR_document_and_image_of_first_page(document_path):
     return first_page, first_page
 
 
-def save_HTR_document_for_download(image, session_id):
-    """Saves the image to a file and returns the path."""
-    if image is None:
+def save_HTR_document_for_download(session_id):
+    path = Path("/tmp/out_htr.pdf")  # TODO: use path that is not hardcoded
+    if not path.exists():
         return None
-
-    # Create a user-specific directory in temp
-    user_downloads_dir = os.path.join(tempfile.gettempdir(), "downloads", session_id)
-    os.makedirs(user_downloads_dir, exist_ok=True)
-
-    # Create a unique filename to avoid conflicts
-    unique_filename = f"rotated_image_{uuid.uuid4().hex[:8]}.png"
-    download_path = os.path.join(user_downloads_dir, unique_filename)
-
-    image.save(download_path)
-    return download_path
+    return str(path)
 
 
 # --- Gradio UI Layout ---
@@ -127,7 +116,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
 
     button_download.click(
         fn=save_HTR_document_for_download,
-        inputs=[rotated_image_state, session_id],
+        inputs=session_id,
         outputs=file_output,
     )
 
