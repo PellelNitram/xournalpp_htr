@@ -1,6 +1,7 @@
 import os
 import tempfile
 import uuid
+from datetime import datetime
 from pathlib import Path
 
 import gradio as gr
@@ -87,7 +88,11 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         """
     )
 
-    session_id = gr.State(value=lambda: str(uuid.uuid4()))
+    session_id = gr.State(
+        value=lambda: datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        + "_"
+        + str(uuid.uuid4())
+    )
 
     original_image_state = gr.State()
 
