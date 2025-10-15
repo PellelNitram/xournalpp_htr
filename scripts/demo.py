@@ -30,7 +30,7 @@ def document_to_image_of_first_page(document_path):
 def document_to_HTR_document_and_image_of_first_page(document_path):
     """Rotates the input image 90 degrees counter-clockwise."""
     if document_path is None:
-        return None, None
+        return None
     document_path = Path(document_path)
     output_path = Path("/tmp/out.pdf")  # TODO: use path that is not hardcoded
     output_path_final = Path("/tmp/out_htr.pdf")  # TODO: use path that is not hardcoded
@@ -46,7 +46,7 @@ def document_to_HTR_document_and_image_of_first_page(document_path):
     )  # TODO: make it a generator to track progress externally like here.
     images = convert_from_path(output_path_final, first_page=1, last_page=1)
     first_page = images[0]
-    return first_page, first_page
+    return first_page
 
 
 def save_HTR_document_for_download(session_id):
@@ -77,7 +77,6 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     session_id = gr.State(value=lambda: str(uuid.uuid4()))
 
     original_image_state = gr.State()
-    rotated_image_state = gr.State()
 
     upload_button = gr.UploadButton(
         "Click to Upload an XOJ File", file_types=[".xoj"], file_count="single"
@@ -111,7 +110,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     button_2.click(
         fn=document_to_HTR_document_and_image_of_first_page,
         inputs=original_image_state,
-        outputs=[image_viewer_2, rotated_image_state],
+        outputs=image_viewer_2,
     )
 
     button_download.click(
