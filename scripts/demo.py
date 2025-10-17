@@ -101,6 +101,11 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
 
     original_image_state = gr.State()
 
+    donate_data_checkbox = gr.Checkbox(
+        label="Donate Data: Help us to improve our open-source models by donating your uploaded document. Everything will be released as open-source!",
+        value=False,
+    )
+
     upload_button = gr.UploadButton(
         "Click to Upload an XOJ File", file_types=[".xoj"], file_count="single"
     )
