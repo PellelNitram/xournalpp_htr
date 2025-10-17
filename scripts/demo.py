@@ -107,7 +107,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     )
 
     upload_button = gr.UploadButton(
-        "Click to Upload an XOJ File", file_types=[".xoj"], file_count="single"
+        "1. Click to Upload an XOJ File", file_types=[".xoj"], file_count="single"
     )
 
     with gr.Row():
@@ -119,10 +119,10 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         )
 
     with gr.Row():
-        button_1 = gr.Button("1. Export to PDF and Show First Page")
-        button_2 = gr.Button("2. Compute PDF with HTR and Show First Page")
+        button_1 = gr.Button("2. Export to PDF and Show First Page")
+        button_2 = gr.Button("3. Compute PDF with HTR and Show First Page")
 
-    button_download = gr.Button("3. Download PDF with HTR")
+    button_download = gr.Button("4. Download PDF with HTR")
     file_output = gr.File(label="Download PDF with HTR")
 
     # --- Event Handlers ---
