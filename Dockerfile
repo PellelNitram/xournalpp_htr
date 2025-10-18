@@ -35,7 +35,7 @@ COPY . .
 
 # Run the INSTALL_HF_DOCKER_SPACE.sh script
 RUN bash INSTALL_HF_DOCKER_SPACE.sh
-RUN pip install matplotlib bs4 pdf2image
+RUN pip install matplotlib bs4 pdf2image supabase python-dotenv
 # ^- that should not be necessary!! TODO!!
 
 # Expose the port Gradio will run on inside Hugging Face Spaces
