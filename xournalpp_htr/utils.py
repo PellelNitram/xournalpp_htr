@@ -1,4 +1,5 @@
 import argparse
+import os
 import subprocess
 from pathlib import Path
 
@@ -102,3 +103,26 @@ def parse_arguments(cli_string: None | str = None):
     )
     args = vars(parser.parse_args(cli_string.split() if cli_string else None))
     return args
+
+
+def get_env_variable(name: str, default=None):
+    """
+    Retrieve the value of an environment variable.
+
+    Args:
+        name (str): The name of the environment variable to retrieve.
+        default (optional): The default value to return if the environment
+            variable is not set. Defaults to None.
+
+    Returns:
+        The value of the environment variable if it is set, or the default
+        value if provided.
+
+    Raises:
+        ValueError: If the environment variable is not set and no default
+        value is provided.
+    """
+    value = os.getenv(name, default)
+    if value is None:
+        raise ValueError(f"Environment variable '{name}' is not set.")
+    return value
