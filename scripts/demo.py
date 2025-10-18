@@ -11,17 +11,17 @@ from supabase import Client, create_client
 
 from xournalpp_htr.documents import get_document
 from xournalpp_htr.models import compute_predictions
-from xournalpp_htr.utils import export_to_pdf_with_xournalpp
+from xournalpp_htr.utils import export_to_pdf_with_xournalpp, get_env_variable
 from xournalpp_htr.xio import write_predictions_to_PDF
 
 load_dotenv()
 
-DEMO = os.getenv("DEMO") == "1"
-SB_URL = os.getenv("SB_URL")
-SB_KEY = os.getenv("SB_KEY")
-SB_BUCKET_NAME = os.getenv("SB_BUCKET_NAME")
-SB_SCHEMA_NAME = os.getenv("SB_SCHEMA_NAME")
-SB_TABLE_NAME = os.getenv("SB_TABLE_NAME")
+DEMO = get_env_variable("DEMO") == "1"
+SB_URL = get_env_variable("SB_URL")
+SB_KEY = get_env_variable("SB_KEY")
+SB_BUCKET_NAME = get_env_variable("SB_BUCKET_NAME")
+SB_SCHEMA_NAME = get_env_variable("SB_SCHEMA_NAME")
+SB_TABLE_NAME = get_env_variable("SB_TABLE_NAME")
 
 # --- Image Processing Functions ---
 
