@@ -33,8 +33,8 @@ jobs:
         run: |
           make docs
 
-      - name: Upload docs
-        uses: actions/upload-artifact@v4
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v2
         with:
-          name: docs
-          path: site
+          branch: gh-pages
+          folder: site
