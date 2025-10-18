@@ -1,5 +1,3 @@
-name: Build and Deploy Docs
-
 name: Deploy docs to GitHub Pages
 
 on:
