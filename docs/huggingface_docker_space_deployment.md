@@ -18,3 +18,35 @@ now cross compiled on M4
     - there're issues!!
 - alternative: use appimage:
     - `wget --no-check-certificate https://github.com/xournalpp/xournalpp/releases/download/v1.2.8/xournalpp-1.2.8-x86_64.AppImage`
+
+## Commands to set up Supabase for event logging and data storage
+
+Contents of `.env` file:
+
+```bash
+DEMO=1
+SB_URL="https://<add here>.supabase.co"
+SB_KEY="<add here>"
+SB_BUCKET_NAME="xournalpp_htr_hf_space"
+SB_SCHEMA_NAME="public"
+SB_TABLE_NAME="xournalpp_htr_hf_space_events"
+```
+
+Create the events table:
+
+```sql
+create table public.xournalpp_htr_hf_space_events (
+  id bigserial primary key,
+  timestamp timestamptz not null,
+  demo boolean not null,
+  session_id text not null,
+  donate_data bool not null,
+  interaction text not null
+);
+```
+
+Create bucket:
+
+```
+xournalpp_htr_hf_space
+```
