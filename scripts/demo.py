@@ -1,16 +1,27 @@
 import os
 import tempfile
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import gradio as gr
+from dotenv import load_dotenv
 from pdf2image import convert_from_path
+from supabase import Client, create_client
 
 from xournalpp_htr.documents import get_document
 from xournalpp_htr.models import compute_predictions
 from xournalpp_htr.utils import export_to_pdf_with_xournalpp
 from xournalpp_htr.xio import write_predictions_to_PDF
+
+load_dotenv()
+
+DEMO = os.getenv("DEMO") == "1"
+SB_URL = os.getenv("SB_URL")
+SB_KEY = os.getenv("SB_KEY")
+SB_BUCKET_NAME = os.getenv("SB_BUCKET_NAME")
+SB_SCHEMA_NAME = os.getenv("SB_SCHEMA_NAME")
+SB_TABLE_NAME = os.getenv("SB_TABLE_NAME")
 
 # --- Image Processing Functions ---
 
@@ -27,8 +38,56 @@ def get_path_of_pdf_with_htr(session_id: str) -> Path:
     return get_temporary_directory() / f"{session_id}_pdf_with_htr.pdf"
 
 
+def log_interaction(
+    session_id: str,
+    donate_data: bool,
+    interaction: str,
+    document_path: str | None,
+):
+    supabase: Client = create_client(SB_URL, SB_KEY)
+
+    if donate_data and document_path:
+        document_path = Path(document_path)
+        destination_path = f"{session_id}{document_path.suffix}"
+        with open(document_path, "rb") as file:
+            supabase.storage.from_(SB_BUCKET_NAME).upload(
+                destination_path,
+                file,
+                {"content-type": "application/octet-stream"},
+            )
+
+    # Insert metadata row
+    row = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "demo": DEMO,
+        "session_id": session_id,
+        "donate_data": donate_data,
+        "interaction": interaction,
+    }
+
+    supabase.schema(SB_SCHEMA_NAME).table(SB_TABLE_NAME).insert(row).execute()
+
+
+def upload_document(document_path, session_id: str, donate_data: bool) -> str:
+    log_interaction(
+        session_id=session_id,
+        donate_data=donate_data,
+        interaction="upload_document",
+        document_path=document_path,
+    )
+    if document_path is None:
+        return None
+    return document_path
+
+
 def document_to_image_of_first_page(document_path, session_id):
     """Flips the input image horizontally."""
+    log_interaction(
+        session_id=session_id,
+        donate_data=False,
+        interaction="document_to_image_of_first_page",
+        document_path=None,
+    )
     if document_path is None:
         return None
     output_path = get_path_of_exported_pdf(session_id)
@@ -43,6 +102,12 @@ def document_to_image_of_first_page(document_path, session_id):
 
 def document_to_HTR_document_and_image_of_first_page(document_path, session_id):
     """Rotates the input image 90 degrees counter-clockwise."""
+    log_interaction(
+        session_id=session_id,
+        donate_data=False,
+        interaction="document_to_HTR_document_and_image_of_first_page",
+        document_path=None,
+    )
     if document_path is None:
         return None
     document_path = Path(document_path)
@@ -64,6 +129,12 @@ def document_to_HTR_document_and_image_of_first_page(document_path, session_id):
 
 
 def save_HTR_document_for_download(session_id):
+    log_interaction(
+        session_id=session_id,
+        donate_data=False,
+        interaction="save_HTR_document_for_download",
+        document_path=None,
+    )
     pdf_with_htr = get_path_of_pdf_with_htr(session_id)
     if not pdf_with_htr.exists():
         return None
@@ -107,7 +178,9 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     )
 
     upload_button = gr.UploadButton(
-        "1. Click to Upload an XOJ File", file_types=[".xoj"], file_count="single"
+        "1. Click to Upload an XOJ File",
+        file_types=[".xoj", ".xopp"],
+        file_count="single",
     )
 
     with gr.Row():
@@ -128,7 +201,9 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     # --- Event Handlers ---
 
     upload_button.upload(
-        lambda file: file, inputs=upload_button, outputs=original_image_state
+        fn=upload_document,
+        inputs=[upload_button, session_id, donate_data_checkbox],
+        outputs=original_image_state,
     )
 
     button_1.click(
