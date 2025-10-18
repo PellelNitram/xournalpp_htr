@@ -1,26 +1,23 @@
 name: Build and Deploy Docs
 
+name: Deploy docs to GitHub Pages
+
 on:
   push:
     branches:
       - master
-      - dev
       - 38-move-documentation-to-github-pages
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -32,22 +29,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r docs/requirements.txt
 
-      - name: Build docs
+      - name: Build and deploy
         run: |
-          make docs
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site   # or build/html if that's where your docs end up
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v2
+          mkdocs gh-deploy --force
