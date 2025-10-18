@@ -39,7 +39,9 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: site  # <-- change if your docs build to another folder
+          path: site
+          name: github-pages
+          retention-days: 1  # Retain the artifact for 1 day
 
   deploy:
     needs: build
