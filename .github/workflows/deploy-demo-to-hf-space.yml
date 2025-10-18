@@ -24,12 +24,12 @@ jobs:
       # Step 3: Clone the Hugging Face Space
       - name: Clone Hugging Face Space
         run: |
-          git clone https://user:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/PellelNitram/xournalpp_htr__staging hf-space
+          git clone https://user:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/PellelNitram/xournalpp_htr hf-space
 
       # Step 4: Sync files from GitHub repo to Hugging Face Space
       - name: Sync files to Hugging Face Space
         run: |
-          rsync -av --exclude='.git' --exclude='.github' --exclude='.env' ./ hf-space/
+          rsync -av --exclude='.git' --exclude='.github' --exclude='.env' --exclude='hf-space' ./ hf-space/
           cd hf-space
           git config --global user.email "konten.ma.le@gmail.com"
           git config --global user.name "Martin L (GitHub Actions)"

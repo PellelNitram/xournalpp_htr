@@ -16,6 +16,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     libgl1 \
     libglib2.0-0 \
+    xournalpp \
+    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Create and set working directory
@@ -33,7 +35,7 @@ COPY . .
 
 # Run the INSTALL_HF_DOCKER_SPACE.sh script
 RUN bash INSTALL_HF_DOCKER_SPACE.sh
-RUN pip install matplotlib bs4
+RUN pip install matplotlib bs4 pdf2image supabase python-dotenv
 # ^- that should not be necessary!! TODO!!
 
 # Expose the port Gradio will run on inside Hugging Face Spaces
