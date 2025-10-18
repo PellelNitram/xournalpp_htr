@@ -3,7 +3,7 @@ name: Deploy to Hugging Face Space
 on:
   push:
     branches:
-      - main  # Deploy whenever changes are pushed to the main branch
+      - master  # Deploy whenever changes are pushed to the main branch
 
 jobs:
   deploy:
