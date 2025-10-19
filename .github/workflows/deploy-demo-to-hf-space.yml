@@ -36,7 +36,7 @@ jobs:
           mv README_HF.md README.md
           git add .
           if [ -n "$(git status --porcelain)" ]; then
-            COMMIT_HASH=$(git -C ../ rev-parse HEAD)
+            COMMIT_HASH=$(git -C ../ rev-parse --short=6 HEAD)
             git commit -m "Automated deployment from GitHub (source commit: $COMMIT_HASH)"
             git push
           else
