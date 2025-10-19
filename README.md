@@ -25,6 +25,10 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 
 </div>
 
+## Online Demo
+
+Check out our online demo on HuggingFace that does not require any installation: [🤗 Demo](https://huggingface.co/spaces/PellelNitram/xournalpp_htr)!
+
 ## Installation
 
 For installation instructions, visit [this page](https://lellep.xyz/docs/xournalpp_htr/installation/) of [the main documentation](https://lellep.xyz/docs/xournalpp_htr/).
