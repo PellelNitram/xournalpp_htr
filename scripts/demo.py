@@ -101,7 +101,24 @@ def document_to_image_of_first_page(document_path, session_id):
 
 
 def document_to_HTR_document_and_image_of_first_page(document_path, session_id):
-    """Rotates the input image 90 degrees counter-clockwise."""
+    """
+    Processes a document to generate a PDF with handwritten text recognition (HTR) predictions
+    and extracts the image of the first page.
+
+    Args:
+        document_path (str or Path): The file path to the input document.
+        session_id (str): The session identifier for logging and file management.
+
+    Returns:
+        PIL.Image.Image or None: The image of the first page of the processed PDF, or None
+        if the input document path is not provided.
+
+    Notes:
+        - The function logs the interaction with the given session ID.
+        - Predictions are computed using a predefined HTR model.
+        - The processed PDF with HTR predictions is generated and the first page is converted to an image.
+        - The function currently assumes the use of a specific HTR model ("2024-07-18_htr_pipeline").
+    """
     log_interaction(
         session_id=session_id,
         donate_data=False,
