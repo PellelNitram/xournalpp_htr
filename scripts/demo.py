@@ -146,6 +146,21 @@ def document_to_HTR_document_and_image_of_first_page(document_path, session_id):
 
 
 def save_HTR_document_for_download(session_id):
+    """
+    Saves the Handwritten Text Recognition (HTR) document for download.
+
+    This function logs the interaction of saving an HTR document for download
+    and retrieves the path of the PDF containing the HTR data. If the PDF does
+    not exist, it returns None. Otherwise, it returns the string representation
+    of the PDF's path.
+
+    Args:
+        session_id (str): The unique identifier for the user session.
+
+    Returns:
+        str or None: The file path of the PDF with HTR as a string if it exists,
+        otherwise None.
+    """
     log_interaction(
         session_id=session_id,
         donate_data=False,
