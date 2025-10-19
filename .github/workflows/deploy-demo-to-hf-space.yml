@@ -35,7 +35,11 @@ jobs:
           git config --global user.name "Martin L (GitHub Actions)"
           mv README_HF.md README.md
           git add .
-          git commit -m "Automated deployment from GitHub"
-          git push
+          if [ -n "$(git status --porcelain)" ]; then
+            git commit -m "Automated deployment from GitHub"
+            git push
+          else
+            echo "No changes to commit"
+          fi
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
