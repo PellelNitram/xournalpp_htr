@@ -2,6 +2,7 @@
 
 # Xournal++ HTR
 
+[![🤗 Try demo on Hugging Face](https://img.shields.io/badge/🤗%20Try%20demo%20on-Hugging%20Face-orange)](https://huggingface.co/spaces/PellelNitram/xournalpp_htr)
 [![python](https://img.shields.io/badge/-Python_3.10-blue?logo=python&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/ashleve/lightning-hydra-template/pulls)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
