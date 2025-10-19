@@ -81,7 +81,25 @@ def upload_document(document_path, session_id: str, donate_data: bool) -> str:
 
 
 def document_to_image_of_first_page(document_path, session_id):
-    """Flips the input image horizontally."""
+    """
+    Converts the first page of the input document to an image.
+
+    This function exports the input document to a PDF format using Xournal++,
+    extracts the first page of the PDF, and converts it to an image. The image
+    is then returned for further processing or display.
+
+    Args:
+        document_path (str or Path): The file path to the input document.
+        session_id (str): The session identifier for logging and file management.
+
+    Returns:
+        PIL.Image.Image or None: The image of the first page of the exported PDF,
+        or None if the input document path is not provided.
+
+    Notes:
+        - The function logs the interaction with the given session ID.
+        - The exported PDF is stored in a temporary directory.
+    """
     log_interaction(
         session_id=session_id,
         donate_data=False,
