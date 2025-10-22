@@ -193,7 +193,7 @@ def save_HTR_document_for_download(session_id):
 
 # --- Gradio UI Layout ---
 
-with gr.Blocks(theme=gr.themes.Soft()) as demo:
+with gr.Blocks(theme=gr.themes.Soft(), title="Xournal++ HTR Demo") as demo:
     gr.Markdown(
         """
         # [Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr) Demo
