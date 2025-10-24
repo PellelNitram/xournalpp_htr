@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 
 import pymupdf
+from huggingface_hub import snapshot_download
 from tqdm import tqdm
 
 
@@ -92,3 +93,20 @@ def get_temporary_filename() -> Path:
     output_file_tmp_noOCR.parent.mkdir(parents=True, exist_ok=True)
 
     return output_file_tmp_noOCR
+
+
+def load_examples():
+    repo_id = "PellelNitram/xournalpp_htr_examples"
+
+    extensions = {".xoj", ".xopp"}
+
+    # Download the repo locally
+    local_dir = snapshot_download(repo_id, repo_type="dataset")
+
+    # Point to the data folder
+    data_dir = Path(local_dir) / "data"
+
+    # Collect all matching file paths recursively
+    file_paths = [str(f) for f in data_dir.rglob("*") if f.suffix.lower() in extensions]
+
+    return file_paths
