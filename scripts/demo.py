@@ -12,7 +12,7 @@ from supabase import Client, create_client
 from xournalpp_htr.documents import get_document
 from xournalpp_htr.models import compute_predictions
 from xournalpp_htr.utils import export_to_pdf_with_xournalpp, get_env_variable
-from xournalpp_htr.xio import write_predictions_to_PDF
+from xournalpp_htr.xio import load_examples, write_predictions_to_PDF
 
 load_dotenv()
 
@@ -22,6 +22,11 @@ SB_KEY = get_env_variable("SB_KEY")
 SB_BUCKET_NAME = get_env_variable("SB_BUCKET_NAME")
 SB_SCHEMA_NAME = get_env_variable("SB_SCHEMA_NAME")
 SB_TABLE_NAME = get_env_variable("SB_TABLE_NAME")
+
+example_files = load_examples()
+print(f"Loaded {len(example_files)} example files from dataset:")
+for example_file in example_files:
+    print(example_file)
 
 # --- Image Processing Functions ---
 
@@ -228,10 +233,21 @@ with gr.Blocks(theme=gr.themes.Soft(), title="Xournal++ HTR Demo") as demo:
     )
 
     upload_button = gr.UploadButton(
-        "1. Click to Upload an XOJ File",
+        "1. Upload Your XOJ/XOPP File (or use an Example Below)",
         file_types=[".xoj", ".xopp"],
         file_count="single",
     )
+
+    with gr.Accordion("📂 Example Files (Click to Expand)", open=False):
+        gr.Markdown(
+            "If you don't have a file at hand, download one of these example files "
+            "and then upload it using the button above."
+        )
+        example_files = gr.File(
+            value=example_files,
+            interactive=False,
+            show_label=False,
+        )
 
     with gr.Row():
         image_viewer_1 = gr.Image(
