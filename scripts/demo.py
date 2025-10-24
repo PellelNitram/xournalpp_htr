@@ -25,8 +25,6 @@ SB_TABLE_NAME = get_env_variable("SB_TABLE_NAME")
 
 example_files = load_examples()
 print(f"Loaded {len(example_files)} example files from dataset:")
-for example_file in example_files:
-    print(example_file)
 
 # --- Image Processing Functions ---
 
