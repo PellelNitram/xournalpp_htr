@@ -31,13 +31,11 @@ Check out our online demo on HuggingFace that does not require any installation:
 
 ## Installation
 
-For installation instructions, visit [this page](https://lellep.xyz/xournalpp_htr/installation/) of [the main documentation](https://lellep.xyz/xournalpp_htr/).
+For up-to-date installation instructions, please visit [the main documentation](https://lellep.xyz/xournalpp_htr/).
 
 ## Usage
 
-Visit this page to learn how to use this project as a user and visit this page to learn how to use this project as a developer.
-
-TODO
+For up-to-date usage instructions, for both users and developers, please visit [the main documentation](https://lellep.xyz/xournalpp_htr/).
 
 ## Contributions
 
