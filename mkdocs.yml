@@ -31,6 +31,9 @@ nav:
   - Contributing: 'contributing.md'
   - Roadmap: 'roadmap.md'
   - Funding: 'funding.md'
+  - ADRs:
+    - 001 Design of HuggingFace Space Dockerfile: 'ADRs/001_design_of_huggingface_space_dockerfile.md'
+    - 002 Use HuggingFace ecosystem for ML: 'ADRs/002_use_HuggingFace_ecosystem_for_ML.md'
 
 markdown_extensions:
   - pymdownx.superfences: # To enable mermaid.js charts, see https://squidfunk.github.io/mkdocs-material/reference/diagrams/.
