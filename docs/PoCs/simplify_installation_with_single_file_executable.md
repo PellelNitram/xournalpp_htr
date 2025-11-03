@@ -6,7 +6,7 @@ For easier installation.
 
 Scope: On Linux.
 
-Commands I experimented with:
+Commands I experimented with after the package has been installed:
 
 ```bash
 cd xournalpp_htr
@@ -19,10 +19,15 @@ This seems to work on my Ubuntu PC.
 Open questions:
 - Does it work on other linux computers?
     - Idea: check w/ EC2/GCP-VM instances.
+    - It does need xournalpp installed to render the document to PDF prior to HTR'ing it. But that's
+      a reasonable dependency b/c we're dealing with X++ files here. Note, however, that xournalpp
+      must be available as `xournalpp` for the script to work.
+      Maybe do `xournalp=<AppImage path> dist/run_htr [.. from above]`?
 - How to include the `xournalpp` binary in order to export the `xopp` file to a PDF?
     - Idea: Let the use select the `xournalpp` path?
 
 
+Add video demo here? -> yes!
 
 Next steps:
 - use github actions to produce binaries for MacOS and Windows.
