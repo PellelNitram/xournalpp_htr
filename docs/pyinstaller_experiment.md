@@ -21,3 +21,34 @@ Open questions:
     - Idea: check w/ EC2/GCP-VM instances.
 - How to include the `xournalpp` binary in order to export the `xopp` file to a PDF?
     - Idea: Let the use select the `xournalpp` path?
+
+
+
+Next steps:
+- use github actions to produce binaries for MacOS and Windows.
+
+
+
+from Github issue:
+
+# Description
+
+To improve the user experience and make `xournalpp_htr` more accessible, this issue proposes a proof of concept for bundling the application into a single, standalone executable using [PyInstaller](https://pyinstaller.org/en/stable/).
+
+# Motivation
+
+Currently, users need to have Python and `conda` set up to install the package and its dependencies on Linux. This can be a barrier for many potential users. A single-file executable would simplify this process to just downloading and running a file.
+
+# Goals for this POC
+
+- Explore if PyInstaller is a viable option.
+- If so:
+  - Create a build script for PyInstaller.
+  - Test that the bundled executable runs correctly without an external Python installation.
+- Add findings to documentation
+
+This would make distribution and installation simple and user-friendly.
+
+# Potential future steps
+
+ Build a single executable not only for Linux but also include Windows and MacOS. This can probably be achieved using Github Action.
