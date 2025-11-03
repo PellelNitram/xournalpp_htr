@@ -1,10 +1,10 @@
 # ADR 002 – Use Hugging Face Ecosystem for Machine Learning
 
 - Date: 2025-11-03
-- Status: ✅ Accepted
+- Status: Accepted
 - PRD: None
 - Drivers: Martin Lellep ([@PellelNitram](https://github.com/PellelNitram/))
-- Deciders: Deciders: Martin Lellep ([@PellelNitram](https://github.com/PellelNitram/))
+- Deciders: Martin Lellep ([@PellelNitram](https://github.com/PellelNitram/))
 
 ## Context
 
