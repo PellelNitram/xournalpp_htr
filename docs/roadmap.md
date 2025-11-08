@@ -1,6 +1,32 @@
-On this page, we outline the project's intended roadmap. This plan helps us strategically manage our time and resources.
+On this page, we outline the project's intended roadmap. The roadmap helps us strategically manage our time and resources.
 
 Below, we present our roadmap. It may evolve over time, so we will preserve previous versions to maintain transparency.
+
+## Roadmap as of *2025-11-08*
+
+Our project currently faces two main challenges: deployment and prediction quality.
+
+1. **Deployment**: Since the plugin runs on the edge, the deployment is
+really the installation on the user's device. This installation has
+been a problem because we only tested it on Linux and the installation process
+requires technical knowledge. These issues have recently been mitigated
+through a new [online demo](https://huggingface.co/spaces/PellelNitram/xournalpp_htr)
+that allows users to try Xournal++ HTR without installation. Following
+the [successful PyInstaller proof of concept](PoCs/simplify_installation_with_single_file_executable.md),
+this setup will likely become the preferred installation method in the future.
+
+2. **Prediction Quality**: We want to improve prediction quality. Improving prediction performance requires a way to measure real-life accuracy. To achieve this, two components are planned:
+
+    * A crowdsourced benchmark dataset, compiled from donated [demo](https://huggingface.co/spaces/PellelNitram/xournalpp_htr) input data.
+    * An end-to-end evaluation metric to assess both text detection and transcription quality.
+
+Additionally, we currently rely on a third-party library called `htr_pipeline` for model delivery.
+While effective, it complicates installation and model management. We plan to replace it with an
+in-house implementation. The first component, the WordDetectorNet, has already been internalized
+(see [explanation of model](https://lellep.xyz/blog/worddetectornet-visually-explained.html),
+[code](https://github.com/PellelNitram/xournalpp_htr/tree/master/xournalpp_htr/training/WordDetectorNN) and
+[demo](https://huggingface.co/spaces/PellelNitram/xournalpp_htr_WordDetectorNN)).
+This transition away from `htr_pipeline` will not be backward compatible.
 
 ## Roadmap as of *2025-05-03*
 
