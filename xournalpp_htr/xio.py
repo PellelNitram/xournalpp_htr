@@ -4,7 +4,13 @@ import tempfile
 from pathlib import Path
 
 import pymupdf
-from huggingface_hub import snapshot_download
+
+try:
+    from huggingface_hub import snapshot_download
+
+    huggingface_hub_available = True
+except ImportError:
+    huggingface_hub_available = False
 from tqdm import tqdm
 
 
@@ -96,6 +102,10 @@ def get_temporary_filename() -> Path:
 
 
 def load_examples():
+    if not huggingface_hub_available:
+        raise ImportError(
+            "The `huggingface_hub` package is required to load the example data."
+        )
     repo_id = "PellelNitram/xournalpp_htr_examples"
 
     extensions = {".xoj", ".xopp"}
