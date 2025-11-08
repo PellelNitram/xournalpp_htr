@@ -1,4 +1,4 @@
-# PoC 001 – Simplifying Installation with a Single-File Executable
+# Simplify Installation with a Single-File Executable
 
 - Date: 2025-11-08  
 - Author: Martin Lellep (@PellelNitram)  
@@ -6,22 +6,24 @@
 
 ## Overview
 
-This proof of concept explores whether [`PyInstaller`](https://pyinstaller.org/en/stable/) can be used to package the `xournalpp_htr` Python application into a single executable file.  
+This proof of concept explores whether [`PyInstaller`](https://pyinstaller.org/en/stable/) can be used to package the `xournalpp_htr` Python application into a single executable file.
+
 The goal is to simplify installation and usage by removing the need for users to manually install Python or Conda environments.
 
 ## Background & Motivation
 
-Currently, `xournalpp_htr` requires a working Python and Conda setup on Linux. This dependency chain can discourage non-technical users.  
-A single-file binary distribution would allow users to simply download and run the program — improving accessibility and ease of use.
+Currently, `xournalpp_htr` requires a working Python and Conda setup on Linux. This dependency chain can discourage non-technical users.
+
+A single-file binary distribution would allow users to simply download and run the program - improving accessibility and ease of use.
 
 ## Objective
 
-This PoC evaluates whether PyInstaller is a viable option for creating a self-contained executable of `xournalpp_htr` that runs without an external Python installation.
+This PoC evaluates whether [`PyInstaller`](https://pyinstaller.org/en/stable/) is a viable option for creating a self-contained executable of `xournalpp_htr` that runs without an external Python installation.
 
 ## Experiment Setup
 
-Environment: Ubuntu Linux (local machine)  
-Scope: Initial validation of PyInstaller packaging on Linux only.
+- Environment: Ubuntu Linux (local machine)  
+- Scope: Initial validation of [`PyInstaller`](https://pyinstaller.org/en/stable/) packaging on Linux only.
 
 ### Commands Used
 
@@ -46,45 +48,32 @@ The bundled application performs as expected, including model loading and HTR pr
 ## Open Questions
 
 * Cross-system compatibility:
-
-  * Does the executable work on other Linux distributions or minimal environments (e.g., EC2 or GCP VMs)?
-  * Next step: Test the binary on a clean VM instance.
-
+    * Does the executable work on other Linux distributions or minimal environments (e.g., EC2 or GCP VMs)?
+    * Next step: Test the binary on a clean VM instance or inside a representative Docker image.
 * Integration with Xournal++:
-
-  * The tool currently requires `xournalpp` to render `.xopp` documents to PDF prior to recognition.
-  * This dependency is natural because we are dealing with xournal++ files here.
-  * Possible approaches:
-
-    * Require `xournalpp` to be installed and accessible via `$PATH`.
-    * Allow the user to specify a custom `xournalpp` binary (e.g., an AppImage).
-
+    * The tool currently requires `xournalpp` to render `.xopp` documents to PDF prior to recognition.
+    * This dependency is reasonable because we are building a Xournal++ plugin here.
+    * Possible approaches:
+        * Require `xournalpp` to be installed and accessible via `$PATH`.
+        * Allow the user to specify a custom `xournalpp` binary (e.g., an AppImage).
 * Bundling external dependencies:
-
-  * Could the `xournalpp` binary itself be packaged within the PyInstaller bundle?
-  * Requires exploration of size implications and licensing considerations.
+    * Could the `xournalpp` binary itself be packaged within the [`PyInstaller`](https://pyinstaller.org/en/stable/) bundle?
+    * Requires exploration of size implications and licensing considerations.
 
 ## Next Steps
 
-1. Cross-platform builds:
-
-   * Attempt PyInstaller builds for macOS and Windows.
-   * Automate using GitHub Actions to produce platform-specific binaries.
-
-2. Integration testing:
-
-   * Validate the binary on clean Linux VMs.
-   * Confirm compatibility with `xournalpp` when executed via different paths.
-
+1. Integration testing:
+    * Validate the binary on clean Linux VMs.
+    * Confirm compatibility with `xournalpp` when executed via different paths.
+2. Cross-platform builds:
+    * Attempt [`PyInstaller`](https://pyinstaller.org/en/stable/) builds for macOS and Windows.
+    * Automate using GitHub Actions to produce platform-specific binaries.
 3. Plugin integration:
-
-   * Update the X++ HTR Lua plugin to use the new standalone executable.
-
+    * Update the Lua part of the Xournal++ HTR plugin to use the new standalone executable.
 4. Documentation update:
-
-   * Document the build and installation process once validated.
+    * Document the build and installation process once validated.
 
 ## Summary
 
-This PoC confirms that PyInstaller is a viable solution for packaging `xournalpp_htr` into a single-file binary on Linux.
-The next phase will focus on cross-platform builds, integration testing, and automating releases to make distribution fully user-friendly.
+This PoC confirms that [`PyInstaller`](https://pyinstaller.org/en/stable/) is a viable solution for packaging `xournalpp_htr` into a single-file binary on Linux.
+The next phase will focus on integration testing, cross-platform builds, and automating releases to make distribution fully user-friendly.
