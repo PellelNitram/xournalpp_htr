@@ -16,6 +16,10 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 
 </div>
 
+## Demo
+
+Try out Xournal++ HTR without any installation by using our [online demo](https://huggingface.co/spaces/PellelNitram/xournalpp_htr)! 🥳
+
 ## Why Handwritten Text Recognition for Xournal++?
 
 A key benefit of digital note-taking is searchability, which digital handwritten notes lack
