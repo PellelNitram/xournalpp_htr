@@ -30,8 +30,6 @@ nav:
     - ADRs:
       - 001 Design of HuggingFace Space Dockerfile: 'ADRs/001_design_of_huggingface_space_dockerfile.md'
       - 002 Use HuggingFace ecosystem for ML: 'ADRs/002_use_HuggingFace_ecosystem_for_ML.md'
-    # - Data Collection: 'data_collection.md' # Unclear if even needed
-    # - Developing New Models: 'developing_new_models.md' # Very unclear what to write as I haven't built anything yet
     - PoCs:
       - Simplify Installation with single file executable: 'PoCs/simplify_installation_with_single_file_executable.md'
   - Contributing: 'contributing.md'
