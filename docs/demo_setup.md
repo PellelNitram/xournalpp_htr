@@ -1,27 +1,26 @@
-## Local Docker image building
+Our [online demo](https://huggingface.co/spaces/PellelNitram/xournalpp_htr) allows users to experiment with Xournal++ HTR without any installation and thereby lowers the entry barrier.
 
-1. Build the Docker image: `docker build -t xournalpp_htr .`
+We use a Hugging Face Docker Space setup to deliver the [online demo](https://huggingface.co/spaces/PellelNitram/xournalpp_htr). The deployment is automated using Github Actions, see [this workflow](https://github.com/PellelNitram/xournalpp_htr/blob/master/.github/workflows/deploy-demo-to-hf-space.yml).
+
+This page outlines how to set up and develop the demo locally, ensuring compatibility with Hugging Face Docker Space deployment.
+
+## Local development using Docker
+
+1. Build the Docker image from the repository root folder: `docker build -t xournalpp_htr .`
 2. Run Docker image: `docker run -d -p 7860:7860 xournalpp_htr`
-    - Interactively for debugging: `docker run -it --entrypoint bash xournalpp_htr`
 3. Run Docker image for interactive development
     - Start docker container: `docker run -it -p 7860:7860 -v $(pwd):/temp_code_mount --entrypoint bash xournalpp_htr`
     - Call Python code inside the container: `python /temp_code_mount/scripts/demo.py`
 
 Generally, tidy up Docker caches with `docker system prune` if your system is full.
 
-## looking into adding xournalpp to the image b/c i need that for the prediction (to convert xoj/xopp to pdf):
+## Production deployment using Github Actions
 
-now cross compiled on M4
-- build image: `docker buildx build --platform linux/amd64 -t xournalpp_htr .`
-- interactively entering: `docker run -it --platform linux/amd64 -p 7860:7860 -v $(pwd):/temp_code_mount --entrypoint bash xournalpp_htr`
-- dl deb file: `wget --no-check-certificate https://github.com/xournalpp/xournalpp/releases/download/v1.2.8/xournalpp-1.2.8-Debian-bookworm-x86_64.deb`
-    - there're issues!!
-- alternative: use appimage:
-    - `wget --no-check-certificate https://github.com/xournalpp/xournalpp/releases/download/v1.2.8/xournalpp-1.2.8-x86_64.AppImage`
+Once code has been pushed to the `master` branch, it is picked up by CI/CD in the form of Github Actions ([see code here](https://github.com/PellelNitram/xournalpp_htr/blob/master/.github/workflows/deploy-demo-to-hf-space.yml)) and the code is automatically deployed to a Hugging Face Docker Space [here](https://huggingface.co/spaces/PellelNitram/xournalpp_htr).
 
-## Commands to set up Supabase for event logging and data storage
+## Environment variables
 
-Contents of `.env` file:
+The demo needs a number of environment variables to work correctly, see below and in the `.env.example` file: 
 
 ```bash
 DEMO=1
@@ -32,7 +31,13 @@ SB_SCHEMA_NAME="public"
 SB_TABLE_NAME="xournalpp_htr_hf_space_events"
 ```
 
-Create the events table:
+Here, demo mode should be disabled for the production environment, i.e. `DEMO=0`.
+
+## Supabase setup
+
+Supabase stores both analytics data and donated data samples.
+
+Create the events table for analytics:
 
 ```sql
 create table public.xournalpp_htr_hf_space_events (
@@ -45,7 +50,7 @@ create table public.xournalpp_htr_hf_space_events (
 );
 ```
 
-Create bucket:
+Create bucket with following name to store donated data samples:
 
 ```
 xournalpp_htr_hf_space
