@@ -67,6 +67,7 @@ def log_interaction(
         "donate_data": donate_data,
         "interaction": interaction,
     }
+    print(f"Logging interaction: {row}")
 
     supabase.schema(SB_SCHEMA_NAME).table(SB_TABLE_NAME).insert(row).execute()
 
