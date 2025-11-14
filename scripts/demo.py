@@ -215,6 +215,8 @@ with gr.Blocks(theme=gr.themes.Soft(), title="Xournal++ HTR Demo") as demo:
         The "we" in the paragraphs above is currently really only me, [Martin Lellep](https://lellep.xyz/?utm_campaign=xppGradioDemo), the main developer of Xournal++ HTR. I really love to work on
         [Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr)! If you think this project is valuable and want to express your gratitute, then please feel free to [buy me a virtual coffee here](https://ko-fi.com/martin_l)
         so that I can buy more GPU power for training models and continue to let the GPUs go brrr :-).
+
+        **Feedback:** Send us any feedback or questions via [email](mailto:blog.ma.lel@gmail.com?subject=Feedback%20for%20Xournal++%20HTR%20Demo&amp;body=Drop%20your%20feedback%20here.%20Thanks%20a%20lot!) :-).
         """
     )
 
