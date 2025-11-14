@@ -41,6 +41,8 @@ RUN pip install matplotlib bs4 pdf2image supabase python-dotenv
 # Expose the port Gradio will run on inside Hugging Face Spaces
 EXPOSE 7860
 
+ENV PYTHONUNBUFFERED=1
+
 # Command to run Gradio app
 # Hugging Face Spaces will set PORT env var, so we use it
 CMD ["python", "scripts/demo.py"]
