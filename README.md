@@ -27,7 +27,7 @@ Developing [handwritten text recognition](https://en.wikipedia.org/wiki/Handwrit
 
 ## Online Demo
 
-Check out our online demo on HuggingFace that does not require any installation: [🤗 Demo](https://huggingface.co/spaces/PellelNitram/xournalpp_htr)!
+Try our no-installation online demo on HuggingFace: [🤗 Demo](https://huggingface.co/spaces/PellelNitram/xournalpp_htr), and see it in action in this [demo video](https://www.youtube.com/watch?v=rwHbacjjAS8)!
 
 ## Installation
 
