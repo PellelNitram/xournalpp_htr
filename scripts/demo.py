@@ -201,7 +201,29 @@ with gr.Blocks(theme=gr.themes.Soft(), title="Xournal++ HTR Demo") as demo:
     gr.Markdown(
         """
         # [Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr) Demo
+        """
+    )
 
+    with gr.Accordion("📹 Watch how to use the demo", open=False):
+        gr.HTML(
+            """
+            <div style="display: flex; justify-content: center; margin-top: 20px;">
+                <iframe
+                    width="560"
+                    height="315"
+                    src="https://www.youtube.com/embed/rwHbacjjAS8?si=m_OWy53c6ZYxCVtd"
+                    title="YouTube video player"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allowfullscreen>
+                </iframe>
+            </div>
+            """
+        )
+
+    gr.Markdown(
+        """
         This is an online demo of the [Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr) project, which strives to bring modern handwritten
         text recognition to open-source handwritten note softwares like [Xournal++](https://xournalpp.github.io/).
 
