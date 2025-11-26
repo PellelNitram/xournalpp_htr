@@ -1,0 +1,1 @@
+python run_htr.py -if ~/data/xournalpp_htr/empty_2025-11-15.xopp -of test.pdf
