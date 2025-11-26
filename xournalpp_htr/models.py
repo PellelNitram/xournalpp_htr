@@ -29,6 +29,19 @@ def compute_predictions(model_name: str, document) -> dict:
                     page_index, TMP_FILE, False, dpi=150
                 )
 
+                # Confirm that page is not empty
+                # (This is not ideal as it'd be better if the `read_page`
+                # function below could handle empty pages gracefully but that
+                # function is part of an external package (at least for
+                # now) so that I cannot alter it for now.)
+                if (
+                    len(document.pages[page_index].layers) == 0
+                    or len(document.pages[page_index].layers[0].strokes) == 0
+                ):
+                    print(f"Page {page_index} is empty. Skipping HTR.")
+                    predictions[page_index] = []
+                    continue
+
                 # ======
                 # Do HTR
                 # ======
