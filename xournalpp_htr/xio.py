@@ -101,7 +101,7 @@ def get_temporary_filename() -> Path:
     return output_file_tmp_noOCR
 
 
-def load_examples():
+def load_examples(exclude_empty: bool = False):
     if not huggingface_hub_available:
         raise ImportError(
             "The `huggingface_hub` package is required to load the example data."
@@ -120,5 +120,9 @@ def load_examples():
     file_paths = sorted(
         [str(f) for f in data_dir.rglob("*") if f.suffix.lower() in extensions]
     )
+
+    # Remove empty files if requested
+    if exclude_empty:
+        file_paths = [fp for fp in file_paths if "empty" not in Path(fp).stem.lower()]
 
     return file_paths
