@@ -117,6 +117,8 @@ def load_examples():
     data_dir = Path(local_dir) / "data"
 
     # Collect all matching file paths recursively
-    file_paths = [str(f) for f in data_dir.rglob("*") if f.suffix.lower() in extensions]
+    file_paths = sorted(
+        [str(f) for f in data_dir.rglob("*") if f.suffix.lower() in extensions]
+    )
 
     return file_paths
