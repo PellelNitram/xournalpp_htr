@@ -23,7 +23,7 @@ SB_BUCKET_NAME = get_env_variable("SB_BUCKET_NAME")
 SB_SCHEMA_NAME = get_env_variable("SB_SCHEMA_NAME")
 SB_TABLE_NAME = get_env_variable("SB_TABLE_NAME")
 
-example_files = load_examples()
+example_files = load_examples(exclude_empty=True)
 print(f"Loaded {len(example_files)} example files from dataset:")
 
 # --- Image Processing Functions ---
