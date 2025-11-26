@@ -38,6 +38,7 @@ def compute_predictions(model_name: str, document) -> dict:
                     len(document.pages[page_index].layers) == 0
                     or len(document.pages[page_index].layers[0].strokes) == 0
                 ):
+                    print(f"Page {page_index} is empty. Skipping HTR.")
                     predictions[page_index] = []
                     continue
 
