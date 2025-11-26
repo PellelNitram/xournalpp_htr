@@ -1,5 +1,7 @@
 # This script tests that the HTR processing does not crash on an empty Xournal++ file.
 
+# TODO: Make this a proper unit test in the future.
+
 set -e
 
 DATASET_DIR=/home/martin/.cache/huggingface/hub/datasets--PellelNitram--xournalpp_htr_examples/snapshots/ca4f8d43dee4bd626139822ba2d5f998dcf4bfa3/data
