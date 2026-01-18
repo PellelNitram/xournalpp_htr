@@ -12,6 +12,8 @@
 - set up entry point script to install the plugin
 - (maybe) set up entry point script to run htr
 - TODO: See my physical notes
+- ideally w/ data classes (or BaseModels) to define input and outputs
+- ideally w/ type checking using ty
 
 ## Context
 
