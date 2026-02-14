@@ -16,6 +16,8 @@
 - ideally w/ type checking using ty
 - i want to use the same code in run_htr and demo.
 - i want to expand the amount of tests to professionalise the project and allow AI coding to be more efficient.
+- See my paper notes!
+- Unclear to me: i can design the inference side probably well. how to define the training side? should i at all??
 
 ## Improvement ideas to review
 
