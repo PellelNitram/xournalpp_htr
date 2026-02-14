@@ -12,8 +12,10 @@
 - set up entry point script to install the plugin
 - (maybe) set up entry point script to run htr
 - TODO: See my physical notes
-- ideally w/ data classes (or BaseModels) to define input and outputs
+- ideally w/ data classes (or BaseModels) to define input and outputs at every point
 - ideally w/ type checking using ty
+- i want to use the same code in run_htr and demo.
+- i want to expand the amount of tests to professionalise the project and allow AI coding to be more efficient.
 
 ## Context
 
