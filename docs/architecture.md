@@ -43,19 +43,24 @@ The pipeline in `pipeline.py` runs three sequential steps:
 
 ```mermaid
 graph TD
+    INPUT[".xoj / .xopp file"] --> PIPELINE["export_xournalpp_to_pdf_with_htr()"]
+
     subgraph "Step 1: Export"
-        S1["export_to_pdf_with_xournalpp()"]
+        PIPELINE --> S1["export_to_pdf_with_xournalpp()"]
         S1 -->|"xournalpp CLI"| TMP["Temporary PDF<br/>(no text layer)"]
     end
+
     subgraph "Step 2: Recognise"
-        INPUT[".xoj / .xopp file"] --> DOC["get_document()"]
-        DOC --> |"Document object"| CP["compute_predictions()"]
-        CP -->|"per page"| RENDER["Render page to image<br/>(matplotlib, 150 DPI)"]
+        PIPELINE --> DOC["get_document()"]
+        DOC -->|"Document object"| CP["compute_predictions()"]
+        CP --> RENDER["save_page_as_image()<br/>(matplotlib, 150 DPI)"]
         RENDER --> HTR["read_page()<br/>(htr_pipeline)"]
         HTR --> PRED["Predictions dict"]
     end
+
     subgraph "Step 3: Embed"
-        TMP --> WRITE["write_predictions_to_PDF()"]
+        PIPELINE --> WRITE["write_predictions_to_PDF()"]
+        TMP --> WRITE
         PRED --> WRITE
         WRITE -->|"PyMuPDF"| OUT["Output PDF<br/>(with text layer)"]
     end
