@@ -1,4 +1,4 @@
-# ADR 002 – Use Hugging Face Ecosystem for Machine Learning
+# ADR 003 – Define Target Architecture
 
 - Date: YYYY-MM-DD
 - Status: Accepted or Ongoing or Superseeded by [ADR]()
