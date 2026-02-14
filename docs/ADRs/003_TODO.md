@@ -30,6 +30,57 @@
 - **Model registry for extensibility**: `compute_predictions()` uses a single `if model_name == ...` branch. A registry (dict mapping name to callable) would make adding models cleaner.
 - **Expand test coverage**: The riskiest code (coordinate conversion, prediction embedding, empty page handling) lacks tests. A golden-file test with a small fixture `.xopp` and known expected predictions would catch regressions.
 
+## Brainstorm: Additional improvement ideas
+
+### Packaging & Tooling
+
+- Migrate from `requirements.txt` + `setup.py` to a single `pyproject.toml` with `uv` as the package manager — modern standard, simplifies install, dependency resolution, and entry point declaration.
+- Define CLI entry points in `pyproject.toml` (e.g. `xournalpp-htr = "xournalpp_htr.run_htr:main"`) so users get a proper command after `pip install`.
+- Pin `ruff` version in `pyproject.toml` (currently only pinned in `.pre-commit-config.yaml`).
+- Add `ty` (or `mypy`/`pyright`) to pre-commit hooks, not just as an aspiration.
+
+### CI/CD
+
+- Replace the fragile Dropbox model download in CI with GitHub Releases or HF Hub artifacts — Dropbox links rot and are slow.
+- Expand CI test scope beyond just `installation` markers — run at least `correctness` tests on PRs to catch regressions.
+- Add a CI job for type checking once `ty` is adopted.
+- Consider caching model downloads in CI (GitHub Actions cache) to speed up runs.
+
+### Architecture & Code Quality
+
+- Remove legacy files: `xournalpp_htr/demo_concept_1.py` and `scripts/demo_concept_1.sh` appear obsolete and add confusion.
+- Introduce a `Pipeline` class or builder pattern to replace the procedural `export_xournalpp_to_pdf_with_htr()` — makes the pipeline composable and testable (e.g., swap out the model, skip PDF export, etc.).
+- Define a `Config` dataclass (or Pydantic `BaseSettings`) that consolidates all configuration: DPI values, model name, detector parameters (scale, margin), debug flags. Pass it through the pipeline instead of scattering hardcoded values.
+- Make the coordinate conversion (150 DPI image → 72 DPI PDF) an explicit, tested function rather than inline math in `xio.py`.
+
+### Plugin
+
+- Replace `os.execute()` (blocking) with an async approach or at least a progress indicator — currently the Xournal++ UI freezes during HTR.
+- Generate `config.lua` from a template at runtime (e.g., using environment variables or a `.xournalpp-htr.toml` in the user's home directory) instead of mutating a tracked source file during install.
+- Add user-facing error messages when Python or dependencies are missing (currently fails silently or with cryptic Lua errors).
+
+### Testing
+
+- Add a golden-file regression test: small fixture `.xopp` → run pipeline → compare output PDF text layer against a known-good snapshot.
+- Unit-test the DPI coordinate conversion in isolation — most critical correctness path with currently zero coverage.
+- Test edge cases: single-stroke pages, pages with only background images, very long text lines, non-ASCII characters.
+- Add a test that the CLI `--help` works and covers all arguments (cheap smoke test).
+
+### Developer Experience
+
+- Add `Makefile` targets (or `uv` scripts) for common workflows: `make test`, `make lint`, `make demo`, `make install-plugin`.
+- Document the local development setup in the developer guide (currently sparse).
+- Consider a `devcontainer.json` for VS Code / Codespaces to standardize the dev environment.
+
+### Bundled External Dependency
+
+- The `external/htr_pipeline` is vendored directly. Decide whether to: (a) fork & maintain it as a proper dependency, (b) absorb it into `xournalpp_htr` (the `WordDetectorNN` training code suggests this direction), or (c) keep vendoring but pin to a specific commit/tag.
+
+### Runtime & Performance
+
+- Multi-page parallel inference — pages are independent and could be processed concurrently (e.g., `concurrent.futures.ProcessPoolExecutor`).
+- Lazy model loading — currently models are loaded per invocation. A long-running service mode (or caching the loaded model) would help repeated use.
+
 ## Context
 
 *(Add text here.)*
