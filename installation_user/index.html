@@ -958,7 +958,15 @@
 <p>This project consists of both the inference and training code. Most users will only be interested in the inference part, so that the below only comprises of the inference part that you need to execute the plugin from within Xournal++.</p>
 <p>The training part is optional and allows to help to train our own models which improve over time. This installation process is optional and detailed in <a href="../developer_guide/#Installation">the developer guide</a>.</p>
 <h2 id="linux">Linux</h2>
-<p>Run <code>bash INSTALL_LINUX.sh</code> from repository root directory.</p>
+<p><b>Please read the whole Linux section before running the script mentioned below.</b></p>
+<p>The script assumes that you have <code>conda</code> installed and it can be found in <code>$PATH</code>. If you don't have it installed, <a href="https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html">set it up</a> first.</p>
+<p>If you are using <code>miniconda</code>, run the following commands <b>before running the script</b>. Without them, miniconda seems to refuse to be executed by an external script.</p>
+<p>
+<code>conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main</code><br>
+<code>conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r</code>
+</p>
+
+<p>Finally, to install, you will have to run <code>bash INSTALL_LINUX.sh</code> from repository root directory. 
 <p>This script also installs the plugin as explained in the last point of the cross-platform installation procedure. The installation of the plugin is performed with <code>plugin/copy_to_plugin_folder.sh</code>, which can also be invoked independently of <code>INSTALL_LINUX.sh</code> for updating the plugin installation.</p>
 <h2 id="cross-platform">Cross-platform</h2>
 <p>If you want to install the plugin manually, then execute the following commands:</p>
