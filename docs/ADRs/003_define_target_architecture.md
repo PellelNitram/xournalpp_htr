@@ -19,6 +19,19 @@
 - See my paper notes!
 - Unclear to me: i can design the inference side probably well. how to define the training side? should i at all??
 
+compute_predictions takes path and pipeline string (or workflow??), ground truth shall be on word level and not sentence level bc thats a post processing step, first design the inference part and later look at model training approach and how to allow different installation modes, the compute fit returns bounding boxes with a string attached, inference for device should be same as for HF demo ideally, add tests, eval script to give pipeline and eval set to, evaluator allows multiple eval metrics to report, challenge the new architecture document, 
+
+*2026-03-01* add version to this current model as well as code version to do it properly from here on.
+
+*2026-03-01* check HF demo image in CI/CD
+
+0302: will the above architecture also allow splitting installation dependencies into prod, dev, test? Or is tjis w pyinstaller irrelevant , how to store eval set? Have different commands or rather one w different argparsers?, how to solve training a model? For that, check if HF is indeed good enough. If I work on it, I need content pipeline
+
+
+## Next actionable steps
+
+1. Add a version to the current status to then work on future versions. We will use regular versioning (NOT date-based).
+
 ## Improvement ideas to review
 
 - **Deduplicate `XournalDocument` / `XournalppDocument`**: Both `load_data()` implementations in `documents.py` are identical. Merge into the base class or a shared helper.
