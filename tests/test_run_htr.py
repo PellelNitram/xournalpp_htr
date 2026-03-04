@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from xournalpp_htr.pipeline import export_xournalpp_to_pdf_with_htr
+from xournalpp_htr.shortcuts import export_xournalpp_to_pdf_with_htr
 from xournalpp_htr.run_htr import parse_arguments
 
 
@@ -78,11 +78,11 @@ def test_parse_arguments_full() -> None:
     This test verifies that the `parse_arguments` function correctly
     parses a complete set of command-line arguments.
     """
-    args = parse_arguments("-if input -of output -m dummy -pid dir -sp")
+    args = parse_arguments("-if input -of output -p dummy -pid dir -sp")
     assert len(args) == 5
     assert args["input_file"].stem == "input"
     assert args["output_file"].stem == "output"
-    assert args["model"] == "dummy"
+    assert args["pipeline"] == "dummy"
     assert args["prediction_image_dir"].stem == "dir"
     assert args["show_predictions"]
 
@@ -103,7 +103,7 @@ def test_main(get_path_to_minimal_test_data: Path, tmp_path: Path) -> None:
     args = {
         "input_file": get_path_to_minimal_test_data,
         "output_file": tmp_path / Path("test_main.pdf"),
-        "model": "2024-07-18_htr_pipeline",  # TODO: Add a `dummy` to test pipeline w/o ML part
+        "pipeline": "2024-07-18_htr_pipeline",  # TODO: Add a `dummy` to test pipeline w/o ML part
         "prediction_image_dir": None,
         "show_predictions": False,
     }

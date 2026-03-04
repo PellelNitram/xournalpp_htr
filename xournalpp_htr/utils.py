@@ -76,13 +76,13 @@ def parse_arguments(cli_string: None | str = None):
     )
     # v-- TODO: Make optional
     parser.add_argument(
-        "-m",
-        "--model",
+        "-p",
+        "--pipeline",
         type=str,
         required=False,
         default="2024-07-18_htr_pipeline",
-        help="The model to use for handwriting recognition.",
-    )  # TODO: Introduce dummy model called "test_lua_to_python"; TODO: Register models somehow to allow choice keyword here; also add "none"; default to latest model
+        help="The pipeline to use for handwriting recognition.",
+    )  # TODO: Introduce dummy pipeline called "test_lua_to_python"; TODO: Register pipelines somehow to allow choice keyword here; also add "none"; default to latest pipeline
     parser.add_argument(
         "-pid",
         "--prediction-image-dir",

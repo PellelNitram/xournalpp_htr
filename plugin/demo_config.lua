@@ -3,7 +3,7 @@ local _M = {}
 -- user settings
 _M.python_executable = "/home/martin/anaconda3/envs/xournalpp_htr/bin/python"
 _M.xournalpp_htr_path = "/home/martin/Development/xournalpp_htr/xournalpp_htr/run_htr.py"
-_M.model = "dummy"
+_M.pipeline = "dummy"
 _M.output_file = "/home/martin/Development/xournalpp_htr/tests/test_1_from_Xpp.pdf"
 _M.debug_HTR_command = false
 -- TODO: allow UI to set other parameters as well of `xournalpp_htr`.

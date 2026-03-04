@@ -15,7 +15,7 @@ def export_xournalpp_to_pdf_with_htr(args: dict) -> None:
 
     :param args: Dictionary containing the following input parameters: `input_file' (Path; path to the input Xournal(++) file),
                  'prediction_image_dir' (Path or None; directory for storing prediction images (optional)), 'output_file'
-                 (Path; path to the output PDF file), 'model' (str; name of the HTR model to use for predictions) and
+                 (Path; path to the output PDF file), 'pipeline' (str; name of the HTR pipeline to use for predictions) and
                  `show_predictions` (bool; switch to render visible prediction texts in PDF instead of invisible texts).
     :returns: None
     """
@@ -30,7 +30,7 @@ def export_xournalpp_to_pdf_with_htr(args: dict) -> None:
     prediction_image_dir = args["prediction_image_dir"]
     output_file = args["output_file"]
     debug_htr = args["show_predictions"]
-    model = args["model"]
+    pipeline = args["pipeline"]
 
     output_file_tmp_noOCR = get_temporary_filename()
 
@@ -44,7 +44,7 @@ def export_xournalpp_to_pdf_with_htr(args: dict) -> None:
 
     document = get_document(input_file)
 
-    predictions = compute_predictions(model_name=model, document=document)
+    predictions = compute_predictions(pipeline_name=pipeline, document=document)
 
     # Plot the predictions to ensure that they are working correctly:
 

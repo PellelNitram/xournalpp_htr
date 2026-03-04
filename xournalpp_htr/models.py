@@ -10,10 +10,10 @@ from htr_pipeline import DetectorConfig, LineClusteringConfig, read_page
 from tqdm import tqdm
 
 
-def compute_predictions(model_name: str, document) -> dict:
+def compute_predictions(pipeline_name: str, document) -> dict:
     predictions = {}
 
-    if model_name == "2024-07-18_htr_pipeline":
+    if pipeline_name == "2024-07-18_htr_pipeline":
         nr_pages = len(document.pages)
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):
@@ -78,7 +78,7 @@ def compute_predictions(model_name: str, document) -> dict:
                 predictions[page_index] = predictions_page
 
     else:
-        raise NotImplementedError(f'Model "{model_name}" not implemented.')
+        raise NotImplementedError(f'Pipeline "{pipeline_name}" not implemented.')
 
     return predictions
 
