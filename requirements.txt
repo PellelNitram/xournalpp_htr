@@ -7,3 +7,7 @@ lxml
 pymupdf
 tqdm
 pre-commit
+pandas
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
