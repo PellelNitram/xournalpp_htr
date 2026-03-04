@@ -24,7 +24,7 @@ The command-line interface. Parses arguments via `utils.parse_arguments()` and d
 python xournalpp_htr/run_htr.py \
     -if input.xopp \
     -of output.pdf \
-    [-m MODEL_NAME] \
+    [-p PIPELINE_NAME] \
     [-pid PREDICTION_IMAGE_DIR] \
     [-sp]
 ```

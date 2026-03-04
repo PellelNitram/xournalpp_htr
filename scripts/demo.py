@@ -139,7 +139,7 @@ def document_to_HTR_document_and_image_of_first_page(document_path, session_id):
         - The function logs the interaction with the given session ID.
         - Predictions are computed using a predefined HTR model.
         - The processed PDF with HTR predictions is generated and the first page is converted to an image.
-        - The function currently assumes the use of a specific HTR model ("2024-07-18_htr_pipeline").
+        - The function currently assumes the use of a specific HTR pipeline ("2024-07-18_htr_pipeline").
     """
     log_interaction(
         session_id=session_id,
@@ -154,7 +154,7 @@ def document_to_HTR_document_and_image_of_first_page(document_path, session_id):
     pdf_with_htr = get_path_of_pdf_with_htr(session_id)
     document = get_document(document_path)
     predictions = compute_predictions(
-        model_name="2024-07-18_htr_pipeline", document=document
+        pipeline_name="2024-07-18_htr_pipeline", document=document
     )
     write_predictions_to_PDF(
         input_as_pdf_path,
