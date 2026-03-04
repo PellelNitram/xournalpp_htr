@@ -9,7 +9,7 @@ All three entry points feed into the same core HTR pipeline, which converts a Xo
 ```mermaid
 graph LR
     A["Xournal++ Plugin<br/>(Lua)"] -->|subprocess| CLI
-    CLI["CLI<br/>(run_htr.py)"] --> P["HTR Pipeline<br/>(pipeline.py)"]
+    CLI["CLI<br/>(run_htr.py)"] --> P["HTR Pipeline<br/>(shortcuts.py)"]
     D["Web Demo<br/>(Gradio)"] --> P
     P --> PDF["Searchable PDF"]
 ```
@@ -18,7 +18,7 @@ graph LR
 
 ### CLI (`xournalpp_htr/run_htr.py`)
 
-The command-line interface. Parses arguments via `utils.parse_arguments()` and delegates to `pipeline.export_xournalpp_to_pdf_with_htr()`.
+The command-line interface. Parses arguments via `utils.parse_arguments()` and delegates to `shortcuts.export_xournalpp_to_pdf_with_htr()`.
 
 ```bash
 python xournalpp_htr/run_htr.py \
@@ -35,11 +35,11 @@ A Lua plugin that integrates into Xournal++ as a menu item (`Tools > Xournal++ H
 
 ### Web Demo (`scripts/demo.py`)
 
-A Gradio app deployed as a HuggingFace Space (via `Dockerfile`). It provides a browser-based UI where users upload `.xoj`/`.xopp` files and step through the pipeline interactively. Unlike the CLI and plugin, the demo calls the pipeline functions directly (not via `pipeline.py`) and displays the first page as a preview. It optionally logs interactions to Supabase for analytics and data donation.
+A Gradio app deployed as a HuggingFace Space (via `Dockerfile`). It provides a browser-based UI where users upload `.xoj`/`.xopp` files and step through the pipeline interactively. Unlike the CLI and plugin, the demo calls the pipeline functions directly (not via `shortcuts.py`) and displays the first page as a preview. It optionally logs interactions to Supabase for analytics and data donation.
 
 ## Core Pipeline
 
-The pipeline in `pipeline.py` runs three sequential steps:
+The pipeline in `shortcuts.py` runs three sequential steps:
 
 ```mermaid
 graph TD
@@ -92,7 +92,7 @@ graph TD
 ```
 xournalpp_htr/
     run_htr.py       # CLI entry point
-    pipeline.py      # Orchestrates Steps 1-3
+    shortcuts.py     # Orchestrates Steps 1-3
     documents.py     # .xoj/.xopp parsing (Document ABC, Page, Layer, Stroke)
     models.py        # HTR inference wrapper (compute_predictions)
     utils.py         # Argument parsing, xournalpp CLI export

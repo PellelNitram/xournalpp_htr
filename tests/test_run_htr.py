@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from xournalpp_htr.pipeline import export_xournalpp_to_pdf_with_htr
+from xournalpp_htr.shortcuts import export_xournalpp_to_pdf_with_htr
 from xournalpp_htr.run_htr import parse_arguments
 
 
