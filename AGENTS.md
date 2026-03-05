@@ -9,3 +9,7 @@
 # Code quality
 
 - Run `make tests-not-slow` to confirm no regressions were introduced after code changes, where necessary
+
+## Issue-Driven Workflow
+
+- Default workflow: issue → branch (`gh issue develop <number>`) → PR referencing the issue (also using `gh`).

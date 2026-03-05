@@ -386,7 +386,7 @@ class PageDatasetFromOnline(Dataset):
         self,
         dataset: Dataset,  # TODO: An online dataset; can come w/ a transform obviously if desired
         positions: list[PageDatasetFromOnlinePosition],
-        page_size: list[MillimeterDimension, MillimeterDimension],
+        page_size: tuple[MillimeterDimension, MillimeterDimension],
         cache_dir: Path,
         dpi: float,
     ) -> None:
@@ -403,7 +403,7 @@ class PageDatasetFromOnline(Dataset):
         PageDatasetFromOnline.check_if_bounding_boxes_overlap(self.data)
         PageDatasetFromOnline.check_if_data_exceeds_page(self.data, self.page_size)
 
-    def compute(self) -> defaultdict[list]:
+    def compute(self) -> defaultdict[int, list]:
         """TODO.
 
         These are the steps performed:
