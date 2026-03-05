@@ -1,3 +1,63 @@
+[project]
+name = "xournalpp-htr"
+version = "0.0.1"
+description = "Developing handwritten text recognition for Xournal++."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "beautifulsoup4",
+    "matplotlib",
+    "opencv-python",
+    "pytest",
+    "lxml",
+    "pymupdf",
+    "tqdm",
+    "pre-commit",
+    "pandas",
+    "gitpython",
+    "htr-pipeline",
+    "torch",
+    "torchvision",
+]
+
+[project.optional-dependencies]
+hf = [
+    "gradio",
+]
+dev = [
+    "jupyter",
+]
+
+[project.scripts]
+xournalpp-htr-configure = "xournalpp_htr.configure:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.backends.legacy:build"
+
+[tool.uv.sources]
+htr-pipeline = { path = "external/htr_pipeline/HTRPipeline" }
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = ["tests"]
+markers = [
+    "slow: Marks tests as slow (select with '-m slow' and deselect with '-m \"not slow\"')",
+    "technical: Marks tests as technical tests to ensure that code features work as expected",
+    "correctness: Denotes tests that check physical behaviour and to ensure physical correctness",
+    "installation: Marks tests that confirm this package was installed correctly.",
+    "data: test data and its location.",
+    "visual_check: Marks tests that need visual checks.",
+]
+
 [tool.ruff]
 fix = true
 show-fixes = true
