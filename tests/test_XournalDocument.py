@@ -51,7 +51,7 @@ def test_get_min_max_coordintes_per_page(get_path_to_minimal_test_data: Path) ->
     """
     xpp_document = XournalppDocument(get_path_to_minimal_test_data)
 
-    result = xpp_document.get_min_max_coordintes_per_page()
+    result = xpp_document.get_min_max_coordinates_per_page()
 
     expected_result = {
         0: {
