@@ -14,15 +14,14 @@ This script also installs the plugin as explained in the last point of the cross
 
 If you want to install the plugin manually, then execute the following commands:
 
-1. Create an environment: ``conda create --name xournalpp_htr python=3.10.11``.
-2. Use this environment: ``conda activate xournalpp_htr``.
-3. Install [HTRPipelines](https://github.com/githubharald/HTRPipeline) package using [its installation guide](https://github.com/githubharald/HTRPipeline/tree/master#installation).
-4. Install all dependencies of this package ``pip install -r requirements.txt``.
-5. Install the package in development mode with ``pip install -e .`` (do not forget the dot, '.').
-6. Install pre-commit hooks with: `pre-commit install`.
-7. Copy `plugin/` folder content to `${XOURNAL_CONFIG_PATH}/plugins/xournalpp_htr/` with `${XOURNAL_CONFIG_PATH}` being the configuration path of Xournal++, see Xournal++ manual [here](https://xournalpp.github.io/guide/file-locations/).
-8. Edit `config.lua`, setting `_M.python_executable` to your python executable **in the conda environment** and `_M.xournalpp_htr_path` to the absolute path of this repo. See the example config for details in `plugin/config.lua`.
-9. Ensure Xournal++ is on your `PATH`. See [here](https://xournalpp.github.io/guide/file-locations/) for the binary location.
+1. Install [uv](https://docs.astral.sh/uv/getting-started/installation/).
+2. Install [HTRPipelines](https://github.com/githubharald/HTRPipeline) package into `external/htr_pipeline/HTRPipeline` (see `INSTALL_LINUX.sh` for the exact steps).
+3. Install all dependencies with `uv sync`.
+4. Run the configuration script with `uv run xournalpp-htr-configure`.
+5. Install pre-commit hooks with: `uv run pre-commit install`.
+6. Copy `plugin/` folder content to `${XOURNAL_CONFIG_PATH}/plugins/xournalpp_htr/` with `${XOURNAL_CONFIG_PATH}` being the configuration path of Xournal++, see Xournal++ manual [here](https://xournalpp.github.io/guide/file-locations/).
+7. Edit `config.lua`, setting `_M.python_executable` to the uv-managed Python executable and `_M.xournalpp_htr_path` to the absolute path of this repo. See the example config for details in `plugin/config.lua`.
+8. Ensure Xournal++ is on your `PATH`. See [here](https://xournalpp.github.io/guide/file-locations/) for the binary location.
 
 ## After installation
 
