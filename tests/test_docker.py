@@ -7,7 +7,7 @@ All tests are marked ``slow``. Run them with::
 Prerequisites: Docker daemon must be running.
 """
 
-import sys
+import logging
 import urllib.request
 from pathlib import Path
 
@@ -15,6 +15,8 @@ import pytest
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.docker_client import DockerClient
 from testcontainers.core.waiting_utils import wait_for_logs
+
+log = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 IMAGE_NAME = "xournalpp_htr_test"
@@ -48,8 +50,8 @@ def docker_image():
     for event in logs:
         line = event.get("stream", "").rstrip()
         if line:
-            print(line, file=sys.stderr)
-    print(_image)
+            log.info(line)
+    log.info("Built image: %s", _image)
     return IMAGE_NAME
 
 
