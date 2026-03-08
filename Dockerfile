@@ -1,7 +1,7 @@
 # Documentation: https://huggingface.co/docs/hub/spaces-sdks-docker
 
 # Start from an official lightweight Python image
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # Prevents Python from writing .pyc files and buffering stdout/stderr
 # ENV PYTHONDONTWRITEBYTECODE=1
@@ -20,6 +20,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:$PATH"
+
 # Create and set working directory
 WORKDIR /app
 
@@ -35,8 +39,6 @@ COPY . .
 
 # Run the INSTALL_HF_DOCKER_SPACE.sh script
 RUN bash INSTALL_HF_DOCKER_SPACE.sh
-RUN pip install matplotlib bs4 pdf2image supabase python-dotenv
-# ^- that should not be necessary!! TODO!!
 
 # Expose the port Gradio will run on inside Hugging Face Spaces
 EXPOSE 7860
@@ -45,7 +47,7 @@ ENV PYTHONUNBUFFERED=1
 
 # Command to run Gradio app
 # Hugging Face Spaces will set PORT env var, so we use it
-CMD ["python", "scripts/demo.py"]
+CMD ["uv", "run", "python", "scripts/demo.py"]
 
 
 

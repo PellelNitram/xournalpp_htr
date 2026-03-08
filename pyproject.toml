@@ -25,6 +25,9 @@ dependencies = [
 [project.optional-dependencies]
 hf = [
     "gradio",
+    "pdf2image",
+    "supabase",
+    "python-dotenv",
 ]
 dev = [
     "jupyter",
