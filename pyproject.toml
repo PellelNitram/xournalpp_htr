@@ -20,6 +20,7 @@ dependencies = [
     "setuptools<80",  # required by htr-pipeline (pkg_resources); removed in setuptools 80+
     "torch",
     "torchvision",
+    "testcontainers>=4.14.1",
 ]
 
 [project.optional-dependencies]
