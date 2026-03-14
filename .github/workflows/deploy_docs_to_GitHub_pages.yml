@@ -19,9 +19,9 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Install dependencies
-        run: uv sync --only-group docs
-
       - name: Build and deploy
-        run: |
-          uv run mkdocs gh-deploy --force
+        run: >
+          uvx
+          --with mkdocs-material
+          --with mkdocs-git-revision-date-localized-plugin
+          mkdocs gh-deploy --force
