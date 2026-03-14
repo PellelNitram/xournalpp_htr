@@ -1,14 +1,17 @@
 docs:
-	mkdocs build --clean
+	uv run mkdocs build --clean
 
 tests-installation:
-	pytest -v -k "installation"
+	uv run pytest -v -k "installation"
 
 tests-all:
-	pytest -v --durations=0
+	uv run pytest -v --durations=0
 
 tests-not-slow:
-	pytest -v --durations=0 -m "not slow"
+	uv run pytest -v --durations=0 -m "not slow"
+
+tests-docker:
+	uv run pytest -m slow tests/test_docker.py -v -s --log-cli-level=INFO
 
 run-pre-commit-hooks:
 	pre-commit run --all-files

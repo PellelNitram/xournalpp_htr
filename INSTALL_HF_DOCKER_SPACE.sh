@@ -20,8 +20,6 @@ install_htr_pipeline () {
     wget https://www.dropbox.com/s/j1hl6bppecug0sz/models.zip
     unzip -o models.zip
     cd ../../
-    pip install .
-    # 3. Install [HTRPipelines](https://github.com/githubharald/HTRPipeline) package using [its installation guide](https://github.com/githubharald/HTRPipeline/tree/master#installation).
 
 }
 
@@ -35,9 +33,8 @@ rm -rf ${HTR_PIPELINE_PATH}
 
 install_htr_pipeline
 cd ${CURRENT_DIR}
-pip install -r requirements.txt
-pip install gradio # TODO: Move to optional package in `pyproject.toml` once I use this setup.
-pip install -e .
+uv sync --extra hf
+uv run xournalpp-htr-configure
 
 # ========
 # Feedback

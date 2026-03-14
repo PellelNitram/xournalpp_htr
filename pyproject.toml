@@ -1,3 +1,73 @@
+[project]
+name = "xournalpp-htr"
+version = "0.0.1"
+description = "Developing handwritten text recognition for Xournal++."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "beautifulsoup4",
+    "matplotlib",
+    "opencv-python",
+    "pytest",
+    "lxml",
+    "pymupdf",
+    "tqdm",
+    "pre-commit",
+    "pandas",
+    "gitpython",
+    "htr-pipeline",
+    "setuptools<80",  # required by htr-pipeline (pkg_resources); removed in setuptools 80+
+    "torch",
+    "torchvision",
+    "testcontainers>=4.14.1",
+]
+
+[project.optional-dependencies]
+hf = [
+    "gradio",
+    "pdf2image",
+    "supabase",
+    "python-dotenv",
+]
+dev = [
+    "jupyter",
+]
+docs = [
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocs-git-revision-date-localized-plugin",
+]
+
+[project.scripts]
+xournalpp-htr-configure = "xournalpp_htr.configure:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+htr-pipeline = { path = "external/htr_pipeline/HTRPipeline" }
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = ["tests"]
+markers = [
+    "slow: Marks tests as slow (select with '-m slow' and deselect with '-m \"not slow\"')",
+    "technical: Marks tests as technical tests to ensure that code features work as expected",
+    "correctness: Denotes tests that check physical behaviour and to ensure physical correctness",
+    "installation: Marks tests that confirm this package was installed correctly.",
+    "data: test data and its location.",
+    "visual_check: Marks tests that need visual checks.",
+]
+
 [tool.ruff]
 fix = true
 show-fixes = true
