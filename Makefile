@@ -1,5 +1,5 @@
 docs:
-	mkdocs build --clean
+	uv run mkdocs build --clean
 
 tests-installation:
 	uv run pytest -v -k "installation"
