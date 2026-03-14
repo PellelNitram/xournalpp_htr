@@ -33,6 +33,11 @@ hf = [
 dev = [
     "jupyter",
 ]
+docs = [
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocs-git-revision-date-localized-plugin",
+]
 
 [project.scripts]
 xournalpp-htr-configure = "xournalpp_htr.configure:main"
