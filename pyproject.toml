@@ -33,11 +33,6 @@ hf = [
 dev = [
     "jupyter",
 ]
-docs = [
-    "mkdocs",
-    "mkdocs-material",
-    "mkdocs-git-revision-date-localized-plugin",
-]
 
 [project.scripts]
 xournalpp-htr-configure = "xournalpp_htr.configure:main"
@@ -45,6 +40,13 @@ xournalpp-htr-configure = "xournalpp_htr.configure:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+docs = [
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocs-git-revision-date-localized-plugin",
+]
 
 [tool.uv.sources]
 htr-pipeline = { path = "external/htr_pipeline/HTRPipeline" }

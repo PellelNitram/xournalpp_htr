@@ -4696,16 +4696,18 @@ dependencies = [
 dev = [
     { name = "jupyter" },
 ]
-docs = [
-    { name = "mkdocs" },
-    { name = "mkdocs-git-revision-date-localized-plugin" },
-    { name = "mkdocs-material" },
-]
 hf = [
     { name = "gradio" },
     { name = "pdf2image" },
     { name = "python-dotenv" },
     { name = "supabase" },
+]
+
+[package.dev-dependencies]
+docs = [
+    { name = "mkdocs" },
+    { name = "mkdocs-git-revision-date-localized-plugin" },
+    { name = "mkdocs-material" },
 ]
 
 [package.metadata]
@@ -4717,9 +4719,6 @@ requires-dist = [
     { name = "jupyter", marker = "extra == 'dev'" },
     { name = "lxml" },
     { name = "matplotlib" },
-    { name = "mkdocs", marker = "extra == 'docs'" },
-    { name = "mkdocs-git-revision-date-localized-plugin", marker = "extra == 'docs'" },
-    { name = "mkdocs-material", marker = "extra == 'docs'" },
     { name = "numpy" },
     { name = "opencv-python" },
     { name = "pandas" },
@@ -4735,7 +4734,14 @@ requires-dist = [
     { name = "torchvision", index = "https://download.pytorch.org/whl/cpu" },
     { name = "tqdm" },
 ]
-provides-extras = ["hf", "dev", "docs"]
+provides-extras = ["hf", "dev"]
+
+[package.metadata.requires-dev]
+docs = [
+    { name = "mkdocs" },
+    { name = "mkdocs-git-revision-date-localized-plugin" },
+    { name = "mkdocs-material" },
+]
 
 [[package]]
 name = "yarl"
