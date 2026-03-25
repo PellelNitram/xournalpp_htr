@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xournal++ Stroke Annotator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Top toolbar -->
+        <header id="toolbar">
+            <div class="toolbar-group">
+                <button id="btn-open" title="Open .xopp / .xoj file">Open File</button>
+                <input type="file" id="file-input" accept=".xopp,.xoj" hidden>
+                <span id="file-name" class="file-name">No file loaded</span>
+            </div>
+            <div class="toolbar-group">
+                <span class="toolbar-label">Tool:</span>
+                <button id="tool-rect" class="tool-btn active" title="Rectangle select (R)">Rect Select</button>
+                <button id="tool-stroke" class="tool-btn" title="Individual stroke select (S)">Stroke Select</button>
+                <button id="tool-pan" class="tool-btn" title="Pan canvas (P)">Pan</button>
+            </div>
+            <div class="toolbar-group">
+                <button id="btn-zoom-in" title="Zoom in (+)">+</button>
+                <span id="zoom-level">100%</span>
+                <button id="btn-zoom-out" title="Zoom out (-)">-</button>
+                <button id="btn-zoom-fit" title="Fit to view (F)">Fit</button>
+            </div>
+            <div class="toolbar-group">
+                <button id="btn-export" title="Export annotations as JSON">Export JSON</button>
+            </div>
+        </header>
+
+        <div id="main-content">
+            <!-- Left sidebar: classes & active class -->
+            <aside id="sidebar-left">
+                <section id="class-section">
+                    <h3>Classes</h3>
+                    <div id="class-list"></div>
+                    <div id="class-add-row">
+                        <input type="text" id="class-name-input" placeholder="Class name">
+                        <input type="color" id="class-color-input" value="#e74c3c">
+                        <button id="btn-add-class">Add</button>
+                    </div>
+                </section>
+
+                <section id="active-class-section">
+                    <h3>Active Class</h3>
+                    <div id="active-class-display">
+                        <span id="active-class-name">None selected</span>
+                    </div>
+                    <div id="word-input-section" class="hidden">
+                        <label for="word-text-input">Word text:</label>
+                        <input type="text" id="word-text-input" placeholder="Type the word...">
+                        <button id="btn-assign-word">Assign</button>
+                    </div>
+                    <div id="non-word-assign-section" class="hidden">
+                        <button id="btn-assign-class">Assign Selected Strokes</button>
+                    </div>
+                </section>
+
+                <section id="selection-info">
+                    <h3>Selection</h3>
+                    <p id="selection-count">0 strokes selected</p>
+                    <button id="btn-clear-selection">Clear Selection</button>
+                    <button id="btn-unassign" title="Remove class assignment from selected strokes">Unassign</button>
+                </section>
+            </aside>
+
+            <!-- Canvas area -->
+            <div id="canvas-container">
+                <canvas id="canvas"></canvas>
+                <!-- Page navigation -->
+                <div id="page-nav">
+                    <button id="btn-prev-page" title="Previous page">&larr;</button>
+                    <span id="page-indicator">Page 0 / 0</span>
+                    <button id="btn-next-page" title="Next page">&rarr;</button>
+                </div>
+            </div>
+
+            <!-- Right sidebar: annotations list -->
+            <aside id="sidebar-right">
+                <h3>Annotations</h3>
+                <div id="annotation-list"></div>
+                <div id="annotation-stats">
+                    <p id="stats-total">Total: 0</p>
+                    <p id="stats-unannotated">Unannotated strokes: 0</p>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script type="module" src="parser.js"></script>
+    <script type="module" src="renderer.js"></script>
+    <script type="module" src="storage.js"></script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
