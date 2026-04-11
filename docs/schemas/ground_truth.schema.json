@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "ground_truth.schema.json",
+  "title": "HTR Ground Truth",
+  "description": "Stroke-level ground truth annotations for HTR model evaluation. One file per source document, named <document-stem>.gt.json. The valid set of annotation classes is determined by schema_version.",
+  "type": "object",
+  "required": ["schema_version", "source_document", "annotator_id", "created_at", "annotations"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "Version of this schema. Bump when adding new annotation classes or changing field semantics."
+    },
+    "annotator_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifier of the person who produced this annotation file."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when this annotation file was created, e.g. 2024-07-26T14:32:00Z."
+    },
+    "source_document": {
+      "type": "object",
+      "description": "Reference to the source Xournal document being annotated.",
+      "required": ["filename", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "filename": {
+          "type": "string",
+          "description": "Filename of the source document, e.g. 2024-07-26_minimal.xopp."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hex digest of the source document file. Guards against silent drift if the source file is modified after annotation."
+        }
+      }
+    },
+    "annotations": {
+      "type": "array",
+      "description": "Stroke-level annotations. Each entry assigns a class (and optionally text) to a group of strokes that form a single logical unit on the page.",
+      "items": {
+        "type": "object",
+        "required": ["class", "page_index", "layer_index", "stroke_indices"],
+        "additionalProperties": false,
+        "properties": {
+          "class": {
+            "type": "string",
+            "enum": [
+              "word",
+              "digit",
+              "mathematical_expression",
+              "arrow",
+              "diagram",
+              "table",
+              "drawing",
+              "separator",
+              "correction",
+              "other"
+            ],
+            "description": "Semantic class of this stroke group. Classes word, digit, and mathematical_expression require a text field."
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Transcription of the stroke group. Required when class is word, digit, or mathematical_expression; absent otherwise."
+          },
+          "page_index": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Zero-based page index within the source document. All strokes in this annotation share the same page."
+          },
+          "layer_index": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Zero-based layer index within the page. All strokes in this annotation share the same layer."
+          },
+          "stroke_indices": {
+            "type": "array",
+            "description": "Zero-based indices of strokes within the layer that together form this annotation unit.",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
+        "if": {
+          "properties": {
+            "class": {"enum": ["word", "digit", "mathematical_expression"]}
+          },
+          "required": ["class"]
+        },
+        "then": {
+          "required": ["text"]
+        },
+        "else": {
+          "properties": {
+            "text": false
+          }
+        }
+      }
+    }
+  }
+}
