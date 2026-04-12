@@ -2,18 +2,35 @@
 
 import { parseFile } from './parser.js';
 import { Renderer } from './renderer.js';
-import { autoSave, autoLoad, exportJSON, restoreState } from './storage.js';
+import {
+    autoSave, autoLoad, exportJSON, restoreState, loadGroundTruth,
+    getAnnotatorId, saveAnnotatorId, TEXT_REQUIRED_CLASSES,
+} from './storage.js';
+
+// ── Fixed class vocabulary (closed, per ADR 004) ───────
+
+const FIXED_CLASSES = [
+    { name: 'word',                   color: '#e74c3c' },
+    { name: 'digit',                  color: '#e67e22' },
+    { name: 'mathematical_expression', color: '#f1c40f' },
+    { name: 'arrow',                  color: '#2ecc71' },
+    { name: 'diagram',                color: '#1abc9c' },
+    { name: 'table',                  color: '#3498db' },
+    { name: 'drawing',                color: '#9b59b6' },
+    { name: 'separator',              color: '#95a5a6' },
+    { name: 'correction',             color: '#cd6155' },
+    { name: 'other',                  color: '#7f8c8d' },
+];
 
 // ── State ──────────────────────────────────────────────
 
 const state = {
     fileName: null,
+    sha256: null,
     pages: [],           // From parser: [{index, width, height, strokes}]
     currentPage: 0,
-    classes: [
-        { name: 'word', color: '#e74c3c' },
-    ],
-    activeClass: null,   // class name string
+    activeClass: 'word',
+    annotatorId: '',
     annotations: [],     // Per-page: [[{id, className, strokeIndices: Set, text}]]
     selectedStrokes: new Set(),
     highlightedAnnotation: null,
@@ -31,17 +48,17 @@ const renderer = new Renderer(canvas);
 // Toolbar
 const fileInput = $('#file-input');
 const fileNameSpan = $('#file-name');
+const gtFileInput = $('#gt-file-input');
 const toolButtons = { rect: $('#tool-rect'), stroke: $('#tool-stroke'), pan: $('#tool-pan') };
 const zoomLevel = $('#zoom-level');
+const annotatorIdInput = $('#annotator-id-input');
 
 // Sidebar left
 const classList = $('#class-list');
-const classNameInput = $('#class-name-input');
-const classColorInput = $('#class-color-input');
 const activeClassName = $('#active-class-name');
-const wordInputSection = $('#word-input-section');
-const nonWordSection = $('#non-word-assign-section');
-const wordTextInput = $('#word-text-input');
+const textInputSection = $('#text-input-section');
+const nonTextSection = $('#non-text-assign-section');
+const textInput = $('#text-input');
 const selectionCount = $('#selection-count');
 
 // Sidebar right
@@ -66,9 +83,28 @@ function init() {
     resizeCanvas();
     window.addEventListener('resize', () => { resizeCanvas(); render(); });
 
+    // Annotator ID
+    state.annotatorId = getAnnotatorId();
+    annotatorIdInput.value = state.annotatorId;
+    annotatorIdInput.addEventListener('input', () => {
+        state.annotatorId = annotatorIdInput.value.trim();
+        saveAnnotatorId(state.annotatorId);
+        if (state.fileName) save();
+    });
+
     // File open
     $('#btn-open').addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', handleFileOpen);
+
+    // Load GT
+    $('#btn-load-gt').addEventListener('click', () => {
+        if (!state.sha256) {
+            alert('Please open the source document (.xopp/.xoj) first.');
+            return;
+        }
+        gtFileInput.click();
+    });
+    gtFileInput.addEventListener('change', handleLoadGT);
 
     // Tools
     $('#tool-rect').addEventListener('click', () => setTool('rect'));
@@ -76,8 +112,14 @@ function init() {
     $('#tool-pan').addEventListener('click', () => setTool('pan'));
 
     // Zoom
-    $('#btn-zoom-in').addEventListener('click', () => { renderer.zoom(1, container.clientWidth / 2, container.clientHeight / 2); updateZoom(); render(); });
-    $('#btn-zoom-out').addEventListener('click', () => { renderer.zoom(-1, container.clientWidth / 2, container.clientHeight / 2); updateZoom(); render(); });
+    $('#btn-zoom-in').addEventListener('click', () => {
+        renderer.zoom(1, container.clientWidth / 2, container.clientHeight / 2);
+        updateZoom(); render();
+    });
+    $('#btn-zoom-out').addEventListener('click', () => {
+        renderer.zoom(-1, container.clientWidth / 2, container.clientHeight / 2);
+        updateZoom(); render();
+    });
     $('#btn-zoom-fit').addEventListener('click', fitToView);
 
     // Canvas events
@@ -87,14 +129,10 @@ function init() {
     canvas.addEventListener('wheel', onWheel, { passive: false });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
 
-    // Class management
-    $('#btn-add-class').addEventListener('click', addClass);
-    classNameInput.addEventListener('keydown', e => { if (e.key === 'Enter') addClass(); });
-
     // Assignment
-    $('#btn-assign-word').addEventListener('click', assignWord);
-    $('#btn-assign-class').addEventListener('click', assignNonWord);
-    wordTextInput.addEventListener('keydown', e => { if (e.key === 'Enter') assignWord(); });
+    $('#btn-assign-text').addEventListener('click', assignTextClass);
+    $('#btn-assign-class').addEventListener('click', assignNonText);
+    textInput.addEventListener('keydown', e => { if (e.key === 'Enter') assignTextClass(); });
 
     // Selection
     $('#btn-clear-selection').addEventListener('click', clearSelection);
@@ -105,15 +143,11 @@ function init() {
     $('#btn-next-page').addEventListener('click', () => changePage(1));
 
     // Export
-    $('#btn-export').addEventListener('click', () => {
-        if (state.fileName) exportJSON(state.fileName, state);
-    });
+    $('#btn-export').addEventListener('click', handleExport);
 
     // Keyboard shortcuts
     document.addEventListener('keydown', onKeyDown);
 
-    // Set default active class
-    state.activeClass = 'word';
     renderClassList();
     updateActiveClassUI();
     render();
@@ -128,6 +162,7 @@ async function handleFileOpen(e) {
     try {
         const doc = await parseFile(file);
         state.fileName = file.name;
+        state.sha256 = doc.sha256;
         state.pages = doc.pages;
         state.currentPage = 0;
         state.selectedStrokes.clear();
@@ -135,24 +170,30 @@ async function handleFileOpen(e) {
 
         fileNameSpan.textContent = file.name;
 
-        // Try to restore saved annotations
+        // Try to restore auto-saved annotations; discard if SHA-256 doesn't match.
         const saved = autoLoad(file.name);
-        const restored = restoreState(saved);
+        const restored = restoreState(saved, state.pages, state.sha256);
         if (restored) {
-            state.classes = restored.classes;
             state.annotations = restored.annotations;
             state.createdAt = restored.createdAt;
-            // Ensure annotations array length matches pages
-            while (state.annotations.length < state.pages.length) {
-                state.annotations.push([]);
+            if (restored.annotatorId) {
+                state.annotatorId = restored.annotatorId;
+                annotatorIdInput.value = restored.annotatorId;
+                saveAnnotatorId(restored.annotatorId);
             }
         } else {
             state.annotations = state.pages.map(() => []);
             state.createdAt = new Date().toISOString();
         }
 
-        if (!state.activeClass && state.classes.length > 0) {
-            state.activeClass = state.classes[0].name;
+        // Ensure annotations array length matches pages
+        while (state.annotations.length < state.pages.length) {
+            state.annotations.push([]);
+        }
+
+        // Keep active class if it's valid, otherwise reset to 'word'
+        if (!FIXED_CLASSES.find(c => c.name === state.activeClass)) {
+            state.activeClass = 'word';
         }
 
         renderClassList();
@@ -166,8 +207,70 @@ async function handleFileOpen(e) {
         console.error(err);
     }
 
-    // Reset input so same file can be re-opened
     fileInput.value = '';
+}
+
+async function handleLoadGT(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+        const restored = await loadGroundTruth(file, state.sha256, state.pages);
+        state.annotations = restored.annotations;
+        state.createdAt = restored.createdAt;
+        if (restored.annotatorId) {
+            state.annotatorId = restored.annotatorId;
+            annotatorIdInput.value = restored.annotatorId;
+            saveAnnotatorId(restored.annotatorId);
+        }
+        renderAnnotationList();
+        renderClassList();
+        render();
+    } catch (err) {
+        alert('Failed to load .gt.json:\n\n' + err.message);
+    }
+
+    gtFileInput.value = '';
+}
+
+// ── Export ─────────────────────────────────────────────
+
+function handleExport() {
+    if (!state.fileName) return;
+
+    if (!state.annotatorId.trim()) {
+        alert('Please enter your annotator ID before saving.');
+        annotatorIdInput.focus();
+        return;
+    }
+
+    const problems = checkCompleteness();
+    if (problems.length > 0) {
+        alert(
+            'Cannot save: not all strokes are annotated.\n\n' + problems.join('\n') +
+            '\n\nAnnotate every stroke before exporting.'
+        );
+        return;
+    }
+
+    exportJSON(state.fileName, state);
+}
+
+function checkCompleteness() {
+    const problems = [];
+    for (let p = 0; p < state.pages.length; p++) {
+        const page = state.pages[p];
+        const pageAnns = state.annotations[p] || [];
+        const annotated = new Set();
+        for (const ann of pageAnns) {
+            for (const si of ann.strokeIndices) annotated.add(si);
+        }
+        const missing = page.strokes.length - annotated.size;
+        if (missing > 0) {
+            problems.push(`  Page ${p + 1}: ${missing} unannotated stroke(s)`);
+        }
+    }
+    return problems;
 }
 
 // ── Canvas ─────────────────────────────────────────────
@@ -205,7 +308,7 @@ function render() {
         pageAnnotations,
         state.selectedStrokes,
         state.highlightedAnnotation,
-        state.classes,
+        FIXED_CLASSES,
         selectionRect
     );
 }
@@ -213,8 +316,7 @@ function render() {
 // ── Mouse events ───────────────────────────────────────
 
 function onMouseDown(e) {
-    if (e.button === 1 || (e.button === 0 && (state.tool === 'pan' || e.spaceKey))) {
-        // Pan
+    if (e.button === 1 || (e.button === 0 && state.tool === 'pan')) {
         isPanning = true;
         panLast = { x: e.clientX, y: e.clientY };
         canvas.style.cursor = 'grabbing';
@@ -237,14 +339,12 @@ function onMouseDown(e) {
         const hitIdx = renderer.hitTestStroke(page.strokes, x, y, 8);
         if (hitIdx >= 0) {
             if (e.shiftKey) {
-                // Toggle individual stroke
                 if (state.selectedStrokes.has(hitIdx)) {
                     state.selectedStrokes.delete(hitIdx);
                 } else {
                     state.selectedStrokes.add(hitIdx);
                 }
             } else {
-                // Single select
                 state.selectedStrokes.clear();
                 state.selectedStrokes.add(hitIdx);
             }
@@ -279,7 +379,6 @@ function onMouseMove(e) {
         render();
     }
 
-    // Update cursor for stroke tool
     if (state.tool === 'stroke' && !isDragging) {
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -300,7 +399,6 @@ function onMouseUp(e) {
     }
 
     if (isDragging && state.tool === 'rect' && selectionRect) {
-        // Find strokes in rect
         const page = currentPage();
         if (page && selectionRect.w > 3 && selectionRect.h > 3) {
             const indices = renderer.strokesInRect(page.strokes, selectionRect);
@@ -332,7 +430,6 @@ function onWheel(e) {
 let spaceDown = false;
 
 function onKeyDown(e) {
-    // Don't intercept when typing in inputs
     if (e.target.tagName === 'INPUT') return;
 
     switch (e.key) {
@@ -360,7 +457,6 @@ function onKeyDown(e) {
     }
 }
 
-// Track space key for pan
 document.addEventListener('keydown', e => {
     if (e.code === 'Space' && !e.target.matches('input')) {
         spaceDown = true;
@@ -402,42 +498,11 @@ function updateCursor() {
     }
 }
 
-// ── Class management ───────────────────────────────────
-
-function addClass() {
-    const name = classNameInput.value.trim().toLowerCase();
-    if (!name) return;
-    if (state.classes.find(c => c.name === name)) {
-        alert('Class "' + name + '" already exists.');
-        return;
-    }
-    state.classes.push({ name, color: classColorInput.value });
-    classNameInput.value = '';
-    state.activeClass = name;
-    renderClassList();
-    updateActiveClassUI();
-    save();
-}
-
-function deleteClass(className) {
-    // Remove all annotations of this class
-    for (let p = 0; p < state.annotations.length; p++) {
-        state.annotations[p] = state.annotations[p].filter(a => a.className !== className);
-    }
-    state.classes = state.classes.filter(c => c.name !== className);
-    if (state.activeClass === className) {
-        state.activeClass = state.classes.length > 0 ? state.classes[0].name : null;
-    }
-    renderClassList();
-    updateActiveClassUI();
-    renderAnnotationList();
-    save();
-    render();
-}
+// ── Class list (fixed vocabulary, selection only) ──────
 
 function renderClassList() {
     classList.innerHTML = '';
-    for (const cls of state.classes) {
+    for (const cls of FIXED_CLASSES) {
         const count = countClassAnnotations(cls.name);
         const div = document.createElement('div');
         div.className = 'class-item' + (state.activeClass === cls.name ? ' active' : '');
@@ -445,15 +510,8 @@ function renderClassList() {
             <span class="class-swatch" style="background:${cls.color}"></span>
             <span class="class-name">${cls.name}</span>
             <span class="class-count">${count}</span>
-            <button class="class-delete" title="Delete class">&times;</button>
         `;
-        div.addEventListener('click', (e) => {
-            if (e.target.classList.contains('class-delete')) {
-                if (confirm(`Delete class "${cls.name}" and all its annotations?`)) {
-                    deleteClass(cls.name);
-                }
-                return;
-            }
+        div.addEventListener('click', () => {
             state.activeClass = cls.name;
             renderClassList();
             updateActiveClassUI();
@@ -472,43 +530,43 @@ function countClassAnnotations(className) {
 
 function updateActiveClassUI() {
     if (state.activeClass) {
-        const cls = state.classes.find(c => c.name === state.activeClass);
+        const cls = FIXED_CLASSES.find(c => c.name === state.activeClass);
         activeClassName.textContent = state.activeClass;
         activeClassName.style.color = cls ? cls.color : '';
 
-        if (state.activeClass === 'word') {
-            wordInputSection.classList.remove('hidden');
-            nonWordSection.classList.add('hidden');
+        if (TEXT_REQUIRED_CLASSES.has(state.activeClass)) {
+            textInputSection.classList.remove('hidden');
+            nonTextSection.classList.add('hidden');
         } else {
-            wordInputSection.classList.add('hidden');
-            nonWordSection.classList.remove('hidden');
+            textInputSection.classList.add('hidden');
+            nonTextSection.classList.remove('hidden');
         }
     } else {
         activeClassName.textContent = 'None selected';
         activeClassName.style.color = '';
-        wordInputSection.classList.add('hidden');
-        nonWordSection.classList.add('hidden');
+        textInputSection.classList.add('hidden');
+        nonTextSection.classList.add('hidden');
     }
 }
 
 // ── Annotation assignment ──────────────────────────────
 
-function assignWord() {
-    const text = wordTextInput.value.trim();
+function assignTextClass() {
+    const text = textInput.value.trim();
     if (!text) {
-        alert('Please enter the word text.');
+        alert('Please enter the transcription text.');
         return;
     }
     if (state.selectedStrokes.size === 0) {
         alert('No strokes selected.');
         return;
     }
-    assignStrokesToClass('word', text);
-    wordTextInput.value = '';
-    wordTextInput.focus();
+    assignStrokesToClass(state.activeClass, text);
+    textInput.value = '';
+    textInput.focus();
 }
 
-function assignNonWord() {
+function assignNonText() {
     if (!state.activeClass) return;
     if (state.selectedStrokes.size === 0) {
         alert('No strokes selected.');
@@ -526,10 +584,8 @@ function assignStrokesToClass(className, text) {
             ann.strokeIndices.delete(si);
         }
     }
-    // Clean up empty annotations
     state.annotations[state.currentPage] = pageAnns.filter(a => a.strokeIndices.size > 0);
 
-    // Create new annotation
     state.annotations[state.currentPage].push({
         id: generateId(),
         className,
@@ -584,7 +640,7 @@ function renderAnnotationList() {
     const pageAnns = state.annotations[state.currentPage] || [];
 
     for (const ann of pageAnns) {
-        const cls = state.classes.find(c => c.name === ann.className);
+        const cls = FIXED_CLASSES.find(c => c.name === ann.className);
         const div = document.createElement('div');
         div.className = 'annotation-item';
         if (state.highlightedAnnotation === ann.id) {
@@ -603,7 +659,6 @@ function renderAnnotationList() {
                 deleteAnnotation(ann.id);
                 return;
             }
-            // Highlight / select strokes
             if (state.highlightedAnnotation === ann.id) {
                 state.highlightedAnnotation = null;
                 state.selectedStrokes.clear();
@@ -618,15 +673,14 @@ function renderAnnotationList() {
         annotationList.appendChild(div);
     }
 
-    // Stats
     const page = currentPage();
     const totalStrokes = page ? page.strokes.length : 0;
-    const annotatedStrokes = new Set();
+    const annotated = new Set();
     for (const ann of pageAnns) {
-        for (const si of ann.strokeIndices) annotatedStrokes.add(si);
+        for (const si of ann.strokeIndices) annotated.add(si);
     }
     statsTotal.textContent = `Annotations: ${pageAnns.length}`;
-    statsUnannotated.textContent = `Unannotated: ${totalStrokes - annotatedStrokes.size} / ${totalStrokes} strokes`;
+    statsUnannotated.textContent = `Unannotated: ${totalStrokes - annotated.size} / ${totalStrokes} strokes`;
 }
 
 function deleteAnnotation(id) {

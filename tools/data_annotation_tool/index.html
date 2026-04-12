@@ -27,8 +27,14 @@
                 <button id="btn-zoom-out" title="Zoom out (-)">-</button>
                 <button id="btn-zoom-fit" title="Fit to view (F)">Fit</button>
             </div>
+            <div class="toolbar-group annotator-group">
+                <label for="annotator-id-input" class="toolbar-label">Annotator:</label>
+                <input type="text" id="annotator-id-input" placeholder="Your ID" title="Annotator identifier (required for export)">
+            </div>
             <div class="toolbar-group">
-                <button id="btn-export" title="Export annotations as JSON">Export JSON</button>
+                <button id="btn-load-gt" title="Load existing .gt.json file (SHA-256 must match open document)">Load GT</button>
+                <input type="file" id="gt-file-input" accept=".json" hidden>
+                <button id="btn-export" title="Save as .gt.json (all strokes must be annotated)">Save .gt.json</button>
             </div>
         </header>
 
@@ -38,11 +44,6 @@
                 <section id="class-section">
                     <h3>Classes</h3>
                     <div id="class-list"></div>
-                    <div id="class-add-row">
-                        <input type="text" id="class-name-input" placeholder="Class name">
-                        <input type="color" id="class-color-input" value="#e74c3c">
-                        <button id="btn-add-class">Add</button>
-                    </div>
                 </section>
 
                 <section id="active-class-section">
@@ -50,12 +51,12 @@
                     <div id="active-class-display">
                         <span id="active-class-name">None selected</span>
                     </div>
-                    <div id="word-input-section" class="hidden">
-                        <label for="word-text-input">Word text:</label>
-                        <input type="text" id="word-text-input" placeholder="Type the word...">
-                        <button id="btn-assign-word">Assign</button>
+                    <div id="text-input-section" class="hidden">
+                        <label for="text-input">Text:</label>
+                        <input type="text" id="text-input" placeholder="Transcription...">
+                        <button id="btn-assign-text">Assign</button>
                     </div>
-                    <div id="non-word-assign-section" class="hidden">
+                    <div id="non-text-assign-section" class="hidden">
                         <button id="btn-assign-class">Assign Selected Strokes</button>
                     </div>
                 </section>

@@ -2,13 +2,13 @@
 
 export async function parseFile(file) {
     const buffer = await file.arrayBuffer();
-    let xmlString;
 
-    // Try to decompress as gzip first (xopp files)
+    const sha256 = await computeSha256(buffer);
+
+    let xmlString;
     try {
         xmlString = await decompressGzip(buffer);
     } catch {
-        // Not gzipped, treat as plain XML (xoj files)
         xmlString = new TextDecoder().decode(buffer);
     }
 
@@ -20,7 +20,15 @@ export async function parseFile(file) {
         throw new Error('Failed to parse XML: ' + parserError.textContent);
     }
 
-    return extractDocument(doc);
+    const result = extractDocument(doc);
+    result.sha256 = sha256;
+    return result;
+}
+
+async function computeSha256(buffer) {
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 async function decompressGzip(buffer) {
@@ -59,18 +67,27 @@ function extractDocument(doc) {
         const height = parseFloat(pageEl.getAttribute('height') || '792');
 
         const strokes = [];
-        let strokeIdx = 0;
+        let globalStrokeIdx = 0;
 
-        // Iterate all layers
+        // Each layer is tracked separately so stroke_indices in the schema
+        // refer to positions within the layer, matching the source XML.
         const layers = pageEl.querySelectorAll('layer');
-        for (const layer of layers) {
+        for (let layerIdx = 0; layerIdx < layers.length; layerIdx++) {
+            const layer = layers[layerIdx];
             const strokeElements = layer.querySelectorAll('stroke');
-            for (const strokeEl of strokeElements) {
-                const stroke = parseStroke(strokeEl, strokeIdx);
+            for (let inLayerIdx = 0; inLayerIdx < strokeElements.length; inLayerIdx++) {
+                const stroke = parseStroke(
+                    strokeElements[inLayerIdx],
+                    globalStrokeIdx,
+                    layerIdx,
+                    inLayerIdx
+                );
                 if (stroke) {
                     strokes.push(stroke);
-                    strokeIdx++;
+                    globalStrokeIdx++;
                 }
+                // inLayerIdx always advances so it matches the XML element position,
+                // even when a stroke element is skipped (no points).
             }
         }
 
@@ -80,28 +97,25 @@ function extractDocument(doc) {
     return { pages };
 }
 
-function parseStroke(strokeEl, index) {
+function parseStroke(strokeEl, globalIndex, layerIndex, indexInLayer) {
     const tool = strokeEl.getAttribute('tool') || 'pen';
     const colorAttr = strokeEl.getAttribute('color') || 'black';
     const widthAttr = strokeEl.getAttribute('width') || '1.0';
 
-    // Parse widths (can be single or per-point)
     const widths = widthAttr.trim().split(/\s+/).map(Number);
     const baseWidth = widths[0];
 
-    // Parse coordinate pairs from text content
     const text = strokeEl.textContent.trim();
     if (!text) return null;
 
     const values = text.split(/\s+/).map(Number);
-    if (values.length < 4) return null; // Need at least 2 points
+    if (values.length < 4) return null;
 
     const points = [];
     for (let i = 0; i < values.length - 1; i += 2) {
         points.push({ x: values[i], y: values[i + 1] });
     }
 
-    // Compute bounding box
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const p of points) {
         if (p.x < minX) minX = p.x;
@@ -111,7 +125,9 @@ function parseStroke(strokeEl, index) {
     }
 
     return {
-        index,
+        index: globalIndex,    // flat index across all layers, used for selection
+        layerIndex,            // which <layer> element within the page (0-based)
+        indexInLayer,          // position within the layer's <stroke> elements (0-based)
         tool,
         color: resolveColor(colorAttr),
         width: baseWidth,
@@ -138,13 +154,10 @@ function resolveColor(colorAttr) {
 
     if (named[colorAttr]) return named[colorAttr];
 
-    // Handle hex format like #rrggbbaa or #rrggbb
     if (colorAttr.startsWith('#')) {
-        // Take only RGB, ignore alpha
         return colorAttr.substring(0, 7);
     }
 
-    // Handle rgba() format
     if (colorAttr.startsWith('rgba') || colorAttr.startsWith('rgb')) {
         return colorAttr;
     }
