@@ -10,17 +10,26 @@ import {
 // ── Fixed class vocabulary (closed, per ADR 004) ───────
 
 const FIXED_CLASSES = [
-    { name: 'word',                   color: '#e74c3c' },
-    { name: 'digit',                  color: '#e67e22' },
+    { name: 'word',                    color: '#e74c3c' },
+    { name: 'digit',                   color: '#e67e22' },
     { name: 'mathematical_expression', color: '#f1c40f' },
-    { name: 'arrow',                  color: '#2ecc71' },
-    { name: 'diagram',                color: '#1abc9c' },
-    { name: 'table',                  color: '#3498db' },
-    { name: 'drawing',                color: '#9b59b6' },
-    { name: 'separator',              color: '#95a5a6' },
-    { name: 'correction',             color: '#cd6155' },
-    { name: 'other',                  color: '#7f8c8d' },
+    { name: 'arrow',                   color: '#2ecc71' },
+    { name: 'diagram',                 color: '#1abc9c' },
+    { name: 'table',                   color: '#3498db' },
+    { name: 'drawing',                 color: '#9b59b6' },
+    { name: 'separator',               color: '#95a5a6' },
+    { name: 'correction',              color: '#e91e63' }, // pink — distinct from word's red
+    { name: 'other',                   color: '#7f8c8d' },
 ];
+
+// Abbreviated display names for long class names in compact list items.
+const CLASS_ABBREV = {
+    mathematical_expression: 'math_expr',
+};
+
+function classDisplayName(name) {
+    return CLASS_ABBREV[name] || name;
+}
 
 // ── State ──────────────────────────────────────────────
 
@@ -37,6 +46,37 @@ const state = {
     tool: 'rect',        // 'rect' | 'stroke' | 'pan'
     createdAt: null,
 };
+
+// ── Undo stack ─────────────────────────────────────────
+
+const undoStack = [];
+const MAX_UNDO = 50;
+
+function pushUndoState() {
+    const snapshot = state.annotations.map(page =>
+        page.map(ann => ({
+            id: ann.id,
+            className: ann.className,
+            text: ann.text,
+            strokeIndices: new Set(ann.strokeIndices),
+        }))
+    );
+    undoStack.push(snapshot);
+    if (undoStack.length > MAX_UNDO) undoStack.shift();
+}
+
+function undo() {
+    if (undoStack.length === 0) return;
+    state.annotations = undoStack.pop();
+    state.selectedStrokes.clear();
+    state.highlightedAnnotation = null;
+    updateSelectionUI();
+    renderAnnotationList();
+    renderClassList();
+    updateGlobalStats();
+    save();
+    render();
+}
 
 // ── DOM refs ───────────────────────────────────────────
 
@@ -150,6 +190,7 @@ function init() {
 
     renderClassList();
     updateActiveClassUI();
+    updateGlobalStats();
     render();
 }
 
@@ -167,6 +208,7 @@ async function handleFileOpen(e) {
         state.currentPage = 0;
         state.selectedStrokes.clear();
         state.highlightedAnnotation = null;
+        undoStack.length = 0;
 
         fileNameSpan.textContent = file.name;
 
@@ -191,13 +233,14 @@ async function handleFileOpen(e) {
             state.annotations.push([]);
         }
 
-        // Keep active class if it's valid, otherwise reset to 'word'
+        // Keep active class if valid, otherwise reset to 'word'
         if (!FIXED_CLASSES.find(c => c.name === state.activeClass)) {
             state.activeClass = 'word';
         }
 
         renderClassList();
         updateActiveClassUI();
+        updateGlobalStats();
         fitToView();
         updatePageNav();
         renderAnnotationList();
@@ -218,6 +261,7 @@ async function handleLoadGT(e) {
         const restored = await loadGroundTruth(file, state.sha256, state.pages);
         state.annotations = restored.annotations;
         state.createdAt = restored.createdAt;
+        undoStack.length = 0;
         if (restored.annotatorId) {
             state.annotatorId = restored.annotatorId;
             annotatorIdInput.value = restored.annotatorId;
@@ -225,6 +269,7 @@ async function handleLoadGT(e) {
         }
         renderAnnotationList();
         renderClassList();
+        updateGlobalStats();
         render();
     } catch (err) {
         alert('Failed to load .gt.json:\n\n' + err.message);
@@ -244,25 +289,38 @@ function handleExport() {
         return;
     }
 
-    const problems = checkCompleteness();
-    if (problems.length > 0) {
+    const completenessProblems = checkCompleteness();
+    if (completenessProblems.length > 0) {
         alert(
-            'Cannot save: not all strokes are annotated.\n\n' + problems.join('\n') +
+            'Cannot save: not all strokes are annotated.\n\n' + completenessProblems.join('\n') +
             '\n\nAnnotate every stroke before exporting.'
         );
         return;
     }
 
-    exportJSON(state.fileName, state);
+    const textProblems = checkTextPresence();
+    if (textProblems.length > 0) {
+        alert(
+            'Cannot save: some transcription-class annotations have no text.\n\n' +
+            textProblems.join('\n')
+        );
+        return;
+    }
+
+    try {
+        exportJSON(state.fileName, state);
+    } catch (err) {
+        alert('Export failed:\n\n' + err.message);
+        console.error(err);
+    }
 }
 
 function checkCompleteness() {
     const problems = [];
     for (let p = 0; p < state.pages.length; p++) {
         const page = state.pages[p];
-        const pageAnns = state.annotations[p] || [];
         const annotated = new Set();
-        for (const ann of pageAnns) {
+        for (const ann of state.annotations[p] || []) {
             for (const si of ann.strokeIndices) annotated.add(si);
         }
         const missing = page.strokes.length - annotated.size;
@@ -271,6 +329,45 @@ function checkCompleteness() {
         }
     }
     return problems;
+}
+
+function checkTextPresence() {
+    const problems = [];
+    for (let p = 0; p < state.annotations.length; p++) {
+        for (const ann of state.annotations[p] || []) {
+            if (TEXT_REQUIRED_CLASSES.has(ann.className) && !ann.text.trim()) {
+                problems.push(`  Page ${p + 1}: "${ann.className}" annotation has no text`);
+            }
+        }
+    }
+    return problems;
+}
+
+// ── Global stats ───────────────────────────────────────
+
+function updateGlobalStats() {
+    const el = $('#global-progress');
+    if (!el) return;
+
+    if (state.pages.length === 0) {
+        el.textContent = '–';
+        el.classList.remove('complete');
+        return;
+    }
+
+    let totalStrokes = 0;
+    let annotatedStrokes = 0;
+    for (let p = 0; p < state.pages.length; p++) {
+        totalStrokes += state.pages[p].strokes.length;
+        const annotated = new Set();
+        for (const ann of state.annotations[p] || []) {
+            for (const si of ann.strokeIndices) annotated.add(si);
+        }
+        annotatedStrokes += annotated.size;
+    }
+
+    el.textContent = `${annotatedStrokes} / ${totalStrokes} strokes`;
+    el.classList.toggle('complete', totalStrokes > 0 && annotatedStrokes === totalStrokes);
 }
 
 // ── Canvas ─────────────────────────────────────────────
@@ -430,9 +527,13 @@ function onWheel(e) {
 let spaceDown = false;
 
 function onKeyDown(e) {
-    if (e.target.tagName === 'INPUT') return;
+    // Don't intercept typing in inputs or button activations
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
 
     switch (e.key) {
+        case 'z': case 'Z':
+            if (e.ctrlKey || e.metaKey) { e.preventDefault(); undo(); }
+            break;
         case 'r': setTool('rect'); break;
         case 's': setTool('stroke'); break;
         case 'p': setTool('pan'); break;
@@ -451,6 +552,12 @@ function onKeyDown(e) {
             changePage(1); break;
         case 'Delete': case 'Backspace':
             unassignSelected(); break;
+        case 'Enter':
+            // Assign selected strokes to the active non-text class
+            if (!nonTextSection.classList.contains('hidden') && state.selectedStrokes.size > 0) {
+                assignNonText();
+            }
+            break;
         case ' ':
             e.preventDefault();
             break;
@@ -506,11 +613,20 @@ function renderClassList() {
         const count = countClassAnnotations(cls.name);
         const div = document.createElement('div');
         div.className = 'class-item' + (state.activeClass === cls.name ? ' active' : '');
-        div.innerHTML = `
-            <span class="class-swatch" style="background:${cls.color}"></span>
-            <span class="class-name">${cls.name}</span>
-            <span class="class-count">${count}</span>
-        `;
+
+        const swatch = document.createElement('span');
+        swatch.className = 'class-swatch';
+        swatch.style.background = cls.color;
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'class-name';
+        nameSpan.textContent = cls.name;
+
+        const countSpan = document.createElement('span');
+        countSpan.className = 'class-count';
+        countSpan.textContent = count;
+
+        div.append(swatch, nameSpan, countSpan);
         div.addEventListener('click', () => {
             state.activeClass = cls.name;
             renderClassList();
@@ -576,13 +692,32 @@ function assignNonText() {
 }
 
 function assignStrokesToClass(className, text) {
+    // Warn if selected strokes span multiple layers — they'll be split into separate
+    // schema entries on export and restored as separate annotations on reload.
+    const page = state.pages[state.currentPage];
+    if (page) {
+        const strokeByGlobal = new Map(page.strokes.map(s => [s.index, s]));
+        const layers = new Set();
+        for (const si of state.selectedStrokes) {
+            const s = strokeByGlobal.get(si);
+            if (s !== undefined) layers.add(s.layerIndex);
+        }
+        if (layers.size > 1) {
+            if (!confirm(
+                `The ${state.selectedStrokes.size} selected strokes span ${layers.size} layers.\n\n` +
+                `They will be saved as ${layers.size} separate entries in the .gt.json (one per layer) ` +
+                `and will be restored as separate annotations.\n\nContinue?`
+            )) return;
+        }
+    }
+
+    pushUndoState();
+
     const pageAnns = state.annotations[state.currentPage];
 
     // Remove selected strokes from any existing annotations on this page
     for (const ann of pageAnns) {
-        for (const si of state.selectedStrokes) {
-            ann.strokeIndices.delete(si);
-        }
+        for (const si of state.selectedStrokes) ann.strokeIndices.delete(si);
     }
     state.annotations[state.currentPage] = pageAnns.filter(a => a.strokeIndices.size > 0);
 
@@ -597,6 +732,7 @@ function assignStrokesToClass(className, text) {
     updateSelectionUI();
     renderAnnotationList();
     renderClassList();
+    updateGlobalStats();
     save();
     render();
 }
@@ -604,11 +740,11 @@ function assignStrokesToClass(className, text) {
 function unassignSelected() {
     if (state.selectedStrokes.size === 0) return;
 
+    pushUndoState();
+
     const pageAnns = state.annotations[state.currentPage];
     for (const ann of pageAnns) {
-        for (const si of state.selectedStrokes) {
-            ann.strokeIndices.delete(si);
-        }
+        for (const si of state.selectedStrokes) ann.strokeIndices.delete(si);
     }
     state.annotations[state.currentPage] = pageAnns.filter(a => a.strokeIndices.size > 0);
 
@@ -616,6 +752,7 @@ function unassignSelected() {
     updateSelectionUI();
     renderAnnotationList();
     renderClassList();
+    updateGlobalStats();
     save();
     render();
 }
@@ -643,22 +780,45 @@ function renderAnnotationList() {
         const cls = FIXED_CLASSES.find(c => c.name === ann.className);
         const div = document.createElement('div');
         div.className = 'annotation-item';
-        if (state.highlightedAnnotation === ann.id) {
-            div.classList.add('highlighted');
-        }
-        div.innerHTML = `
-            <span class="annotation-swatch" style="background:${cls ? cls.color : '#888'}"></span>
-            <span class="annotation-class">${ann.className}</span>
-            <span class="annotation-text">${ann.text || ''}</span>
-            <span class="annotation-strokes">${ann.strokeIndices.size}s</span>
-            <button class="annotation-delete" title="Delete annotation">&times;</button>
-        `;
+        if (state.highlightedAnnotation === ann.id) div.classList.add('highlighted');
 
-        div.addEventListener('click', (e) => {
-            if (e.target.classList.contains('annotation-delete')) {
-                deleteAnnotation(ann.id);
-                return;
-            }
+        const swatch = document.createElement('span');
+        swatch.className = 'annotation-swatch';
+        swatch.style.background = cls ? cls.color : '#888';
+
+        const classSpan = document.createElement('span');
+        classSpan.className = 'annotation-class';
+        classSpan.textContent = classDisplayName(ann.className);
+        classSpan.title = ann.className; // full name on hover
+
+        const textSpan = document.createElement('span');
+        const isTextRequired = TEXT_REQUIRED_CLASSES.has(ann.className);
+        textSpan.className = 'annotation-text' + (isTextRequired ? ' editable' : '');
+        textSpan.textContent = ann.text || (isTextRequired ? '(no text)' : '');
+        if (isTextRequired) {
+            textSpan.title = 'Click to edit transcription';
+            textSpan.addEventListener('click', e => {
+                e.stopPropagation();
+                startInlineEdit(textSpan, ann);
+            });
+        }
+
+        const strokesSpan = document.createElement('span');
+        strokesSpan.className = 'annotation-strokes';
+        strokesSpan.textContent = ann.strokeIndices.size + 's';
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'annotation-delete';
+        deleteBtn.title = 'Delete annotation';
+        deleteBtn.textContent = '×';
+        deleteBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            deleteAnnotation(ann.id);
+        });
+
+        div.append(swatch, classSpan, textSpan, strokesSpan, deleteBtn);
+
+        div.addEventListener('click', () => {
             if (state.highlightedAnnotation === ann.id) {
                 state.highlightedAnnotation = null;
                 state.selectedStrokes.clear();
@@ -670,9 +830,11 @@ function renderAnnotationList() {
             renderAnnotationList();
             render();
         });
+
         annotationList.appendChild(div);
     }
 
+    // Per-page stats
     const page = currentPage();
     const totalStrokes = page ? page.strokes.length : 0;
     const annotated = new Set();
@@ -683,13 +845,52 @@ function renderAnnotationList() {
     statsUnannotated.textContent = `Unannotated: ${totalStrokes - annotated.size} / ${totalStrokes} strokes`;
 }
 
+function startInlineEdit(spanEl, ann) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = ann.text;
+    input.className = 'annotation-text-edit';
+    spanEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    let done = false;
+
+    const commit = () => {
+        if (done) return;
+        done = true;
+        const newText = input.value.trim();
+        if (newText && newText !== ann.text) {
+            pushUndoState();
+            ann.text = newText;
+            save();
+        }
+        renderAnnotationList();
+    };
+
+    const cancel = () => {
+        if (done) return;
+        done = true;
+        renderAnnotationList();
+    };
+
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', e => {
+        e.stopPropagation(); // Prevent canvas keyboard shortcuts from firing
+        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+    });
+}
+
 function deleteAnnotation(id) {
+    pushUndoState();
     state.annotations[state.currentPage] = state.annotations[state.currentPage].filter(a => a.id !== id);
     if (state.highlightedAnnotation === id) {
         state.highlightedAnnotation = null;
     }
     renderAnnotationList();
     renderClassList();
+    updateGlobalStats();
     save();
     render();
 }
