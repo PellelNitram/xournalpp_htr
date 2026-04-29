@@ -25,7 +25,7 @@ jobs:
 
       - name: Clone Hugging Face Space
         run: |
-          git clone https://user:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/PellelNitram/xournal_htr_data_annotation_tool hf-space
+          git clone https://user:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/PellelNitram/xournalpp_htr_data_annotation_tool hf-space
 
       - name: Sync files to Hugging Face Space
         run: |
