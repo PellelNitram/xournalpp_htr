@@ -7,3 +7,5 @@ sdk: static
 pinned: false
 short_description: Browser-based annotation tool for Xournal++ HTR ground truth data
 ---
+
+A browser-based tool for annotating Xournal++ handwriting data to create HTR ground truth datasets.
