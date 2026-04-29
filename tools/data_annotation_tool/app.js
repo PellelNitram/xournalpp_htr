@@ -245,6 +245,7 @@ async function handleFileOpen(e) {
         updatePageNav();
         renderAnnotationList();
         render();
+        trackEvent('file-opened');
     } catch (err) {
         alert('Error loading file: ' + err.message);
         console.error(err);
@@ -271,6 +272,7 @@ async function handleLoadGT(e) {
         renderClassList();
         updateGlobalStats();
         render();
+        trackEvent('gt-loaded');
     } catch (err) {
         alert('Failed to load .gt.json:\n\n' + err.message);
     }
@@ -309,6 +311,7 @@ function handleExport() {
 
     try {
         exportJSON(state.fileName, state);
+        trackEvent('annotation-exported');
     } catch (err) {
         alert('Export failed:\n\n' + err.message);
         console.error(err);
@@ -930,6 +933,14 @@ function generateId() {
 function save() {
     if (state.fileName) {
         autoSave(state.fileName, state);
+    }
+}
+
+// ── Analytics ──────────────────────────────────────────
+
+function trackEvent(name) {
+    if (window.goatcounter && window.goatcounter.count) {
+        window.goatcounter.count({ path: name, event: true });
     }
 }
 
