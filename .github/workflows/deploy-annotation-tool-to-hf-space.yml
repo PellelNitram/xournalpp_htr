@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - 79-evaluation-of-prediction-algorithms
     paths:
       - 'tools/data_annotation_tool/**'
   workflow_dispatch:
