@@ -43,6 +43,7 @@ if __name__ == "__main__":
                     "precision": result.precision,
                     "recall": result.recall,
                     "cer": result.cer,
+                    "cer_case_insensitive": result.cer_case_insensitive,
                     "n_gt_words": result.n_gt_words,
                     "n_predicted_words": result.n_predicted_words,
                     "n_matched": result.n_matched,
@@ -58,4 +59,5 @@ if __name__ == "__main__":
         print(
             f"Recall   : {result.recall:.1%}  ({result.n_matched}/{result.n_gt_words} GT words matched)"
         )
-        print(f"CER      : {result.cer:.1%}")
+        print(f"CER      : {result.cer:.1%}  (case-sensitive)")
+        print(f"CER      : {result.cer_case_insensitive:.1%}  (case-insensitive)")

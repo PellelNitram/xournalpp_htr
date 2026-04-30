@@ -29,6 +29,7 @@ class BenchmarkResult:
     precision: float
     recall: float
     cer: float
+    cer_case_insensitive: float
     n_gt_words: int
     n_predicted_words: int
     n_matched: int
@@ -122,6 +123,7 @@ def run_benchmark(pipeline_name: str) -> BenchmarkResult:
     total_pred = 0
     total_matched = 0
     total_edit_chars = 0
+    total_edit_chars_case_insensitive = 0
     total_gt_chars_matched = 0
 
     for sample in samples:
@@ -141,17 +143,26 @@ def run_benchmark(pipeline_name: str) -> BenchmarkResult:
             total_edit_chars += round(
                 _cer(gt_word.text, pred_word.text) * len(gt_word.text)
             )
+            total_edit_chars_case_insensitive += round(
+                _cer(gt_word.text.lower(), pred_word.text.lower()) * len(gt_word.text)
+            )
 
     precision = total_matched / total_pred if total_pred > 0 else 0.0
     recall = total_matched / total_gt if total_gt > 0 else 0.0
     cer = (
         total_edit_chars / total_gt_chars_matched if total_gt_chars_matched > 0 else 0.0
     )
+    cer_case_insensitive = (
+        total_edit_chars_case_insensitive / total_gt_chars_matched
+        if total_gt_chars_matched > 0
+        else 0.0
+    )
 
     return BenchmarkResult(
         precision=precision,
         recall=recall,
         cer=cer,
+        cer_case_insensitive=cer_case_insensitive,
         n_gt_words=total_gt,
         n_predicted_words=total_pred,
         n_matched=total_matched,
