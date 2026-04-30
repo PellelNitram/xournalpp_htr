@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pymupdf
 
+from xournalpp_htr.models import PageIndex, WordPrediction
+
 try:
     from huggingface_hub import snapshot_download
 
@@ -24,7 +26,7 @@ class BenchmarkSample:
 def write_predictions_to_PDF(
     input_pdf_file: Path,
     output_pdf_file: Path,
-    predictions: dict,
+    predictions: dict[PageIndex, list[WordPrediction]],
     debug_htr: bool,
 ) -> None:
     """
@@ -52,18 +54,18 @@ def write_predictions_to_PDF(
             if debug_htr:
                 pdf_page.draw_rect(
                     rect=pymupdf.Rect(
-                        [prediction["xmin"], prediction["ymin"]],
-                        [prediction["xmax"], prediction["ymax"]],
+                        [prediction.xmin, prediction.ymin],
+                        [prediction.xmax, prediction.ymax],
                     ),
                     color=pymupdf.pdfcolor["blue"],
                 )
 
             pdf_page.insert_textbox(
                 rect=pymupdf.Rect(
-                    [prediction["xmin"], prediction["ymin"]],
-                    [prediction["xmax"], prediction["ymax"]],
+                    [prediction.xmin, prediction.ymin],
+                    [prediction.xmax, prediction.ymax],
                 ),
-                buffer=prediction["text"],
+                buffer=prediction.text,
                 color=pymupdf.pdfcolor["blue"],
                 align=pymupdf.TEXT_ALIGN_CENTER,
                 fontsize=6,
