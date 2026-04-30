@@ -1,6 +1,7 @@
 # TODO: Rename to `io` once `xournalpp_htr.py` was moved from this folder.
 
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 
 import pymupdf
@@ -12,6 +13,12 @@ try:
 except ImportError:
     huggingface_hub_available = False
 from tqdm import tqdm
+
+
+@dataclass
+class BenchmarkSample:
+    xopp_path: Path
+    gt_path: Path
 
 
 def write_predictions_to_PDF(
@@ -99,6 +106,25 @@ def get_temporary_filename() -> Path:
     output_file_tmp_noOCR.parent.mkdir(parents=True, exist_ok=True)
 
     return output_file_tmp_noOCR
+
+
+def load_benchmark() -> list[BenchmarkSample]:
+    """Return benchmark samples from the xournalpp_htr_benchmark HuggingFace dataset."""
+    if not huggingface_hub_available:
+        raise ImportError(
+            "The `huggingface_hub` package is required to load the benchmark data."
+        )
+    local_dir = Path(
+        snapshot_download("PellelNitram/xournalpp_htr_benchmark", repo_type="dataset")
+    )
+    data_dir = local_dir / "data"
+    xopp_files = sorted(data_dir.glob("*.xopp")) + sorted(data_dir.glob("*.xoj"))
+    samples = []
+    for xopp_path in xopp_files:
+        gt_path = xopp_path.with_suffix("").with_suffix(".gt.json")
+        if gt_path.exists():
+            samples.append(BenchmarkSample(xopp_path=xopp_path, gt_path=gt_path))
+    return samples
 
 
 def load_examples(exclude_empty: bool = False):
