@@ -1,9 +1,12 @@
 # TODO: Rename to `io` once `xournalpp_htr.py` was moved from this folder.
 
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 
 import pymupdf
+
+from xournalpp_htr.models import PageIndex, WordPrediction
 
 try:
     from huggingface_hub import snapshot_download
@@ -14,10 +17,16 @@ except ImportError:
 from tqdm import tqdm
 
 
+@dataclass
+class BenchmarkSample:
+    xopp_path: Path
+    gt_path: Path
+
+
 def write_predictions_to_PDF(
     input_pdf_file: Path,
     output_pdf_file: Path,
-    predictions: dict,
+    predictions: dict[PageIndex, list[WordPrediction]],
     debug_htr: bool,
 ) -> None:
     """
@@ -45,30 +54,18 @@ def write_predictions_to_PDF(
             if debug_htr:
                 pdf_page.draw_rect(
                     rect=pymupdf.Rect(
-                        [
-                            prediction["xmin"] / 150 * 72,
-                            prediction["ymin"] / 150 * 72,
-                        ],
-                        [
-                            prediction["xmax"] / 150 * 72,
-                            prediction["ymax"] / 150 * 72,
-                        ],
+                        [prediction.xmin, prediction.ymin],
+                        [prediction.xmax, prediction.ymax],
                     ),
                     color=pymupdf.pdfcolor["blue"],
                 )
 
             pdf_page.insert_textbox(
                 rect=pymupdf.Rect(
-                    [
-                        prediction["xmin"] / 150 * 72,
-                        prediction["ymin"] / 150 * 72,
-                    ],
-                    [
-                        prediction["xmax"] / 150 * 72,
-                        prediction["ymax"] / 150 * 72,
-                    ],
+                    [prediction.xmin, prediction.ymin],
+                    [prediction.xmax, prediction.ymax],
                 ),
-                buffer=prediction["text"],
+                buffer=prediction.text,
                 color=pymupdf.pdfcolor["blue"],
                 align=pymupdf.TEXT_ALIGN_CENTER,
                 fontsize=6,
@@ -99,6 +96,25 @@ def get_temporary_filename() -> Path:
     output_file_tmp_noOCR.parent.mkdir(parents=True, exist_ok=True)
 
     return output_file_tmp_noOCR
+
+
+def load_benchmark() -> list[BenchmarkSample]:
+    """Return benchmark samples from the xournalpp_htr_benchmark HuggingFace dataset."""
+    if not huggingface_hub_available:
+        raise ImportError(
+            "The `huggingface_hub` package is required to load the benchmark data."
+        )
+    local_dir = Path(
+        snapshot_download("PellelNitram/xournalpp_htr_benchmark", repo_type="dataset")
+    )
+    data_dir = local_dir / "data"
+    xopp_files = sorted(data_dir.glob("*.xopp")) + sorted(data_dir.glob("*.xoj"))
+    samples = []
+    for xopp_path in xopp_files:
+        gt_path = xopp_path.with_suffix("").with_suffix(".gt.json")
+        if gt_path.exists():
+            samples.append(BenchmarkSample(xopp_path=xopp_path, gt_path=gt_path))
+    return samples
 
 
 def load_examples(exclude_empty: bool = False):

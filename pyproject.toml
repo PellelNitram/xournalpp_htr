@@ -21,6 +21,7 @@ dependencies = [
     "torch",
     "torchvision",
     "testcontainers>=4.14.1",
+    "huggingface-hub",
 ]
 
 [project.optional-dependencies]

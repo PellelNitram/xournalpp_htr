@@ -2,6 +2,7 @@
 # another module for training or loading custom models.
 
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
@@ -9,11 +10,30 @@ import matplotlib.pyplot as plt
 from htr_pipeline import DetectorConfig, LineClusteringConfig, read_page
 from tqdm import tqdm
 
+PageIndex = int
 
-def compute_predictions(pipeline_name: str, document) -> dict:
-    predictions = {}
+
+@dataclass
+class WordPrediction:
+    text: str
+    xmin: float
+    xmax: float
+    ymin: float
+    ymax: float
+
+
+def compute_predictions(
+    pipeline_name: str, document
+) -> dict[PageIndex, list[WordPrediction]]:
+    """Run HTR on a document and return word-level predictions.
+
+    Bounding box coordinates are always in document units (72 DPI), regardless
+    of the internal rendering resolution used by the pipeline. See ADR 005.
+    """
+    predictions: dict[PageIndex, list[WordPrediction]] = {}
 
     if pipeline_name == "2024-07-18_htr_pipeline":
+        RENDER_DPI = 150
         nr_pages = len(document.pages)
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):
@@ -26,7 +46,7 @@ def compute_predictions(pipeline_name: str, document) -> dict:
                 TMP_FILE = Path(tmpfile.name)
 
                 written_file = document.save_page_as_image(
-                    page_index, TMP_FILE, False, dpi=150
+                    page_index, TMP_FILE, False, dpi=RENDER_DPI
                 )
 
                 # Confirm that page is not empty
@@ -50,31 +70,28 @@ def compute_predictions(pipeline_name: str, document) -> dict:
                 img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
 
                 # detect and read text
-                # height = 700 # good
-                # enlarge = 5
-                # enlarge = 10
-                # height = 1000 # good
-                # height = 1600 # not good
-                scale = 0.4
+                detector_scale = 0.4
                 margin = 5
                 read_lines = read_page(
                     img,
-                    DetectorConfig(scale=scale, margin=margin),
+                    DetectorConfig(scale=detector_scale, margin=margin),
                     line_clustering_config=LineClusteringConfig(min_words_per_line=2),
                 )
 
+                # Convert bounding boxes from render pixels to document units.
+                coord_scale = document.DPI / RENDER_DPI
                 predictions_page = []
                 for line in read_lines:
                     for word in line:
-                        data = {
-                            "page_index": page_index,
-                            "text": word.text,
-                            "xmin": word.aabb.xmin,
-                            "xmax": word.aabb.xmax,
-                            "ymin": word.aabb.ymin,
-                            "ymax": word.aabb.ymax,
-                        }
-                        predictions_page.append(data)
+                        predictions_page.append(
+                            WordPrediction(
+                                text=word.text,
+                                xmin=word.aabb.xmin * coord_scale,
+                                xmax=word.aabb.xmax * coord_scale,
+                                ymin=word.aabb.ymin * coord_scale,
+                                ymax=word.aabb.ymax * coord_scale,
+                            )
+                        )
                 predictions[page_index] = predictions_page
 
     else:
@@ -84,7 +101,9 @@ def compute_predictions(pipeline_name: str, document) -> dict:
 
 
 def store_predictions_as_images(
-    output_directory: Path, predictions: dict, document
+    output_directory: Path,
+    predictions: dict[PageIndex, list[WordPrediction]],
+    document,
 ) -> None:
     output_directory.mkdir(parents=True, exist_ok=True)
 
@@ -98,10 +117,6 @@ def store_predictions_as_images(
             page_index, file_name, False, dpi=150
         )
 
-        # ======
-        # Do HTR
-        # ======
-
         # read image
         img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
 
@@ -110,20 +125,18 @@ def store_predictions_as_images(
 
         # Impose predictions on image
         for prediction in predictions[page_index]:
-            text = prediction["text"]
-            xmin = prediction["xmin"]
-            xmax = prediction["xmax"]
-            ymin = prediction["ymin"]
-            ymax = prediction["ymax"]
-
             img = cv2.rectangle(
-                img, (int(xmin), int(ymax)), (int(xmax), int(ymin)), (255, 0, 0), 2
+                img,
+                (int(prediction.xmin), int(prediction.ymax)),
+                (int(prediction.xmax), int(prediction.ymin)),
+                (255, 0, 0),
+                2,
             )
 
             img = cv2.putText(
                 img,
-                text=text,
-                org=(int(xmin), int(ymin)),
+                text=prediction.text,
+                org=(int(prediction.xmin), int(prediction.ymin)),
                 fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                 fontScale=1,
                 color=(255, 0, 0),

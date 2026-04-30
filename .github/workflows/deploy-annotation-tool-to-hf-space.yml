@@ -1,0 +1,46 @@
+name: Deploy Annotation Tool to Hugging Face Space
+
+on:
+  push:
+    branches:
+      - master
+      - 79-evaluation-of-prediction-algorithms
+    paths:
+      - 'tools/data_annotation_tool/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Git LFS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git-lfs
+          git lfs install
+
+      - name: Clone Hugging Face Space
+        run: |
+          git clone https://user:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/PellelNitram/xournalpp_htr_data_annotation_tool hf-space
+
+      - name: Sync files to Hugging Face Space
+        run: |
+          rsync -av --exclude='.git' tools/data_annotation_tool/ hf-space/
+          cd hf-space
+          git config --global user.email "konten.ma.le@gmail.com"
+          git config --global user.name "Martin L (GitHub Actions)"
+          mv README_HF.md README.md
+          git add .
+          if [ -n "$(git status --porcelain)" ]; then
+            COMMIT_HASH=$(git -C ../ rev-parse --short=6 HEAD)
+            git commit -m "Automated deployment from GitHub (source commit: $COMMIT_HASH)"
+            git push
+          else
+            echo "No changes to commit"
+          fi
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
