@@ -85,7 +85,7 @@ graph TD
 
 ### Step 3: Embed Text in PDF
 
-`xio.write_predictions_to_PDF()` uses PyMuPDF to add text boxes to the temporary PDF from Step 1. Coordinates are converted from 150 DPI image pixels to 72 DPI PDF points. Text is rendered invisibly (`render_mode=3`) by default, making the PDF searchable without visual clutter. In debug mode (`--show-predictions`), text and bounding boxes are drawn visibly.
+`xio.write_predictions_to_PDF()` uses PyMuPDF to add text boxes to the temporary PDF from Step 1. Prediction coordinates are already in document units (72 DPI) as per ADR 005, so no conversion is needed here. Text is rendered invisibly (`render_mode=3`) by default, making the PDF searchable without visual clutter. In debug mode (`--show-predictions`), text and bounding boxes are drawn visibly.
 
 ## Module Structure
 
@@ -94,12 +94,14 @@ xournalpp_htr/
     run_htr.py       # CLI entry point
     shortcuts.py     # Orchestrates Steps 1-3
     documents.py     # .xoj/.xopp parsing (Document ABC, Page, Layer, Stroke)
-    models.py        # HTR inference wrapper (compute_predictions)
+    models.py        # HTR inference wrapper (compute_predictions, WordPrediction)
     utils.py         # Argument parsing, xournalpp CLI export
-    xio.py           # PDF I/O (PyMuPDF), example loading (HuggingFace Hub)
+    xio.py           # PDF I/O (PyMuPDF), benchmark/example loading (HuggingFace Hub)
+    benchmark.py     # Benchmark logic (run_benchmark, precision/recall/CER)
 
 scripts/
-    demo.py          # Gradio web demo
+    demo.py              # Gradio web demo
+    run_benchmark.py     # CLI to run benchmark against xournalpp_htr_benchmark dataset
 
 plugin/
     main.lua         # Xournal++ plugin

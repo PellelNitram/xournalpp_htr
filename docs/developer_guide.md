@@ -57,3 +57,22 @@ Next steps to improve the performance of the handwritten text recognition even f
 - Use sequence-to-sequence algorithm that makes use of [Xournal++](https://github.com/xournalpp/xournalpp)'s data format. This translates into using online HTR algorithms.
 
 I would like to acknowledge [Harald Scheidl](https://github.com/githubharald) in this concept as he wrote the underlying algorithms and made them easily usable through [his HTRPipeline repository](https://github.com/githubharald/HTRPipeline) - after all I just feed his algorithm [Xournal++](https://github.com/xournalpp/xournalpp) data in concept 1. [Go check out his great content](https://githubharald.github.io/)!
+
+## Benchmarking
+
+Pipelines are evaluated against the [`xournalpp_htr_benchmark`](https://huggingface.co/datasets/PellelNitram/xournalpp_htr_benchmark) dataset on HuggingFace. The dataset is downloaded automatically on first run and cached locally.
+
+Run the benchmark with the default pipeline:
+
+```bash
+uv run python scripts/run_benchmark.py
+```
+
+To benchmark a specific pipeline or change the output format:
+
+```bash
+uv run python scripts/run_benchmark.py --pipeline 2024-07-18_htr_pipeline
+uv run python scripts/run_benchmark.py --format json
+```
+
+The benchmark reports precision, recall, and CER (case-sensitive and case-insensitive) over matched word pairs. See `xournalpp_htr/benchmark.py` and ADR 005 for details on the evaluation methodology.
