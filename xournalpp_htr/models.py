@@ -11,9 +11,16 @@ from tqdm import tqdm
 
 
 def compute_predictions(pipeline_name: str, document) -> dict:
+    """Run HTR on a document and return word-level predictions.
+
+    Bounding box coordinates in the returned dict are always in document units
+    (72 DPI), regardless of the internal rendering resolution used by the
+    pipeline. See ADR 005.
+    """
     predictions = {}
 
     if pipeline_name == "2024-07-18_htr_pipeline":
+        RENDER_DPI = 150
         nr_pages = len(document.pages)
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):
@@ -26,7 +33,7 @@ def compute_predictions(pipeline_name: str, document) -> dict:
                 TMP_FILE = Path(tmpfile.name)
 
                 written_file = document.save_page_as_image(
-                    page_index, TMP_FILE, False, dpi=150
+                    page_index, TMP_FILE, False, dpi=RENDER_DPI
                 )
 
                 # Confirm that page is not empty
@@ -63,16 +70,18 @@ def compute_predictions(pipeline_name: str, document) -> dict:
                     line_clustering_config=LineClusteringConfig(min_words_per_line=2),
                 )
 
+                # Convert bounding boxes from render pixels to document units.
+                scale = document.DPI / RENDER_DPI
                 predictions_page = []
                 for line in read_lines:
                     for word in line:
                         data = {
                             "page_index": page_index,
                             "text": word.text,
-                            "xmin": word.aabb.xmin,
-                            "xmax": word.aabb.xmax,
-                            "ymin": word.aabb.ymin,
-                            "ymax": word.aabb.ymax,
+                            "xmin": word.aabb.xmin * scale,
+                            "xmax": word.aabb.xmax * scale,
+                            "ymin": word.aabb.ymin * scale,
+                            "ymax": word.aabb.ymax * scale,
                         }
                         predictions_page.append(data)
                 predictions[page_index] = predictions_page

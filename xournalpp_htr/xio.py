@@ -52,28 +52,16 @@ def write_predictions_to_PDF(
             if debug_htr:
                 pdf_page.draw_rect(
                     rect=pymupdf.Rect(
-                        [
-                            prediction["xmin"] / 150 * 72,
-                            prediction["ymin"] / 150 * 72,
-                        ],
-                        [
-                            prediction["xmax"] / 150 * 72,
-                            prediction["ymax"] / 150 * 72,
-                        ],
+                        [prediction["xmin"], prediction["ymin"]],
+                        [prediction["xmax"], prediction["ymax"]],
                     ),
                     color=pymupdf.pdfcolor["blue"],
                 )
 
             pdf_page.insert_textbox(
                 rect=pymupdf.Rect(
-                    [
-                        prediction["xmin"] / 150 * 72,
-                        prediction["ymin"] / 150 * 72,
-                    ],
-                    [
-                        prediction["xmax"] / 150 * 72,
-                        prediction["ymax"] / 150 * 72,
-                    ],
+                    [prediction["xmin"], prediction["ymin"]],
+                    [prediction["xmax"], prediction["ymax"]],
                 ),
                 buffer=prediction["text"],
                 color=pymupdf.pdfcolor["blue"],
