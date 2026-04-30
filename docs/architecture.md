@@ -137,7 +137,9 @@ external/htr_pipeline/
 }
 ```
 
-Bounding box coordinates are in image pixels at 150 DPI.
+Bounding box coordinates are in **document units (72 DPI)**, matching the coordinate system
+of stroke data in `Document`. Pipelines that render pages at a higher DPI internally must
+convert their raw output before returning (see [ADR 005](ADRs/005_prediction_bounding_box_coordinate_system.md)).
 
 ## External Dependencies
 
