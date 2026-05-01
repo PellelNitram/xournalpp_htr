@@ -117,6 +117,30 @@ def load_benchmark() -> list[BenchmarkSample]:
     return samples
 
 
+def load_IAM_OnDB_dataset() -> Path:
+    """Return path to the IAM-OnDB dataset, downloading from HuggingFace Hub if needed.
+
+    Requires a valid HuggingFace token with access to the private repository,
+    set via the ``HF_TOKEN`` environment variable or ``huggingface-cli login``.
+
+    :returns: Path to the root of the IAM-OnDB dataset (the ``data/`` subfolder
+              of the HuggingFace repo).
+    """
+    if not huggingface_hub_available:
+        raise ImportError(
+            "The `huggingface_hub` package is required to load the IAM-OnDB dataset."
+        )
+    return (
+        Path(
+            snapshot_download(
+                repo_id="PellelNitram/xournalpp_htr_IAM_OnDB",
+                repo_type="dataset",
+            )
+        )
+        / "data"
+    )
+
+
 def load_examples(exclude_empty: bool = False):
     if not huggingface_hub_available:
         raise ImportError(

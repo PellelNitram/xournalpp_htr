@@ -3,6 +3,8 @@ from pathlib import Path
 
 import pytest
 
+from xournalpp_htr.xio import load_IAM_OnDB_dataset
+
 
 @pytest.fixture
 def get_repo_root_directory(request: pytest.FixtureRequest) -> Path:
@@ -52,9 +54,15 @@ def get_path_to_minimal_test_data(get_repo_root_directory: Path) -> Path:
 
 
 @pytest.fixture
-def get_path_to_IAM_OnDB_dataset(get_repo_root_directory: Path) -> Path:
-    """TODO Add docstring."""
+def get_path_to_IAM_OnDB_dataset() -> Path:
+    """Fixture to retrieve the path to the IAM-OnDB dataset.
 
-    path_to_IAM_OnDB_dataset = get_repo_root_directory / "data/datasets/IAM-OnDB"
+    Downloads and caches the dataset from HuggingFace Hub if not already
+    present locally. Requires a valid HuggingFace token with access to the
+    private repository, set via the ``HF_TOKEN`` environment variable or
+    ``huggingface-cli login``.
 
-    return path_to_IAM_OnDB_dataset
+    :returns: Path to the root of the IAM-OnDB dataset (the ``data/``
+              subfolder of the HuggingFace repo).
+    """
+    return load_IAM_OnDB_dataset()
