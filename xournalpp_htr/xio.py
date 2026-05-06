@@ -28,6 +28,7 @@ def write_predictions_to_PDF(
     output_pdf_file: Path,
     predictions: dict[PageIndex, list[WordPrediction]],
     debug_htr: bool,
+    small_text: bool = False,
 ) -> None:
     """
     Writes handwritten text predictions to a PDF file.
@@ -47,32 +48,46 @@ def write_predictions_to_PDF(
 
     nr_pages = len(doc)
 
+    # Cache font metrics for Helvetica (the default font used by insert_text).
+    _helv = pymupdf.Font("helv")
+    # Scale factor: fills ~95% of the bounding box height with a single text line.
+    _fontsize_fill_factor = 0.95 / (_helv.ascender - _helv.descender)
+    # In PyMuPDF (y-down), char_center_y = baseline_y - ascender*fs + line_h/2
+    # Rearranging: baseline_y = char_center_y + (ascender + descender)/2 * fs
+    _char_center_to_baseline = (_helv.ascender + _helv.descender) / 2
+
     for page_index in tqdm(range(nr_pages), desc="Export to PDF"):
         pdf_page = doc[page_index]
 
         for prediction in predictions[page_index]:
-            if debug_htr:
-                pdf_page.draw_rect(
-                    rect=pymupdf.Rect(
-                        [prediction.xmin, prediction.ymin],
-                        [prediction.xmax, prediction.ymax],
-                    ),
-                    color=pymupdf.pdfcolor["blue"],
-                )
-
-            pdf_page.insert_textbox(
-                rect=pymupdf.Rect(
-                    [prediction.xmin, prediction.ymin],
-                    [prediction.xmax, prediction.ymax],
-                ),
-                buffer=prediction.text,
-                color=pymupdf.pdfcolor["blue"],
-                align=pymupdf.TEXT_ALIGN_CENTER,
-                fontsize=6,
-                render_mode=0 if debug_htr else 3,  # 0 for visible, 3 for invisible
+            rect = pymupdf.Rect(
+                [prediction.xmin, prediction.ymin],
+                [prediction.xmax, prediction.ymax],
             )
-            # TODO: Improve text alignment with prediction. (1) center text vertically and then (2) stretch text to full box.
-            #       Re (1) see https://github.com/pymupdf/PyMuPDF/discussions/1662.
+
+            if debug_htr:
+                pdf_page.draw_rect(rect=rect, color=pymupdf.pdfcolor["blue"])
+
+            # Scale the fontsize to fill the prediction bounding box height so
+            # that text selection in PDF viewers aligns with the handwriting.
+            # Place the baseline so characters are vertically centred on the
+            # box, and horizontally centre the word within it.
+            box_h = prediction.ymax - prediction.ymin
+            fontsize = 6 if small_text else box_h * _fontsize_fill_factor
+
+            box_center_y = (prediction.ymin + prediction.ymax) / 2
+            baseline_y = box_center_y + _char_center_to_baseline * fontsize
+
+            text_width = _helv.text_length(prediction.text, fontsize)
+            x_start = (prediction.xmin + prediction.xmax) / 2 - text_width / 2
+
+            pdf_page.insert_text(
+                point=(x_start, baseline_y),
+                text=prediction.text,
+                fontsize=fontsize,
+                color=pymupdf.pdfcolor["blue"],
+                render_mode=0 if debug_htr else 3,
+            )
 
     doc.ez_save(output_pdf_file)
 

@@ -101,6 +101,13 @@ def parse_arguments(cli_string: None | str = None):
         "Useful for debugging purposes. "
         "Otherwise only store invisible text.",
     )
+    parser.add_argument(
+        "--small-text",
+        action="store_true",
+        help="Use a fixed small font size (6pt) for prediction text instead of "
+        "scaling text to fill the bounding box. "
+        "Useful with --show-predictions to reduce visual clutter.",
+    )
     args = vars(parser.parse_args(cli_string.split() if cli_string else None))
     return args
 
