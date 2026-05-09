@@ -161,6 +161,7 @@ def document_to_HTR_document_and_image_of_first_page(document_path, session_id):
         pdf_with_htr,
         predictions,
         debug_htr=True,
+        small_text=False,
     )  # TODO: make it a generator to track progress externally like here.
     images = convert_from_path(pdf_with_htr, first_page=1, last_page=1)
     first_page = images[0]
