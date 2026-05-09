@@ -31,7 +31,7 @@ def test_parse_arguments_full() -> None:
     parses a complete set of command-line arguments.
     """
     args = parse_arguments("-if input -of output -p dummy -pid dir -sp")
-    assert len(args) == 5
+    assert len(args) == 6
     assert args["input_file"].stem == "input"
     assert args["output_file"].stem == "output"
     assert args["pipeline"] == "dummy"
@@ -58,6 +58,7 @@ def test_main(get_path_to_minimal_test_data: Path, tmp_path: Path) -> None:
         "pipeline": "2024-07-18_htr_pipeline",  # TODO: Add a `dummy` to test pipeline w/o ML part
         "prediction_image_dir": None,
         "show_predictions": False,
+        "small_text": False,
     }
 
     export_xournalpp_to_pdf_with_htr(args)

@@ -30,6 +30,7 @@ def export_xournalpp_to_pdf_with_htr(args: dict) -> None:
     prediction_image_dir = args["prediction_image_dir"]
     output_file = args["output_file"]
     debug_htr = args["show_predictions"]
+    small_text = args["small_text"]
     pipeline = args["pipeline"]
 
     output_file_tmp_noOCR = get_temporary_filename()
@@ -57,6 +58,7 @@ def export_xournalpp_to_pdf_with_htr(args: dict) -> None:
         output_file,
         predictions,
         debug_htr,
+        small_text,
     )
 
     print("xournalpp_htr: Done!")
