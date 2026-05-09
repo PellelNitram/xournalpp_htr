@@ -73,7 +73,13 @@ def write_predictions_to_PDF(
             # Place the baseline so characters are vertically centred on the
             # box, and horizontally centre the word within it.
             box_h = prediction.ymax - prediction.ymin
-            fontsize = 6 if small_text else box_h * _fontsize_fill_factor
+            box_w = prediction.xmax - prediction.xmin
+            if small_text:
+                fontsize = 6
+            else:
+                fontsize_from_height = box_h * _fontsize_fill_factor
+                fontsize_from_width = box_w / _helv.text_length(prediction.text, 1.0)
+                fontsize = min(fontsize_from_height, fontsize_from_width)
 
             box_center_y = (prediction.ymin + prediction.ymax) / 2
             baseline_y = box_center_y + _char_center_to_baseline * fontsize
