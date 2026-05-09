@@ -60,6 +60,9 @@ def write_predictions_to_PDF(
         pdf_page = doc[page_index]
 
         for prediction in predictions[page_index]:
+            if not prediction.text:
+                continue
+
             rect = pymupdf.Rect(
                 [prediction.xmin, prediction.ymin],
                 [prediction.xmax, prediction.ymax],
