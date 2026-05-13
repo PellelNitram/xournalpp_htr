@@ -109,16 +109,17 @@ in [`pyproject.toml`](../../pyproject.toml):
 [project.optional-dependencies]
 training-carbune = ["lightning", "hydra-core", ...]
 training-<next-model> = ["transformers", "datasets", ...]
-training = [
-    "xournalpp_htr[training-carbune]",
-    "xournalpp_htr[training-<next-model>]",
-]
 ```
 
 Install options:
 - `uv add xournalpp_htr` — inference only (lean)
 - `uv add xournalpp_htr[training-carbune]` — inference + Carbune training
-- `uv add xournalpp_htr[training]` — everything
+
+A `[training]` umbrella extra (installing every model's training dependencies at once) was considered
+and rejected. It would grow unboundedly as new models are added, conflate incompatible framework
+versions, and is unnecessary in practice — a developer typically works on one model at a time and can
+install multiple per-model extras explicitly (`uv add xournalpp_htr[training-carbune,training-<other>]`)
+on the rare occasions when more than one is needed at once.
 
 Shared training utilities (CTC decoder, evaluation metrics, dataset loaders used across models) live in
 `xournalpp_htr/training/shared/` with no extra dependencies beyond the base package.
@@ -161,9 +162,10 @@ to the `LitModule1` class definition. ONNX removes that binding entirely: any tr
 produce the export, and any runtime that supports `onnxruntime` can consume it. This is also the path of
 least resistance for future PyInstaller packaging.
 
-**Per-model extras over a single `[training]` extra**: different models need incompatible frameworks.
-A union extra would bloat every training environment. Named per-model extras keep environments minimal and
-make dependency intent explicit.
+**Per-model extras with no umbrella**: different models need incompatible frameworks; a union extra
+would bloat every training environment and grow unboundedly as new models are added. Named per-model
+extras keep environments minimal and make dependency intent explicit. No umbrella `[training]` extra is
+provided — developers who need multiple model environments can combine extras explicitly.
 
 **`PyTorchModelHubMixin` deferred**: this would give `from_pretrained` / `push_to_hub` on custom
 `nn.Module`s without a full `PreTrainedModel` rewrite, and is the preferred long-term path — the goal is
@@ -202,7 +204,9 @@ mixin cannot be applied. This upgrade should be revisited once the model archite
   manually.
 - Supporting files (alphabet, config) alongside the ONNX are model-specific with no enforced schema —
   the model builder is responsible for documenting what is required.
-- The `[training]` umbrella extra installs all training frameworks and will grow heavy over time.
+- Developers who need to work on multiple models simultaneously must combine per-model extras
+  explicitly (`uv add xournalpp_htr[training-a,training-b]`); there is no single command to install
+  every training environment at once.
 
 ## Open Questions
 
@@ -239,5 +243,9 @@ mixin cannot be applied. This upgrade should be revisited once the model archite
   `transformers`. Deferred: requires extracting the network from the Lightning wrapper first.
 - **TorchScript instead of ONNX**: also framework-agnostic but harder to bundle with PyInstaller and
   requires full PyTorch at inference time. Rejected in favour of ONNX.
-- **Single `[training]` extra**: simpler but bloated when multiple incompatible training frameworks
-  coexist. Rejected in favour of per-model named extras.
+- **Single `[training]` extra**: simpler at first but bloated when multiple incompatible training
+  frameworks coexist, and grows unboundedly as new models are added. Rejected in favour of per-model
+  named extras with no umbrella.
+- **`[training]` umbrella extra alongside per-model extras**: gives a one-shot "install everything"
+  command. Rejected for the same growth reason — even as a convenience, an extra that pulls in every
+  framework version every project ever supported will eventually become unusable.
