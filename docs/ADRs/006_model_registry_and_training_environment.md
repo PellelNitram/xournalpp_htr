@@ -203,7 +203,11 @@ Examples: `PellelNitram/xournalpp-htr-carbune`, `PellelNitram/xournalpp-htr-word
 
 The model card documents the dataset the model was trained on. A pipeline (as defined in
 [ADR 003](003_define_target_architecture.md)) may reference one or more model repositories;
-pipeline-to-model mapping is done inside each pipeline.
+pipeline-to-model mapping is done inside each pipeline implementation directly — there is no global
+registry, lookup table, or algorithmic resolution. Each pipeline simply imports and instantiates the
+concrete model classes it needs (e.g. `CarbuneModel.from_pretrained()`), which addresses issue
+[#64](https://github.com/PellelNitram/xournalpp_htr/issues/64) for this concern without requiring a
+separate ADR.
 
 ## Rationale
 
@@ -268,16 +272,6 @@ mixin cannot be applied. This upgrade should be revisited once the model archite
   explicitly (`uv add xournalpp_htr[training-a,training-b]`); there is no single command to install
   every training environment at once.
 
-## Open Questions
-
-- **Issue [#64](https://github.com/PellelNitram/xournalpp_htr/issues/64)** — Pipeline configuration: how
-  does a pipeline name map to the one or more HF Hub model repos it requires? This is unresolved and
-  will be addressed in a future ADR or issue.
-- **Issue [#73](https://github.com/PellelNitram/xournalpp_htr/issues/73)** — Training delivery:
-  [Docker](https://www.docker.com/) containers are a reasonable fit for cloud and CI training (each
-  model's `Dockerfile` runs `uv add xournalpp_htr[training-<model-name>]`), but add friction for local
-  experimentation. Decision deferred.
-
 ## Related Decisions
 
 - **Issue [#71](https://github.com/PellelNitram/xournalpp_htr/issues/71)** (eval dataset storage) is
@@ -293,6 +287,14 @@ mixin cannot be applied. This upgrade should be revisited once the model archite
   [#69](https://github.com/PellelNitram/xournalpp_htr/issues/69)** (CLI shape, HTR entry point): the
   inference loading pattern decided here (`hf_hub_download` + `onnxruntime`) is what the future CLI
   entry point will use internally.
+- **Issue [#73](https://github.com/PellelNitram/xournalpp_htr/issues/73)** (training delivery):
+  Training is run on a GPU-enabled machine with the per-model extras installed via `uv`. Cloud or CI
+  training is explicitly out of scope for now (and likely permanently); a possible future direction
+  is on-demand cloud training via [Vertex AI](https://cloud.google.com/vertex-ai) or similar, but no
+  commitment is made here. [Docker](https://www.docker.com/) is **not** the default delivery
+  mechanism — it will only be introduced if a future model's training environment proves too painful
+  to reproduce with `uv` alone. The decision is to start with a `uv` environment and reach for Docker
+  only when dependency hell forces the issue.
 
 ## Alternatives
 
