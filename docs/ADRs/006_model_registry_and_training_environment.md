@@ -205,9 +205,7 @@ The model card documents the dataset the model was trained on. A pipeline (as de
 [ADR 003](003_define_target_architecture.md)) may reference one or more model repositories;
 pipeline-to-model mapping is done inside each pipeline implementation directly — there is no global
 registry, lookup table, or algorithmic resolution. Each pipeline simply imports and instantiates the
-concrete model classes it needs (e.g. `CarbuneModel.from_pretrained()`), which addresses issue
-[#64](https://github.com/PellelNitram/xournalpp_htr/issues/64) for this concern without requiring a
-separate ADR.
+concrete model classes it needs (e.g. `CarbuneModel.from_pretrained()`).
 
 ## Rationale
 
