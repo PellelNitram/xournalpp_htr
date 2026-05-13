@@ -75,43 +75,71 @@ api.upload_file(path_or_fileobj="exports/config.json", path_in_repo="config.json
                 repo_id="PellelNitram/xournalpp-htr-carbune")
 ```
 
-To keep consumers free from knowing which files to fetch for each model, every model class implements
-the following abstract base class:
+To keep consumers free from knowing which files to fetch — or even which repository each model lives
+in — every model class implements the following abstract base class:
 
 ```python
 from abc import ABC, abstractmethod
+from typing import ClassVar
 
 class HFHubInferenceModel(ABC):
+    HF_REPO_ID: ClassVar[str]
+
+    def __init__(self, revision: str):
+        self.revision = revision
+
     @classmethod
     @abstractmethod
-    def from_hf_hub(cls, repo_id: str) -> "HFHubInferenceModel": ...
+    def from_pretrained(cls, revision: str = "main") -> "HFHubInferenceModel": ...
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(repo={self.HF_REPO_ID!r}, revision={self.revision!r})"
 ```
 
+The `HF_REPO_ID` class attribute binds each subclass to its repository. `revision` is stored on the
+instance so callers can introspect which version is loaded (useful for logging and reproducibility),
+and the default `__repr__` surfaces both pieces of information for debug output.
+
 Each concrete model encapsulates its own `hf_hub_download` calls and any supporting-file loading
-inside `from_hf_hub`. A typical implementation:
+inside `from_pretrained`. A typical implementation:
 
 ```python
+import json
 import onnxruntime as ort
 from huggingface_hub import hf_hub_download
 
 class CarbuneModel(HFHubInferenceModel):
+    HF_REPO_ID = "PellelNitram/xournalpp-htr-carbune"
+
     @classmethod
-    def from_hf_hub(cls, repo_id: str) -> "CarbuneModel":
-        onnx_path = hf_hub_download(repo_id, "model.onnx")
-        config_path = hf_hub_download(repo_id, "config.json")
+    def from_pretrained(cls, revision: str = "main") -> "CarbuneModel":
+        onnx_path = hf_hub_download(cls.HF_REPO_ID, "model.onnx", revision=revision)
+        config_path = hf_hub_download(cls.HF_REPO_ID, "config.json", revision=revision)
+        with open(config_path) as f:
+            config = json.load(f)
         return cls(
             session=ort.InferenceSession(onnx_path),
-            config=_load_config(config_path),
+            config=config,
+            revision=revision,
         )
 ```
 
-Consumers then load any model with a single call:
+Consumers then load any model with a single, parameter-free call:
 
 ```python
-model = CarbuneModel.from_hf_hub("PellelNitram/xournalpp-htr-carbune")
+model = CarbuneModel.from_pretrained()
 ```
 
+The model class is the user-facing identity; consumers do not need to know the HF Hub repository ID
+or which files to fetch. Pinning to a specific version is opt-in via the `revision` argument
+(`CarbuneModel.from_pretrained(revision="v1.2.0")`).
+
 This gives a uniform, `from_pretrained`-shaped loading interface without depending on `transformers`.
+The ABC deliberately does **not** define a `predict()` / `__call__()` method — the inference signature
+varies too much across models (different input domains, batch shapes, output types), and the central
+inference API is `compute_predictions(document, pipeline)` per [ADR 003](003_define_target_architecture.md).
+The ABC's responsibility is model lifecycle (loading and version introspection), not inference shape.
+
 Subsequent calls to `hf_hub_download` with the same arguments hit the local cache
 (`~/.cache/huggingface/hub/`) and do not re-download unless the file changed on the Hub.
 
@@ -214,8 +242,9 @@ mixin cannot be applied. This upgrade should be revisited once the model archite
   [#66](https://github.com/PellelNitram/xournalpp_htr/issues/66),
   [#67](https://github.com/PellelNitram/xournalpp_htr/issues/67)).
 - Naming convention is simple and consistent across all models.
-- The `HFHubInferenceModel.from_hf_hub(repo_id)` interface gives consumers a uniform, `from_pretrained`-shaped
-  loading API across all custom models without requiring `transformers`.
+- The `HFHubInferenceModel.from_pretrained()` interface gives consumers a uniform, parameter-free
+  loading API across all custom models without requiring `transformers`. The class itself identifies
+  the model; consumers never deal with repository IDs or file lists.
 
 ### Cons
 
@@ -229,9 +258,10 @@ mixin cannot be applied. This upgrade should be revisited once the model archite
   before export to preserve control flow, use the newer
   [`torch.onnx.export(..., dynamo=True)`](https://pytorch.org/docs/stable/onnx_dynamo.html) path, or
   restructure the model so that dynamic logic lives outside the exported portion.
-- Consumers cannot use `transformers.from_pretrained` directly. The `HFHubInferenceModel.from_hf_hub(repo_id)`
-  ABC gives a morally equivalent interface, but consumers must still know which concrete model class
-  to instantiate (there is no `AutoModel` equivalent that dispatches from the repo ID alone).
+- Consumers cannot use `transformers.from_pretrained` directly. The
+  `HFHubInferenceModel.from_pretrained()` ABC gives a morally equivalent interface, but consumers must
+  still know which concrete model class to instantiate (there is no `AutoModel` equivalent that
+  dispatches from a repo ID alone).
 - Supporting files (alphabet, config) alongside the ONNX are model-specific with no enforced schema —
   the model builder is responsible for documenting what is required.
 - Developers who need to work on multiple models simultaneously must combine per-model extras
