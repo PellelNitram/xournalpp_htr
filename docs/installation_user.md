@@ -2,7 +2,7 @@
 
 This project consists of both the inference and training code. Most users will only be interested in the inference part, so that the below only comprises of the inference part that you need to execute the plugin from within Xournal++.
 
-The training part is optional and allows to help to train our own models which improve over time. This installation process is optional and detailed in [the developer guide](developer_guide.md#Installation).
+The training part is optional and allows to help to train our own models which improve over time. This installation process is optional and detailed in [the developer installation guide](installation_developer.md).
 
 ## Linux
 

@@ -19,7 +19,7 @@ Hub on first use.
 
 HF Hub is already used in this project for dataset distribution:
 [`snapshot_download`](https://huggingface.co/docs/huggingface_hub/main/en/guides/download#download-an-entire-repository)
-in [`xio.py`](../../xournalpp_htr/xio.py) fetches the
+in [`xio.py`](https://github.com/PellelNitram/xournalpp_htr/blob/master/xournalpp_htr/xio.py) fetches the
 [IAM-OnDB training dataset](https://huggingface.co/datasets/PellelNitram/xournalpp_htr_IAM_OnDB), the
 [benchmark dataset](https://huggingface.co/datasets/PellelNitram/xournalpp_htr_benchmark), and the
 [examples dataset](https://huggingface.co/datasets/PellelNitram/xournalpp_htr_examples). This ADR
@@ -155,10 +155,10 @@ bundling than full PyTorch.
 
 ### 3. Per-model training extras and subfolders
 
-Training code lives under [`xournalpp_htr/training/<model-name>/`](../../xournalpp_htr/training/) and
+Training code lives under [`xournalpp_htr/training/<model-name>/`](https://github.com/PellelNitram/xournalpp_htr/tree/master/xournalpp_htr/training) and
 its dependencies are declared as a named
 [optional extra](https://packaging.python.org/en/latest/specifications/dependency-specifiers/#extras)
-in [`pyproject.toml`](../../pyproject.toml):
+in [`pyproject.toml`](https://github.com/PellelNitram/xournalpp_htr/blob/master/pyproject.toml):
 
 ```toml
 [project.optional-dependencies]
@@ -275,7 +275,7 @@ mixin cannot be applied. This upgrade should be revisited once the model archite
 - **Issue [#71](https://github.com/PellelNitram/xournalpp_htr/issues/71)** (eval dataset storage) is
   largely resolved by existing infrastructure: the benchmark dataset already lives on HF Hub
   ([`PellelNitram/xournalpp_htr_benchmark`](https://huggingface.co/datasets/PellelNitram/xournalpp_htr_benchmark))
-  and is consumed via `snapshot_download` in [`xio.py`](../../xournalpp_htr/xio.py). The existing
+  and is consumed via `snapshot_download` in [`xio.py`](https://github.com/PellelNitram/xournalpp_htr/blob/master/xournalpp_htr/xio.py). The existing
   dataset will be extended rather than replaced; no new eval dataset format decision is needed.
 - **Issues [#66](https://github.com/PellelNitram/xournalpp_htr/issues/66),
   [#67](https://github.com/PellelNitram/xournalpp_htr/issues/67)** (installation modes, PyInstaller):
