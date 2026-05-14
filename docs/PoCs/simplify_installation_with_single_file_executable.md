@@ -36,8 +36,8 @@ pyinstaller --onefile \
     --hidden-import "PIL._tkinter_finder" \
     run_htr.py
 
-dist/run_htr --input-file /home/martin/data/xournalpp_htr/test_1.xoj \
-             --output-file /home/martin/Development/xournalpp_htr/tests/test_1_from_Xpp-3.pdf
+dist/run_htr --input-file /path/to/input.xoj \
+             --output-file /path/to/output.pdf
 ```
 
 ## Results
