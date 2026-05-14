@@ -1,6 +1,5 @@
 """This script helps to annotate Xournal++ files."""
 
-import argparse
 import dataclasses
 import datetime
 import tkinter as tk
@@ -62,7 +61,7 @@ def draw_document():
     # Plot points
     for layer in xpp_document.pages[I_PAGE].layers:
         for stroke in layer.strokes:
-            for coord_x, coord_y in zip(stroke.x, stroke.y):
+            for coord_x, coord_y in zip(stroke.x, stroke.y, strict=False):
                 draw_a_point(canvas, coord_x, coord_y, color)
 
     if DRAW_STROKE_BOUNDING_BOX.get():
@@ -148,18 +147,13 @@ def update_bbox_text():
 
 
 def export():
-    if DEBUG:
-        output_path = Path(
-            "/home/martin/Development/xournalpp_htr/tests/data/2024-10-13_minimal.annotations.json"
+    output_path = Path(
+        asksaveasfilename(
+            initialfile="Untitled.json",
+            defaultextension=".json",
+            filetypes=[("All Files", "*.*"), ("JSON Documents", "*.json")],
         )
-    else:
-        output_path = Path(
-            asksaveasfilename(
-                initialfile="Untitled.json",
-                defaultextension=".json",
-                filetypes=[("All Files", "*.*"), ("JSON Documents", "*.json")],
-            )
-        )
+    )
 
     xpp_document = XournalppDocument(Path(currently_loaded_document))
 
@@ -225,24 +219,13 @@ def export():
 # =========
 
 
-parser = argparse.ArgumentParser(prog="annotate helper")
-parser.add_argument("-d", "--debug", action="store_true", help="Enable debug mode.")
-args = vars(parser.parse_args())
-
-DEBUG = args["debug"]
-
 root = tk.Tk()  # create root window
 root.title("Annotate Tool")  # title of the GUI window
 root.geometry("1000x800")
 root.config(bg="skyblue")  # specify background color
 
 
-if DEBUG:
-    currently_loaded_document = Path(
-        "/home/martin/Development/xournalpp_htr/tests/data/2024-07-26_minimal.xopp"
-    )
-else:
-    currently_loaded_document = None
+currently_loaded_document = None
 
 
 I_PAGE = 0
