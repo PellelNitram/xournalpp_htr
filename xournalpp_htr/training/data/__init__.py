@@ -1,6 +1,4 @@
-import dataclasses
 import datetime
-import json
 import uuid
 from dataclasses import dataclass
 
@@ -21,15 +19,6 @@ class BBox:
 
     def __str__(self) -> str:
         return str(self.capture_date)
-
-    def to_json_str(self) -> str:
-        return json.dumps(
-            dataclasses.asdict(self), indent=4, sort_keys=True, default=str
-        )
-
-    def from_json_str(self, json_str: str) -> None:
-        print("from_json_str")
-        pass
 
     @staticmethod
     def get_new_uuid() -> str:
