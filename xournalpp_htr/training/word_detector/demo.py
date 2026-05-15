@@ -1,3 +1,10 @@
+"""Gradio demo for the WordDetector HuggingFace Space.
+
+Requires the ``training-word-detector`` and ``hf`` extras. Run with::
+
+    uv run python -m xournalpp_htr.training.word_detector.demo --help
+"""
+
 import argparse
 import os
 from datetime import datetime, timezone
@@ -9,12 +16,10 @@ import gradio as gr
 import numpy as np
 import torch
 from dotenv import load_dotenv
-from my_code import (
-    draw_bboxes_on_image,
-    get_example_list,
-    run_image_through_network,
-    save_event,
-)
+
+from xournalpp_htr.training.shared.postprocessing import draw_bboxes_on_image
+from xournalpp_htr.training.word_detector.events import get_example_list, save_event
+from xournalpp_htr.training.word_detector.infer import run_image_through_network
 
 load_dotenv()
 
@@ -26,7 +31,7 @@ SB_SCHEMA_NAME = os.getenv("SB_SCHEMA_NAME")
 SB_TABLE_NAME = os.getenv("SB_TABLE_NAME")
 
 parser = argparse.ArgumentParser(
-    description="Train a WordDetectorNet model.",
+    description="Run the WordDetectorNet Gradio demo.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
 parser.add_argument(
@@ -51,14 +56,13 @@ print(f"Used args: {args}")
 
 
 def process_image(
-    image: np.ndarray,  # Is (H, W, 3) uint8 RGB; return needs to be the same
+    image: np.ndarray,  # (H, W, 3) uint8 RGB; return is the same
     margin: float,
     donate_data: bool,
 ) -> np.ndarray:
     margin = int(margin)
 
     image_BGR = cv2.cvtColor(image.copy(), cv2.COLOR_RGB2BGR)
-
     image_gray = cv2.cvtColor(image_BGR, cv2.COLOR_BGR2GRAY)
 
     if device_selection == "auto":
@@ -66,14 +70,12 @@ def process_image(
     else:
         device = "cpu"
 
-    # Inference
     result = run_image_through_network(
         image_grayscale=image_gray,
         model_path=model_path,
         device=device,
     )
 
-    # Post processing
     scaling_factors = np.array(image_gray.shape) / np.array(
         result["model_input_image"].shape
     )
@@ -105,13 +107,7 @@ demo = gr.Interface(
     fn=process_image,
     inputs=[
         gr.Image(type="numpy", label="Input image."),
-        gr.Slider(
-            minimum=0,
-            maximum=100,
-            value=0,
-            step=1,
-            label="Margin",
-        ),
+        gr.Slider(minimum=0, maximum=100, value=0, step=1, label="Margin"),
         gr.Checkbox(
             value=False,
             label="Donate Data",
@@ -135,4 +131,5 @@ demo = gr.Interface(
     cache_examples=True,
 )
 
-demo.launch()
+if __name__ == "__main__":
+    demo.launch()
