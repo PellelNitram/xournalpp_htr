@@ -1,0 +1,1645 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Developing handwritten text recognition for Xournal++">
+      
+      
+      
+      
+        <link rel="prev" href="../005_prediction_bounding_box_coordinate_system/">
+      
+      
+        <link rel="next" href="../../PoCs/simplify_installation_with_single_file_executable/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>006 Model registry and training environment - Xournal++ HTR</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#adr-006-model-registry-and-training-environment" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Xournal++ HTR" class="md-header__button md-logo" aria-label="Xournal++ HTR" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Xournal++ HTR
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              006 Model registry and training environment
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/PellelNitram/xournalpp_htr" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    PellelNitram/xournalpp_htr
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Xournal++ HTR" class="md-nav__button md-logo" aria-label="Xournal++ HTR" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Xournal++ HTR
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/PellelNitram/xournalpp_htr" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    PellelNitram/xournalpp_htr
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started as User
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started as User
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation_user/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started as Developer
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started as Developer
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation_developer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../demo_setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADRs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    ADRs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../001_design_of_huggingface_space_dockerfile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    001 Design of HuggingFace Space Dockerfile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../002_use_HuggingFace_ecosystem_for_ML/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    002 Use HuggingFace ecosystem for ML
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../003_define_target_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    003 Define target architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../004_ground_truth_schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    004 Ground truth schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../005_prediction_bounding_box_coordinate_system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    005 Prediction bounding box coordinate system
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    006 Model registry and training environment
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    006 Model registry and training environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decision">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-hf-hub-as-plain-artifact-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. HF Hub as plain artifact storage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-onnx-as-the-inference-export-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. ONNX as the inference export format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-per-model-training-extras-and-subfolders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Per-model training extras and subfolders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-hf-hub-repository-naming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. HF Hub repository naming
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rationale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rationale
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#consequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Consequences
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Consequences">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pros" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pros
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cons" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cons
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternatives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternatives
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PoCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    PoCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PoCs/simplify_installation_with_single_file_executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Simplify Installation with single file executable
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../funding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Funding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decision">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-hf-hub-as-plain-artifact-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. HF Hub as plain artifact storage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-onnx-as-the-inference-export-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. ONNX as the inference export format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-per-model-training-extras-and-subfolders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Per-model training extras and subfolders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-hf-hub-repository-naming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. HF Hub repository naming
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rationale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rationale
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#consequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Consequences
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Consequences">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pros" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pros
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cons" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cons
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternatives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternatives
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="adr-006-model-registry-and-training-environment">ADR 006 – Model Registry and Training Environment</h1>
+<ul>
+<li>Date: 2026-05-09</li>
+<li>Status: Accepted</li>
+<li>PRD: None</li>
+<li>Drivers: Martin Lellep (<a href="https://github.com/PellelNitram/">@PellelNitram</a>)</li>
+<li>Deciders: Martin Lellep (<a href="https://github.com/PellelNitram/">@PellelNitram</a>)</li>
+</ul>
+<h2 id="context">Context</h2>
+<p><a href="../002_use_HuggingFace_ecosystem_for_ML/">ADR 002</a> adopted the <a href="https://huggingface.co/">HuggingFace</a>
+ecosystem and noted two possible strategies for hosting custom model architectures on the
+<a href="https://huggingface.co/docs/hub/index">HF Hub</a>: (a) subclassing
+<a href="https://huggingface.co/docs/transformers/main_classes/model"><code>PreTrainedModel</code></a> for full
+<a href="https://huggingface.co/docs/transformers/index"><code>transformers</code></a> integration, or (b) using the Hub as
+plain artifact storage. <a href="../003_define_target_architecture/">ADR 003</a> established
+<code>compute_predictions(document, pipeline)</code> as the central inference API, with models downloaded from HF
+Hub on first use.</p>
+<p>HF Hub is already used in this project for dataset distribution:
+<a href="https://huggingface.co/docs/huggingface_hub/main/en/guides/download#download-an-entire-repository"><code>snapshot_download</code></a>
+in <a href="https://github.com/PellelNitram/xournalpp_htr/blob/master/xournalpp_htr/xio.py"><code>xio.py</code></a> fetches the
+<a href="https://huggingface.co/datasets/PellelNitram/xournalpp_htr_IAM_OnDB">IAM-OnDB training dataset</a>, the
+<a href="https://huggingface.co/datasets/PellelNitram/xournalpp_htr_benchmark">benchmark dataset</a>, and the
+<a href="https://huggingface.co/datasets/PellelNitram/xournalpp_htr_examples">examples dataset</a>. This ADR
+extends that existing infrastructure to cover trained model artifacts.</p>
+<p>The project is now at the point of training its first custom model:
+<a href="https://github.com/PellelNitram/OnlineHTR">Carbune</a>, a bidirectional LSTM stack with CTC loss. Carbune
+operates on <strong>online ink strokes</strong> (x/y/t time series from a stylus), a non-standard input domain that
+the <code>transformers</code> library has no built-in support for. It is implemented as a
+<a href="https://lightning.ai/docs/pytorch/stable/">PyTorch Lightning</a> <code>LightningModule</code>
+(<a href="https://github.com/PellelNitram/OnlineHTR/blob/main/src/models/carbune_module.py"><code>LitModule1</code></a>) and
+uses a custom <code>AlphabetMapper</code> tokeniser and a greedy CTC decoder — none of which map onto standard
+<code>transformers</code> abstractions. This is the root reason why off-the-shelf <code>PreTrainedModel</code> integration is
+impractical. This ADR decides:</p>
+<ol>
+<li>How custom models are stored on and retrieved from HF Hub.</li>
+<li>What format trained models are exported to for inference.</li>
+<li>How training code and its dependencies are organised within the repository.</li>
+<li>How HF Hub model repositories are named.</li>
+</ol>
+<p>Constraints:
+- The training framework is not fixed: different models may use Lightning,
+  <a href="https://huggingface.co/docs/transformers/main_classes/trainer">HF Trainer</a>, or raw
+  <a href="https://pytorch.org/">PyTorch</a>.
+- The inference artifact must work independently of the training framework used.
+- The inference environment must be lean (<a href="https://pyinstaller.org/">PyInstaller</a> compatibility is a
+  future goal; see issues <a href="https://github.com/PellelNitram/xournalpp_htr/issues/66">#66</a>,
+  <a href="https://github.com/PellelNitram/xournalpp_htr/issues/67">#67</a>).
+- A pipeline may use multiple models (<a href="../003_define_target_architecture/">ADR 003</a>); naming must reflect
+  individual models, not pipelines.</p>
+<h2 id="decision">Decision</h2>
+<h3 id="1-hf-hub-as-plain-artifact-storage">1. HF Hub as plain artifact storage</h3>
+<p>Custom models are stored on HF Hub as raw files — not by subclassing <code>PreTrainedModel</code> or using
+<a href="https://huggingface.co/docs/huggingface_hub/main/en/guides/integrations#a-concrete-example-pytorch"><code>PyTorchModelHubMixin</code></a>.
+Each model repository contains the inference artifact(s) and whatever supporting files the model
+requires to run (e.g. <code>config.json</code>, alphabet, tokeniser). The model builder decides what to upload
+alongside the primary artifact; there is no enforced schema for supporting files. Files are downloaded
+at inference time via
+<a href="https://huggingface.co/docs/huggingface_hub/main/en/guides/download#download-a-single-file"><code>hf_hub_download</code></a>.</p>
+<p>A typical post-training upload looks like:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">huggingface_hub</span><span class="w"> </span><span class="kn">import</span> <span class="n">HfApi</span>
+
+<span class="n">api</span> <span class="o">=</span> <span class="n">HfApi</span><span class="p">()</span>
+<span class="n">api</span><span class="o">.</span><span class="n">upload_file</span><span class="p">(</span><span class="n">path_or_fileobj</span><span class="o">=</span><span class="s2">&quot;exports/model.onnx&quot;</span><span class="p">,</span> <span class="n">path_in_repo</span><span class="o">=</span><span class="s2">&quot;model.onnx&quot;</span><span class="p">,</span>
+                <span class="n">repo_id</span><span class="o">=</span><span class="s2">&quot;PellelNitram/xournalpp-htr-carbune&quot;</span><span class="p">)</span>
+<span class="n">api</span><span class="o">.</span><span class="n">upload_file</span><span class="p">(</span><span class="n">path_or_fileobj</span><span class="o">=</span><span class="s2">&quot;exports/config.json&quot;</span><span class="p">,</span> <span class="n">path_in_repo</span><span class="o">=</span><span class="s2">&quot;config.json&quot;</span><span class="p">,</span>
+                <span class="n">repo_id</span><span class="o">=</span><span class="s2">&quot;PellelNitram/xournalpp-htr-carbune&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>To keep consumers free from knowing which files to fetch — or even which repository each model lives
+in — every model class implements the following abstract base class:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClassVar</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">HFHubInferenceModel</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="n">HF_REPO_ID</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">revision</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">revision</span> <span class="o">=</span> <span class="n">revision</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_pretrained</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">revision</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;main&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;HFHubInferenceModel&quot;</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(repo=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">HF_REPO_ID</span><span class="si">!r}</span><span class="s2">, revision=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">revision</span><span class="si">!r}</span><span class="s2">)&quot;</span>
+</code></pre></div>
+<p>The <code>HF_REPO_ID</code> class attribute binds each subclass to its repository. <code>revision</code> is stored on the
+instance so callers can introspect which version is loaded (useful for logging and reproducibility),
+and the default <code>__repr__</code> surfaces both pieces of information for debug output.</p>
+<p>Each concrete model encapsulates its own <code>hf_hub_download</code> calls and any supporting-file loading
+inside <code>from_pretrained</code>. A typical implementation:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">onnxruntime</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ort</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">huggingface_hub</span><span class="w"> </span><span class="kn">import</span> <span class="n">hf_hub_download</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CarbuneModel</span><span class="p">(</span><span class="n">HFHubInferenceModel</span><span class="p">):</span>
+    <span class="n">HF_REPO_ID</span> <span class="o">=</span> <span class="s2">&quot;PellelNitram/xournalpp-htr-carbune&quot;</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_pretrained</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">revision</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;main&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;CarbuneModel&quot;</span><span class="p">:</span>
+        <span class="n">onnx_path</span> <span class="o">=</span> <span class="n">hf_hub_download</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">HF_REPO_ID</span><span class="p">,</span> <span class="s2">&quot;model.onnx&quot;</span><span class="p">,</span> <span class="n">revision</span><span class="o">=</span><span class="n">revision</span><span class="p">)</span>
+        <span class="n">config_path</span> <span class="o">=</span> <span class="n">hf_hub_download</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">HF_REPO_ID</span><span class="p">,</span> <span class="s2">&quot;config.json&quot;</span><span class="p">,</span> <span class="n">revision</span><span class="o">=</span><span class="n">revision</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">session</span><span class="o">=</span><span class="n">ort</span><span class="o">.</span><span class="n">InferenceSession</span><span class="p">(</span><span class="n">onnx_path</span><span class="p">),</span>
+            <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+            <span class="n">revision</span><span class="o">=</span><span class="n">revision</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div>
+<p>Consumers then load any model with a single, parameter-free call:</p>
+<div class="highlight"><pre><span></span><code><span class="n">model</span> <span class="o">=</span> <span class="n">CarbuneModel</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">()</span>
+</code></pre></div>
+<p>The model class is the user-facing identity; consumers do not need to know the HF Hub repository ID
+or which files to fetch. Pinning to a specific version is opt-in via the <code>revision</code> argument
+(<code>CarbuneModel.from_pretrained(revision="v1.2.0")</code>).</p>
+<p>This gives a uniform, <code>from_pretrained</code>-shaped loading interface without depending on <code>transformers</code>.
+The ABC deliberately does <strong>not</strong> define a <code>predict()</code> / <code>__call__()</code> method — the inference signature
+varies too much across models (different input domains, batch shapes, output types), and the central
+inference API is <code>compute_predictions(document, pipeline)</code> per <a href="../003_define_target_architecture/">ADR 003</a>.
+The ABC's responsibility is model lifecycle (loading and version introspection), not inference shape.</p>
+<p>Subsequent calls to <code>hf_hub_download</code> with the same arguments hit the local cache
+(<code>~/.cache/huggingface/hub/</code>) and do not re-download unless the file changed on the Hub.</p>
+<h3 id="2-onnx-as-the-inference-export-format">2. ONNX as the inference export format</h3>
+<p>After training, models are exported to <a href="https://onnx.ai/">ONNX</a> and this export is the canonical
+inference artifact. The training checkpoint (Lightning <code>.ckpt</code>, HF Trainer output, etc.) may also be
+uploaded to the same HF Hub repository for resuming training, but inference always uses the ONNX export.</p>
+<p>Rationale: ONNX is training-framework-agnostic, works with
+<a href="https://onnxruntime.ai/"><code>onnxruntime</code></a> (a lean dependency), and is more amenable to PyInstaller
+bundling than full PyTorch.</p>
+<h3 id="3-per-model-training-extras-and-subfolders">3. Per-model training extras and subfolders</h3>
+<p>Training code lives under <a href="https://github.com/PellelNitram/xournalpp_htr/tree/master/xournalpp_htr/training"><code>xournalpp_htr/training/&lt;model-name&gt;/</code></a> and
+its dependencies are declared as a named
+<a href="https://packaging.python.org/en/latest/specifications/dependency-specifiers/#extras">optional extra</a>
+in <a href="https://github.com/PellelNitram/xournalpp_htr/blob/master/pyproject.toml"><code>pyproject.toml</code></a>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">[project.optional-dependencies]</span>
+<span class="n">training-carbune</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lightning&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;hydra-core&quot;</span><span class="p">,</span><span class="w"> </span><span class="err">...]</span>
+<span class="n">training-</span><span class="err">&lt;</span><span class="n">next-model</span><span class="err">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;transformers&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;datasets&quot;</span><span class="p">,</span><span class="w"> </span><span class="err">...]</span>
+</code></pre></div>
+<p>Install options:
+- <code>uv add xournalpp_htr</code> — inference only (lean)
+- <code>uv add xournalpp_htr[training-carbune]</code> — inference + Carbune training</p>
+<p>A <code>[training]</code> umbrella extra (installing every model's training dependencies at once) was considered
+and rejected. It would grow unboundedly as new models are added, conflate incompatible framework
+versions, and is unnecessary in practice — a developer typically works on one model at a time and can
+install multiple per-model extras explicitly (<code>uv add xournalpp_htr[training-carbune,training-&lt;other&gt;]</code>)
+on the rare occasions when more than one is needed at once.</p>
+<p>Shared training utilities (CTC decoder, evaluation metrics, dataset loaders used across models) live in
+<code>xournalpp_htr/training/shared/</code> with no extra dependencies beyond the base package.</p>
+<p>Each training subfolder's <code>__init__.py</code> guards against missing dependencies:</p>
+<div class="highlight"><pre><span></span><code><span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">lightning</span>
+<span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+        <span class="s2">&quot;Carbune training requires additional dependencies. &quot;</span>
+        <span class="s2">&quot;Install with: uv add xournalpp_htr[training-carbune]&quot;</span>
+    <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+</code></pre></div>
+<h3 id="4-hf-hub-repository-naming">4. HF Hub repository naming</h3>
+<p>Individual model repositories follow the convention:</p>
+<div class="highlight"><pre><span></span><code>PellelNitram/xournalpp-htr-&lt;model-name&gt;
+</code></pre></div>
+<p>Examples: <code>PellelNitram/xournalpp-htr-carbune</code>, <code>PellelNitram/xournalpp-htr-word-detector</code>.</p>
+<p>The model card documents the dataset the model was trained on. A pipeline (as defined in
+<a href="../003_define_target_architecture/">ADR 003</a>) may reference one or more model repositories;
+pipeline-to-model mapping is done inside each pipeline implementation directly — there is no global
+registry, lookup table, or algorithmic resolution. Each pipeline simply imports and instantiates the
+concrete model classes it needs (e.g. <code>CarbuneModel.from_pretrained()</code>).</p>
+<h2 id="rationale">Rationale</h2>
+<p><strong>Plain artifact storage over <code>PreTrainedModel</code></strong>: subclassing <code>PreTrainedModel</code> would require a
+significant rewrite of the Carbune architecture and a fixed training framework, while providing little
+benefit for a model with a non-standard input domain (online ink strokes). The plain storage approach
+unblocks model sharing immediately with no model code changes.</p>
+<p><strong>ONNX over Lightning checkpoints at inference</strong>: <code>load_from_checkpoint</code> binds inference to Lightning and
+to the <code>LitModule1</code> class definition. ONNX removes that binding entirely: any training framework can
+produce the export, and any runtime that supports <code>onnxruntime</code> can consume it. This is also the path of
+least resistance for future PyInstaller packaging.</p>
+<p><strong>Per-model extras with no umbrella</strong>: different models need incompatible frameworks; a union extra
+would bloat every training environment and grow unboundedly as new models are added. Named per-model
+extras keep environments minimal and make dependency intent explicit. No umbrella <code>[training]</code> extra is
+provided — developers who need multiple model environments can combine extras explicitly.</p>
+<p><strong><code>PyTorchModelHubMixin</code> deferred</strong>: this would give <code>from_pretrained</code> / <code>push_to_hub</code> on custom
+<code>nn.Module</code>s without a full <code>PreTrainedModel</code> rewrite, and is the preferred long-term path — the goal is
+a uniform <code>from_pretrained</code> interface across both off-the-shelf <code>transformers</code> models and custom
+architectures. The blocker is concrete: the Carbune network (<code>Carbune2020NetAttempt1</code>) is referenced in
+the Hydra config but has not been extracted into its own class — the LSTM layers and linear head live
+directly inside <code>LitModule1</code>. Until the network is separated from the Lightning training wrapper, the
+mixin cannot be applied. This upgrade should be revisited once the model architecture stabilises.</p>
+<h2 id="consequences">Consequences</h2>
+<h3 id="pros">Pros</h3>
+<ul>
+<li>Training framework is fully flexible — Lightning, HF Trainer, or raw PyTorch are all valid.</li>
+<li>Inference has minimal dependencies: <code>onnxruntime</code> + <code>huggingface_hub</code>.</li>
+<li>Model sharing is unblocked immediately without any model code changes.</li>
+<li>Per-model extras keep training environments lean and explicit.</li>
+<li>ONNX export is compatible with the PyInstaller packaging path (issues
+  <a href="https://github.com/PellelNitram/xournalpp_htr/issues/66">#66</a>,
+  <a href="https://github.com/PellelNitram/xournalpp_htr/issues/67">#67</a>).</li>
+<li>Naming convention is simple and consistent across all models.</li>
+<li>The <code>HFHubInferenceModel.from_pretrained()</code> interface gives consumers a uniform, parameter-free
+  loading API across all custom models without requiring <code>transformers</code>. The class itself identifies
+  the model; consumers never deal with repository IDs or file lists.</li>
+</ul>
+<h3 id="cons">Cons</h3>
+<ul>
+<li>ONNX export must be written and validated for each model. ONNX export traces the model with example
+  inputs and freezes the operations into a static graph, so Python-level control flow whose path depends
+  on tensor values at runtime is captured as whichever branch the trace happened to take. For Carbune
+  this affects mostly the CTC decoder (greedy/beam-search loops over output probabilities), so the
+  decoder will likely run in Python outside the ONNX graph rather than being exported. Variable-length
+  sequence handling also requires explicit dynamic axes declarations. Workarounds when control flow is
+  needed inside the graph: use <a href="https://pytorch.org/docs/stable/generated/torch.jit.script.html"><code>torch.jit.script</code></a>
+  before export to preserve control flow, use the newer
+  <a href="https://pytorch.org/docs/stable/onnx_dynamo.html"><code>torch.onnx.export(..., dynamo=True)</code></a> path, or
+  restructure the model so that dynamic logic lives outside the exported portion.</li>
+<li>Consumers cannot use <code>transformers.from_pretrained</code> directly. The
+  <code>HFHubInferenceModel.from_pretrained()</code> ABC gives a morally equivalent interface, but consumers must
+  still know which concrete model class to instantiate (there is no <code>AutoModel</code> equivalent that
+  dispatches from a repo ID alone).</li>
+<li>Supporting files (alphabet, config) alongside the ONNX are model-specific with no enforced schema —
+  the model builder is responsible for documenting what is required.</li>
+<li>Developers who need to work on multiple models simultaneously must combine per-model extras
+  explicitly (<code>uv add xournalpp_htr[training-a,training-b]</code>); there is no single command to install
+  every training environment at once.</li>
+</ul>
+<h2 id="related-decisions">Related Decisions</h2>
+<ul>
+<li><strong>Issue <a href="https://github.com/PellelNitram/xournalpp_htr/issues/71">#71</a></strong> (eval dataset storage) is
+  largely resolved by existing infrastructure: the benchmark dataset already lives on HF Hub
+  (<a href="https://huggingface.co/datasets/PellelNitram/xournalpp_htr_benchmark"><code>PellelNitram/xournalpp_htr_benchmark</code></a>)
+  and is consumed via <code>snapshot_download</code> in <a href="https://github.com/PellelNitram/xournalpp_htr/blob/master/xournalpp_htr/xio.py"><code>xio.py</code></a>. The existing
+  dataset will be extended rather than replaced; no new eval dataset format decision is needed.</li>
+<li><strong>Issues <a href="https://github.com/PellelNitram/xournalpp_htr/issues/66">#66</a>,
+  <a href="https://github.com/PellelNitram/xournalpp_htr/issues/67">#67</a></strong> (installation modes, PyInstaller):
+  the per-model extras and ONNX inference format directly support the planned installation mode split.
+  The lean base install (<code>uv add xournalpp_htr</code>) corresponds to the end-user installation mode.</li>
+<li><strong>Issues <a href="https://github.com/PellelNitram/xournalpp_htr/issues/62">#62</a>,
+  <a href="https://github.com/PellelNitram/xournalpp_htr/issues/69">#69</a></strong> (CLI shape, HTR entry point): the
+  inference loading pattern decided here (<code>hf_hub_download</code> + <code>onnxruntime</code>) is what the future CLI
+  entry point will use internally.</li>
+<li><strong>Issue <a href="https://github.com/PellelNitram/xournalpp_htr/issues/73">#73</a></strong> (training delivery):
+  Training is run on a GPU-enabled machine with the per-model extras installed via <code>uv</code>. Cloud or CI
+  training is explicitly out of scope for now (and likely permanently); a possible future direction
+  is on-demand cloud training via <a href="https://cloud.google.com/vertex-ai">Vertex AI</a> or similar, but no
+  commitment is made here. <a href="https://www.docker.com/">Docker</a> is <strong>not</strong> the default delivery
+  mechanism — it will only be introduced if a future model's training environment proves too painful
+  to reproduce with <code>uv</code> alone. The decision is to start with a <code>uv</code> environment and reach for Docker
+  only when dependency hell forces the issue.</li>
+</ul>
+<h2 id="alternatives">Alternatives</h2>
+<ul>
+<li><strong>Subclass <code>PreTrainedModel</code></strong>: full transformers integration, inference via standard <code>from_pretrained</code>.
+  Rejected: requires rewriting the model interface, fixes the training framework, and provides little
+  benefit for a non-standard input domain.</li>
+<li><strong><code>PyTorchModelHubMixin</code></strong>: adds <code>from_pretrained</code> / <code>push_to_hub</code> to any <code>nn.Module</code> without
+  <code>transformers</code>. Deferred: requires extracting the network from the Lightning wrapper first.</li>
+<li><strong>TorchScript instead of ONNX</strong>: also framework-agnostic but harder to bundle with PyInstaller and
+  requires full PyTorch at inference time. Rejected in favour of ONNX.</li>
+<li><strong>Single <code>[training]</code> extra</strong>: simpler at first but bloated when multiple incompatible training
+  frameworks coexist, and grows unboundedly as new models are added. Rejected in favour of per-model
+  named extras with no umbrella.</li>
+<li><strong><code>[training]</code> umbrella extra alongside per-model extras</strong>: gives a one-shot "install everything"
+  command. Rejected for the same growth reason — even as a convenience, an extra that pulls in every
+  framework version every project ever supported will eventually become unusable.</li>
+</ul>
+
+
+
+
+
+
+
+  
+    
+  
+  
+    
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="May 15, 2026 20:39:16 BST">May 15, 2026</span>
+  </span>
+
+    
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Created">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="May 15, 2026 20:39:16 BST">May 15, 2026</span>
+  </span>
+
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
