@@ -1,9 +1,6 @@
 from pathlib import Path
 
 import pytest
-from huggingface_hub import hf_hub_download
-
-from xournalpp_htr.xio import load_IAM_OnDB_dataset
 
 
 @pytest.fixture
@@ -15,6 +12,8 @@ def get_path_to_minimal_test_data() -> Path:
 
     :returns: The path to the minimal test data file.
     """
+    from huggingface_hub import hf_hub_download
+
     return Path(
         hf_hub_download(
             repo_id="PellelNitram/xournalpp_htr_examples",
@@ -36,4 +35,6 @@ def get_path_to_IAM_OnDB_dataset() -> Path:
     :returns: Path to the root of the IAM-OnDB dataset (the ``data/``
               subfolder of the HuggingFace repo).
     """
+    from xournalpp_htr.xio import load_IAM_OnDB_dataset
+
     return load_IAM_OnDB_dataset()

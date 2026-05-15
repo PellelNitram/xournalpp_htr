@@ -11,7 +11,7 @@ tests-not-slow:
 	uv run pytest -v --durations=0 -m "not slow"
 
 tests-docker:
-	uv run pytest -m slow tests/test_docker.py -v -s --log-cli-level=INFO
+	uv run --no-project --python 3.11 --with pytest --with testcontainers pytest -m slow tests/test_docker.py -v -s --log-cli-level=INFO
 
 run-pre-commit-hooks:
 	pre-commit run --all-files

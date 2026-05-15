@@ -49,18 +49,6 @@ jobs:
     - uses: actions/checkout@v4
     - name: Set up uv
       uses: astral-sh/setup-uv@v5
-    - name: Install htr_pipeline package
-      run: |
-        mkdir -p external/htr_pipeline
-        cd external/htr_pipeline
-        git clone https://github.com/githubharald/HTRPipeline.git
-        cd HTRPipeline
-        cd htr_pipeline/models
-        wget https://www.dropbox.com/s/j1hl6bppecug0sz/models.zip
-        unzip -o models.zip
-        cd ../../
-    - name: Install dependencies
-      run: uv sync
     - name: Run Docker integration tests
       run: |
         make tests-docker
