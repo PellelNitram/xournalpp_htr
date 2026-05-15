@@ -94,6 +94,51 @@ def compute_predictions(
                         )
                 predictions[page_index] = predictions_page
 
+    elif pipeline_name == "word_detector_nn":
+        # WordDetectorNN is a detection-only model: it produces word bounding
+        # boxes but no transcription, so `text` is left empty. The ONNX model
+        # is fetched from HF Hub on first use and cached (ADR 006).
+        from xournalpp_htr.inference_models import WordDetectorModel
+
+        RENDER_DPI = 150
+        model = WordDetectorModel.from_pretrained()
+        coord_scale = document.DPI / RENDER_DPI
+        nr_pages = len(document.pages)
+
+        for page_index in tqdm(range(nr_pages), desc="Recognition"):
+            if (
+                len(document.pages[page_index].layers) == 0
+                or len(document.pages[page_index].layers[0].strokes) == 0
+            ):
+                print(f"Page {page_index} is empty. Skipping HTR.")
+                predictions[page_index] = []
+                continue
+
+            with tempfile.NamedTemporaryFile(
+                dir="/tmp",
+                delete=False,
+                prefix=f"xournalpp_htr__page{page_index}__",
+                suffix=".jpg",
+            ) as tmpfile:
+                written_file = document.save_page_as_image(
+                    page_index, Path(tmpfile.name), False, dpi=RENDER_DPI
+                )
+
+            img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
+
+            # `detect` returns boxes in the rendered image's pixel space;
+            # convert to document units (72 DPI) per ADR 005.
+            predictions[page_index] = [
+                WordPrediction(
+                    text="",
+                    xmin=bbox.x_min * coord_scale,
+                    xmax=bbox.x_max * coord_scale,
+                    ymin=bbox.y_min * coord_scale,
+                    ymax=bbox.y_max * coord_scale,
+                )
+                for bbox in model.detect(img)
+            ]
+
     else:
         raise NotImplementedError(f'Pipeline "{pipeline_name}" not implemented.')
 
