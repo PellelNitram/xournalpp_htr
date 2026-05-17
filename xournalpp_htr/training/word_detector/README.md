@@ -87,9 +87,11 @@ model = WordDetectorModel.from_pretrained()           # or revision="v1.2.0"
 boxes = model.detect(grayscale_image)                 # list[BoundingBox]
 ```
 
-It is also wired into the central inference API as the `word_detector_nn`
-pipeline (ADR 003); bounding boxes are returned in document units (ADR 005).
-WordDetector is detection-only and produces no transcription.
+WordDetector is detection-only: it produces word bounding boxes but no
+transcription/labels. It is therefore **not** exposed as a `compute_predictions`
+pipeline (ADR 003), which contracts word-level boxes *and* transcriptions. The
+`WordDetectorModel` class is the integration point; wiring it into a full
+pipeline waits on a recognition stage that adds labels.
 
 ## Current status
 
