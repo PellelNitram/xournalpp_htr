@@ -31,13 +31,13 @@ from xournalpp_htr.training.word_detector.dataset import (
     IAM_Dataset,
     custom_collate_fn,
 )
-from xournalpp_htr.training.word_detector.events import (
-    CustomEncoder,
-    get_git_commit_hash,
-)
 from xournalpp_htr.training.word_detector.network import (
     WordDetectorNet,
     compute_loss,
+)
+from xournalpp_htr.training.word_detector.utils import (
+    CustomEncoder,
+    get_git_commit_hash,
 )
 
 global_step = 0  # TODO: Make global step non-global as it's very bad practise.

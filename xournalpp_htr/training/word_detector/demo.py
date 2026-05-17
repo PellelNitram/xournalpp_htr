@@ -1,135 +1,87 @@
-"""Gradio demo for the WordDetector HuggingFace Space.
+"""Local sanity-check demo for a trained WordDetector checkpoint.
 
-Requires the ``training-word-detector`` and ``hf`` extras. Run with::
+No web UI, no HuggingFace Space, no telemetry (ADR 007): just run a checkpoint
+on one or more images and write the predicted word boxes to disk so you can
+eyeball whether the trained model works.
 
     uv run python -m xournalpp_htr.training.word_detector.demo --help
+
+With no ``--image`` the bundled example images are downloaded and used.
 """
 
 import argparse
-import os
-from datetime import datetime, timezone
 from pathlib import Path
-from uuid import uuid4
+from urllib.request import urlretrieve
 
 import cv2
-import gradio as gr
 import numpy as np
-import torch
-from dotenv import load_dotenv
 
 from xournalpp_htr.training.shared.postprocessing import draw_bboxes_on_image
-from xournalpp_htr.training.word_detector.events import get_example_list, save_event
 from xournalpp_htr.training.word_detector.infer import run_image_through_network
-
-load_dotenv()
-
-DEMO = os.getenv("DEMO") == "1"
-SB_URL = os.getenv("SB_URL")
-SB_KEY = os.getenv("SB_KEY")
-SB_BUCKET_NAME = os.getenv("SB_BUCKET_NAME")
-SB_SCHEMA_NAME = os.getenv("SB_SCHEMA_NAME")
-SB_TABLE_NAME = os.getenv("SB_TABLE_NAME")
-
-parser = argparse.ArgumentParser(
-    description="Run the WordDetectorNet Gradio demo.",
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-)
-parser.add_argument(
-    "--model_path",
-    type=Path,
-    default=Path("best_model.pth"),
-    help="Path to trained pth model.",
-)
-parser.add_argument(
-    "--device",
-    type=str,
-    choices=["cpu", "auto"],
-    default="cpu",
-    help='Selects the device. "auto" selects GPU if available.',
-)
-args = vars(parser.parse_args())
-
-model_path = args["model_path"]
-device_selection = args["device"]
-
-print(f"Used args: {args}")
+from xournalpp_htr.training.word_detector.utils import get_example_list
 
 
-def process_image(
-    image: np.ndarray,  # (H, W, 3) uint8 RGB; return is the same
-    margin: float,
-    donate_data: bool,
-) -> np.ndarray:
-    margin = int(margin)
+def annotate(image_path: Path, model_path: Path, device: str, output_path: Path) -> int:
+    """Run the checkpoint on one image, save the annotated copy, return #words."""
+    image_bgr = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
+    image_gray = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY)
 
-    image_BGR = cv2.cvtColor(image.copy(), cv2.COLOR_RGB2BGR)
-    image_gray = cv2.cvtColor(image_BGR, cv2.COLOR_BGR2GRAY)
+    result = run_image_through_network(image_gray, model_path=model_path, device=device)
 
-    if device_selection == "auto":
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+    # Scale boxes from the fixed network-input size back to the input image.
+    scaling = np.array(image_gray.shape) / np.array(result["model_input_image"].shape)
+    boxes = [aabb.scale(*scaling[::-1]) for aabb in result["aabbs"]]
+    vis = draw_bboxes_on_image(image_bgr, boxes, denormalise=False)
+
+    cv2.imwrite(str(output_path), vis)
+    print(f"{image_path} -> {output_path}  ({len(boxes)} words)")
+    return len(boxes)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--image",
+        type=Path,
+        default=None,
+        help="Image to run on. If omitted, the bundled examples are used.",
+    )
+    parser.add_argument(
+        "--model-path",
+        type=Path,
+        default=Path("best_model.pth"),
+        help="Path to the trained .pth checkpoint.",
+    )
+    parser.add_argument("--device", choices=["cpu", "cuda"], default="cpu")
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("demo_output"),
+        help="Directory the annotated images are written into.",
+    )
+    args = parser.parse_args()
+
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.image is not None:
+        images = [args.image]
     else:
-        device = "cpu"
+        images = []
+        for url in get_example_list():
+            dst = args.output_dir / Path(url).name
+            if not dst.exists():
+                urlretrieve(url, dst)
+            images.append(dst)
+        if not images:
+            parser.error("No --image given and no example images reachable online.")
 
-    result = run_image_through_network(
-        image_grayscale=image_gray,
-        model_path=model_path,
-        device=device,
-    )
+    for image_path in images:
+        out = args.output_dir / f"{Path(image_path).stem}_detected.jpg"
+        annotate(image_path, args.model_path, args.device, out)
 
-    scaling_factors = np.array(image_gray.shape) / np.array(
-        result["model_input_image"].shape
-    )
-    bboxes_scaled = [
-        aabb.scale(*scaling_factors[::-1]).enlarge(margin_x=margin, margin_y=margin)
-        for aabb in result["aabbs"]
-    ]
-    vis_scaled = draw_bboxes_on_image(image_BGR, bboxes_scaled, denormalise=False)
-
-    save_event(
-        {
-            "timestamp": datetime.now(timezone.utc),
-            "demo": DEMO,
-            "donate_data": donate_data,
-            "uuid": uuid4(),
-            "image": image,
-        },
-        SB_URL=SB_URL,
-        SB_KEY=SB_KEY,
-        SB_SCHEMA_NAME=SB_SCHEMA_NAME,
-        SB_TABLE_NAME=SB_TABLE_NAME,
-        SB_BUCKET_NAME=SB_BUCKET_NAME,
-    )
-
-    return cv2.cvtColor(vis_scaled, cv2.COLOR_BGR2RGB)
-
-
-demo = gr.Interface(
-    fn=process_image,
-    inputs=[
-        gr.Image(type="numpy", label="Input image."),
-        gr.Slider(minimum=0, maximum=100, value=0, step=1, label="Margin"),
-        gr.Checkbox(
-            value=False,
-            label="Donate Data",
-            info="By checking this box, you agree to share your uploaded image to help improve our open-source models. Donated data will be open source and freely available as dataset.",
-        ),
-    ],
-    outputs=gr.Image(
-        type="numpy", label="Input image with detected words superimposed."
-    ),
-    title="WordDetectorNN: Handwritten Word Detection",
-    description="Detect handwritten words in images. Upload an image, adjust the margin slider, and see bounding boxes around detected words.",
-    article="""
-    ### About this project
-    This demo is part of **[Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr)**, an open-source effort to bring handwritten text recognition to [Xournal++](https://github.com/xournalpp/xournalpp).
-
-    The original WordDetectorNN model was created by **Harald Scheidl** in his [WordDetectorNN repository](https://github.com/githubharald/WordDetectorNN). This project re-implements it with PyTorch best practices. Thanks Harald for the great work and inspiration!
-
-    Donated data will contribute to an open-source dataset for the community. Thank you for supporting open-source innovation!
-    """,
-    examples=get_example_list(),
-    cache_examples=True,
-)
 
 if __name__ == "__main__":
-    demo.launch()
+    main()
