@@ -39,6 +39,7 @@ hf = [
 training-word-detector = [
     "tensorboard",
     "onnx",
+    "gradio",  # local demo (ADR 007); run locally, not as a HF Space
 ]
 dev = [
     "jupyter",

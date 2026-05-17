@@ -19,7 +19,7 @@ This is no longer a standalone `uv` project; it is part of the main package.
 | `train.py` | Training entrypoint | `training-word-detector` |
 | `export.py` | ONNX + `config.json` export, HF Hub upload | `training-word-detector` |
 | `infer.py` | Local torch inference from a `.pth` checkpoint | `training-word-detector` |
-| `demo.py` | Local sanity-check demo (no web UI / no HF Space, ADR 007) | `training-word-detector` |
+| `demo.py` | Local Gradio demo (run locally, not a HF Space, ADR 007) | `training-word-detector` |
 | `utils.py` | Git-hash, JSON encoder, example-image list | `training-word-detector` |
 | `notebooks/test_best_model.ipynb` | Inspect a trained checkpoint offline | `training-word-detector` |
 
@@ -52,14 +52,19 @@ The best checkpoint is written as `best_model.pth` (gitignored).
 
 ## Local demo (ADR 007)
 
-A quick, offline sanity check that a trained checkpoint actually detects
-words — no web UI, no HuggingFace Space, no telemetry. With no `--image` the
-bundled example images are downloaded and used:
+An interactive Gradio app to sanity-check a trained checkpoint — upload an
+image, tweak the margin, see the predicted word boxes. Per
+[ADR 007](../../../docs/ADRs/007_model_demos_local_only.md) it runs **locally**
+(no HuggingFace Space, no telemetry/Supabase):
 
 ```
 uv run python -m xournalpp_htr.training.word_detector.demo \
-    --model-path best_model.pth --output-dir demo_output/
+    --model-path best_model.pth         # opens http://127.0.0.1:7860
 ```
+
+`--device {cpu,cuda,auto}` selects inference hardware; `--share` exposes a
+temporary public link. Every contributed model ships a local demo like this;
+there is no per-model HF Space.
 
 Annotated images are written to `--output-dir`. Per
 [ADR 007](../../../docs/ADRs/007_model_demos_local_only.md), every contributed
