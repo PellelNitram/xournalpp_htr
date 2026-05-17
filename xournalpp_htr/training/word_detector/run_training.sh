@@ -1,6 +1,8 @@
-# TODO: Store log into file as script itself does not capture the log itself
+#!/usr/bin/env bash
 
-set -e # To catch all errors
+# `pipefail` is required so a failed training run still aborts the script even
+# though its output is piped into `tee` for logging.
+set -euo pipefail # To catch all errors
 
 # ========
 # Settings
@@ -23,11 +25,14 @@ do
 
         echo "LR=${LEARNING_RATE}, BS=${BATCH_SIZE}"
 
-        python run_training.py \
-            --learning_rate ${LEARNING_RATE} \
-            --batch_size ${BATCH_SIZE} \
-            --output_path ${BASE_PATH}/experiment1/lr${LEARNING_RATE}_bs${BATCH_SIZE} \
-            --epoch_max ${EPOCH_MAX} \
+        OUT="${BASE_PATH}/experiment1/lr${LEARNING_RATE}_bs${BATCH_SIZE}"
+        mkdir -p "${OUT}"
+
+        uv run python -m xournalpp_htr.training.word_detector.train \
+            --learning_rate "${LEARNING_RATE}" \
+            --batch_size "${BATCH_SIZE}" \
+            --output_path "${OUT}" \
+            --epoch_max "${EPOCH_MAX}" 2>&1 | tee "${OUT}/train.log"
 
     done
 done
