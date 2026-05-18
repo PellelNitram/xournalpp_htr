@@ -72,8 +72,8 @@ class IAM_Dataset(Dataset):
     PyTorch's ``DataLoader``.
     """
 
-    _GT_DIR_NAME = "gt"
-    _IMG_DIR_NAME = "img"
+    _GT_DIR_NAME = "xml"
+    _IMG_DIR_NAME = "forms"
     _IMG_EXT = ".png"
     _GT_EXT = "*.xml"
 

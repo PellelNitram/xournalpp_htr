@@ -39,6 +39,7 @@ from xournalpp_htr.training.word_detector.utils import (
     CustomEncoder,
     get_git_commit_hash,
 )
+from xournalpp_htr.xio import load_IAM_DB_dataset
 
 global_step = 0  # TODO: Make global step non-global as it's very bad practise.
 
@@ -71,8 +72,12 @@ def parse_args() -> dict:
     data_group.add_argument(
         "--data_path",
         type=Path,
-        default=Path.home() / "Development/WordDetectorNN/data/train",
-        help="Path to training data",
+        default=None,
+        help=(
+            "Path to the IAM-DB dataset root (the directory containing "
+            "'forms/' and 'xml/'). If omitted, the dataset is resolved from "
+            "the HuggingFace Hub via load_IAM_DB_dataset() (cached locally)."
+        ),
     )
     data_group.add_argument(
         "--percent_train_data",
@@ -354,6 +359,10 @@ def train_network(
 
 
 def main(args: dict):
+    if args["data_path"] is None:
+        args["data_path"] = load_IAM_DB_dataset()
+        print(f"Resolved IAM-DB dataset from HuggingFace Hub: {args['data_path']}")
+
     args["output_path"].mkdir(exist_ok=True, parents=True)
 
     with open(args["output_path"] / "args.json", "w") as f:
