@@ -359,7 +359,7 @@ def train_network(
 
 
 def main(args: dict):
-    if args["data_path"] is None:
+    if args["data_path"] is None and not args["cache_path"].exists():
         args["data_path"] = load_IAM_DB_dataset()
         print(f"Resolved IAM-DB dataset from HuggingFace Hub: {args['data_path']}")
 
