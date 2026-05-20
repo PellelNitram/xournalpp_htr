@@ -21,68 +21,170 @@ This is no longer a standalone `uv` project; it is part of the main package.
 | `infer.py` | Local torch inference from a `.pth` checkpoint | `training-word-detector` |
 | `demo.py` | Local Gradio demo (run locally, not a HF Space, ADR 007) | `training-word-detector` |
 | `utils.py` | Git-hash, JSON encoder, example-image list | `training-word-detector` |
-| `notebooks/test_best_model.ipynb` | Inspect a trained checkpoint offline | `training-word-detector` |
+| `test_best_model.ipynb` | Inspect a trained checkpoint offline | `training-word-detector`, `dev` |
+| `run_training.sh` | Hyperparameter sweep (grid search) | `training-word-detector` |
+| `run_training.eval.sh` | Find the best model from a sweep | — |
 
 Generic geometry and the map decoder/clustering/metrics live in
 [`xournalpp_htr/training/shared/`](../shared/) (base deps only, importable in
 the lean inference install). The HF-Hub-backed inference class lives in
 [`xournalpp_htr/inference_models.py`](../../inference_models.py).
 
-## Installation
+## GPU training setup (step-by-step)
 
-Inference only (lean, no training deps):
+Prerequisites: a Linux machine with an NVIDIA GPU, CUDA drivers installed
+(`nvidia-smi` should work), and `uv` installed (`pip install uv`).
 
+### 1. Clone and install the base package
+
+```bash
+git clone https://github.com/PellelNitram/xournalpp_htr.git
+cd xournalpp_htr
+bash INSTALL_LINUX.sh
 ```
-uv add xournalpp_htr
+
+The install script downloads the HTRPipeline models via `wget` from Dropbox.
+If this fails (e.g. corporate proxy blocking SSL), download `models.zip` on
+another machine and copy it into
+`external/htr_pipeline/HTRPipeline/htr_pipeline/models/`, then `unzip -o models.zip`.
+After that, copy the ONNX/JSON files into the venv:
+
+```bash
+mkdir -p .venv/lib/python3.11/site-packages/htr_pipeline/models/
+cp external/htr_pipeline/HTRPipeline/htr_pipeline/models/*.onnx \
+   external/htr_pipeline/HTRPipeline/htr_pipeline/models/*.json \
+   .venv/lib/python3.11/site-packages/htr_pipeline/models/
 ```
 
-Training / export / local demo:
+### 2. Install the training extra (with CUDA PyTorch)
 
-```
+```bash
 uv sync --extra training-word-detector
 ```
 
-## Train
+This installs PyTorch with CUDA support (cu128 index configured in
+`pyproject.toml`). Verify GPU access:
 
+```bash
+uv run python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
 ```
-uv run python -m xournalpp_htr.training.word_detector.train --help
+
+If the CUDA version doesn't match your driver, update the `pytorch-cu128`
+index URL in `pyproject.toml` to the appropriate version (e.g. `cu121`,
+`cu124`) and re-run `uv sync --extra training-word-detector`.
+
+### 3. Verify the installation
+
+```bash
+make tests-not-slow
 ```
 
-The best checkpoint is written as `best_model.pth` (gitignored).
+All tests should pass except `test_run_htr::test_main` which requires the
+`xournalpp` desktop application (not needed for training). No datasets are
+required for this step.
 
-## Local demo (ADR 007)
+### 4. Authenticate with HuggingFace
 
-An interactive Gradio app to sanity-check a trained checkpoint — upload an
-image, tweak the margin, see the predicted word boxes. Per
-[ADR 007](../../../docs/ADRs/007_model_demos_local_only.md) it runs **locally**
-(no HuggingFace Space, no telemetry/Supabase):
+Required for downloading the training dataset and (later) uploading the
+exported model:
 
+```bash
+hf auth login
 ```
+
+### 5. Download the training dataset
+
+```bash
+hf download PellelNitram/xournalpp_htr_IAM_DB --repo-type dataset
+```
+
+The first run caches the dataset under `~/.cache/huggingface/`. Subsequent
+runs resolve the cache instantly.
+
+### 6. Train
+
+Single training run:
+
+```bash
+uv run python -m xournalpp_htr.training.word_detector.train \
+    --epoch_max 200 --batch_size 32 --learning_rate 0.001
+```
+
+Or run the full hyperparameter sweep:
+
+```bash
+cd xournalpp_htr/training/word_detector
+bash run_training.sh
+```
+
+Results are written to `experiments/experiment1/lr<LR>_bs<BS>/`. Each run
+produces `best_model.pth`, `best_model.json` (best val F1, epoch),
+TensorBoard logs in `summary_writer/`, and `args.json`.
+
+Monitor training with TensorBoard (forward port 6006 if remote):
+
+```bash
+tensorboard --logdir experiments/ --port 6006
+```
+
+The first training run builds a `dataset_cache.pickle` from the HF-cached
+raw files. Subsequent runs load directly from this pickle, skipping
+both the HF validation and image preprocessing.
+
+### 7. Evaluate the sweep
+
+```bash
+bash run_training.eval.sh
+```
+
+Reports the F1 score for each completed run and prints the best model path.
+
+### 8. Inspect the best model
+
+Use the best model path from the previous step. Visually check it with the
+Gradio demo:
+
+```bash
 uv run python -m xournalpp_htr.training.word_detector.demo \
-    --model-path best_model.pth         # opens http://127.0.0.1:7860
+    --model-path experiments/experiment1/<best_run>/best_model.pth \
+    --device auto --share
 ```
 
-`--device {cpu,cuda,auto}` selects inference hardware; `--share` exposes a
-temporary public link. Every contributed model ships a local demo like this;
-there is no per-model HF Space.
+`--share` exposes a temporary public URL (useful on headless machines).
 
-Annotated images are written to `--output-dir`. Per
-[ADR 007](../../../docs/ADRs/007_model_demos_local_only.md), every contributed
-model ships a local demo like this; there is no per-model HF Space.
+### 9. Export to ONNX
 
-## Export to ONNX and publish (ADR 006)
-
-ONNX is the canonical inference artifact. Export the trained checkpoint, then
-upload it to the HF Hub repo `PellelNitram/xournalpp-htr-word-detector`:
-
-```
+```bash
 uv run python -m xournalpp_htr.training.word_detector.export \
-    --checkpoint best_model.pth --output-dir exports/ [--upload]
+    --checkpoint experiments/experiment1/<best_run>/best_model.pth \
+    --output-dir exports/
 ```
 
-`--upload` requires HF authentication (`huggingface-cli login` or `HF_TOKEN`)
-and write access to the model repo. This produces `model.onnx` (softmax baked
-into the graph) and `config.json` (pre/post-processing parameters).
+Produces `exports/model.onnx` and `exports/config.json`.
+
+### 10. Validate the ONNX export
+
+Run the notebook to compare PyTorch and ONNX predictions side by side.
+The notebook expects `best_model.pth` in the `word_detector/` directory:
+
+```bash
+cp experiments/experiment1/<best_run>/best_model.pth best_model.pth
+uv sync --extra dev  # adds jupyter
+uv run jupyter nbconvert --to notebook --execute test_best_model.ipynb \
+    --output test_best_model_executed.ipynb
+```
+
+### 11. Upload to HuggingFace Hub
+
+Once satisfied with the model quality:
+
+```bash
+uv run python -m xournalpp_htr.training.word_detector.export \
+    --checkpoint experiments/experiment1/<best_run>/best_model.pth \
+    --output-dir exports/ --upload
+```
+
+Requires write access to `PellelNitram/xournalpp-htr-word-detector`.
 
 ## Inference
 
