@@ -8,7 +8,7 @@ set -euo pipefail # To catch all errors
 # Settings
 # ========
 
-BASE_PATH=${HOME}/experiments
+BASE_PATH=experiments
 
 # ============
 # Experiment 1
