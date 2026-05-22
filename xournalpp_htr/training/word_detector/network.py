@@ -11,10 +11,7 @@ import torch.nn.functional as F
 from torchvision.models.resnet import BasicBlock, ResNet
 
 from xournalpp_htr.training.shared.bounding_box import ImageDimensions
-from xournalpp_htr.training.shared.postprocessing import (
-    MapOrdering,
-    compute_scale_down,
-)
+from xournalpp_htr.training.shared.postprocessing import MapOrdering
 
 
 class ModifiedResNet18(ResNet):
@@ -78,7 +75,6 @@ class WordDetectorNet(torch.nn.Module):
     output_size_ImageDimensions: ImageDimensions = ImageDimensions(
         width=224, height=224
     )
-    scale_down = compute_scale_down(input_size, output_size)
 
     def __init__(self):
         super().__init__()
