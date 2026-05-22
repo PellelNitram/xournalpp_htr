@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_PATH=${HOME}/experiments
+BASE_PATH=experiments
 
 best_f1=0
 best_dir=""
