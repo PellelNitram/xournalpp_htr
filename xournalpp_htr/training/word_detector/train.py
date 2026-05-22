@@ -132,6 +132,23 @@ def get_dataloaders(
     return {"train": dataloader_train, "val": dataloader_val}
 
 
+def _decode_and_evaluate_sample(y_element, img_np, gt_bboxes, scale, cfg_detection):
+    decoded_aabbs = decode(
+        y_element,
+        scale=scale,
+        comp_fg=fg_by_cc(
+            thres=cfg_detection.fg_threshold,
+            max_num=cfg_detection.max_detections,
+        ),
+    )
+    h, w = img_np.shape
+    aabbs = [aabb.clip(BoundingBox(0, 0, w - 1, h - 1)) for aabb in decoded_aabbs]
+    clustered_aabbs = cluster_aabbs(aabbs)
+    metrics = binary_classification_metrics(gt_bboxes, clustered_aabbs)
+    vis = draw_bboxes_on_image(img_np, clustered_aabbs)
+    return metrics, vis
+
+
 def validate(
     net,
     dataloader_val,
@@ -147,49 +164,35 @@ def validate(
     avg_loss = 0.0
     tp = fp = fn = 0
     image_counter = 0
+    scale = input_size.width / output_size.width
+
     for batch in dataloader_val:
+        images = batch["images"].to(device)
+        gt_encoded = batch["gt_encoded"].to(device)
+
         with torch.no_grad():
-            images = batch["images"].to(device)
-            gt_encoded = batch["gt_encoded"].to(device)
-            y = net(images)
-            loss = compute_loss(y, gt_encoded)
-            avg_loss += loss.item()
-        with torch.no_grad():
-            images = batch["images"].to(device)
-            gt_encoded = batch["gt_encoded"].to(device)
+            y_loss = net(images)
+            avg_loss += compute_loss(y_loss, gt_encoded).item()
+
             y = net(images, apply_softmax=True)
             seg = y[:, MapOrdering.SEG_WORD : MapOrdering.SEG_BACKGROUND + 1, :, :]
             assert seg.min() >= 0.0
             assert seg.max() <= 1.0
-        batch_size_here = y.shape[0]
-        y = y.to("cpu").numpy()
-        for i_element_in_batch in range(batch_size_here):
-            y_element = y[i_element_in_batch, :, :, :]
-            decoded_aabbs = decode(
-                y_element,
-                scale=input_size.width / output_size.width,
-                comp_fg=fg_by_cc(
-                    thres=cfg_detection.fg_threshold,
-                    max_num=cfg_detection.max_detections,
-                ),
+
+        y_np = y.to("cpu").numpy()
+        for i in range(y_np.shape[0]):
+            img_np = batch["images"][i, 0, :, :].to("cpu").numpy()
+            metrics, vis = _decode_and_evaluate_sample(
+                y_np[i], img_np, batch["bounding_boxes"][i], scale, cfg_detection
             )
-            img_np = batch["images"][i_element_in_batch, 0, :, :].to("cpu").numpy()
-            h, w = img_np.shape
-            aabbs = [
-                aabb.clip(BoundingBox(0, 0, w - 1, h - 1)) for aabb in decoded_aabbs
-            ]
-            clustered_aabbs = cluster_aabbs(aabbs)
-            result = binary_classification_metrics(
-                batch["bounding_boxes"][i_element_in_batch], clustered_aabbs
-            )
-            tp += result["tp"]
-            fp += result["fp"]
-            fn += result["fn"]
-            vis = draw_bboxes_on_image(img_np, clustered_aabbs)
+            tp += metrics["tp"]
+            fp += metrics["fp"]
+            fn += metrics["fn"]
             writer.add_image(
                 f"img{image_counter}", vis.transpose((2, 0, 1)), global_step
             )
             image_counter += 1
+
     avg_loss = avg_loss / len(dataloader_val)
     precision = tp / (tp + fp + regularisation)
     recall = tp / (tp + fn + regularisation)
