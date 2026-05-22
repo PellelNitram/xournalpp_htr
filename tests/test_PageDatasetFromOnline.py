@@ -1,9 +1,10 @@
 from pathlib import Path
 
 import pytest
-import torch
 
-from xournalpp_htr.training.data.datasets import (
+torch = pytest.importorskip("torch")
+
+from xournalpp_htr.training.data.datasets import (  # noqa: E402
     IAM_OnDB_Dataset,
     PageDatasetFromOnline,
     PageDatasetFromOnlinePosition,
