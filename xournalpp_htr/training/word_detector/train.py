@@ -41,8 +41,6 @@ from xournalpp_htr.training.word_detector.utils import (
 )
 from xournalpp_htr.xio import load_IAM_DB_dataset
 
-global_step = 0  # TODO: Make global step non-global as it's very bad practise.
-
 
 def parse_args() -> dict:
     parser = argparse.ArgumentParser(
@@ -206,9 +204,15 @@ def get_dataloaders(
 
 
 def validate(
-    net, dataloader_val, writer, device, input_size, output_size, regularisation=1e-8
+    net,
+    dataloader_val,
+    writer,
+    device,
+    input_size,
+    output_size,
+    global_step,
+    regularisation=1e-8,
 ):
-    global global_step
     net.eval()
     avg_loss = 0.0
     tp = fp = fn = 0
@@ -262,8 +266,7 @@ def validate(
     return f1
 
 
-def train(net, optimizer, loader, writer, device):
-    global global_step
+def train(net, optimizer, loader, writer, device, global_step):
     net.train()
     for i, loader_item in enumerate(loader):
         images = loader_item["images"].to(device)
@@ -278,6 +281,7 @@ def train(net, optimizer, loader, writer, device):
         print(f"{i + 1}/{len(loader)}: {loss.item()}")
         writer.add_scalar("loss/train", loss, global_step)
         global_step += 1
+    return global_step
 
 
 def train_network(
@@ -300,13 +304,16 @@ def train_network(
 
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
 
+    global_step = 0
     epoch = 0
     best_val_f1 = 0.0
     patience_counter = 0
     while True:
         epoch += 1
         print(f"Epoch: {epoch}")
-        train(net, optimizer, dataloader_train, writer, device)
+        global_step = train(
+            net, optimizer, dataloader_train, writer, device, global_step
+        )
         if epoch % val_epoch == 0:
             f1 = validate(
                 net,
@@ -315,6 +322,7 @@ def train_network(
                 device,
                 WordDetectorNet.input_size_ImageDimensions,
                 WordDetectorNet.output_size_ImageDimensions,
+                global_step,
             )
 
             if f1 > best_val_f1:
