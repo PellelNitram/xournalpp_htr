@@ -21,6 +21,7 @@ from xournalpp_htr.training.shared.postprocessing import (
 )
 from xournalpp_htr.training.word_detector.config import DetectionConfig
 from xournalpp_htr.training.word_detector.network import WordDetectorNet
+from xournalpp_htr.training.word_detector.utils import get_device
 
 _DETECTION_DEFAULTS = DetectionConfig()
 
@@ -28,8 +29,9 @@ _DETECTION_DEFAULTS = DetectionConfig()
 def run_image_through_network(
     image_grayscale: np.ndarray,
     model_path: Path = Path("best_model.pth"),
-    device: str = "cuda",
+    device: str = "auto",
 ) -> dict:
+    device = get_device(device)
     model = WordDetectorNet()
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.to(device)

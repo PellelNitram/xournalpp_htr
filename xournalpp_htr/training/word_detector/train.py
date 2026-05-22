@@ -39,6 +39,7 @@ from xournalpp_htr.training.word_detector.network import (
 )
 from xournalpp_htr.training.word_detector.utils import (
     CustomEncoder,
+    get_device,
     get_git_commit_hash,
 )
 from xournalpp_htr.xio import load_IAM_DB_dataset
@@ -309,7 +310,7 @@ def main(cfg: WordDetectorConfig):
     with open(output_path / "config.yaml", "w") as f:
         f.write(OmegaConf.to_yaml(cfg))
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = get_device()
 
     seed_everything(
         numpy_seed=cfg.seed.split,
