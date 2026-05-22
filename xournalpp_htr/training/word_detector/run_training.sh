@@ -14,7 +14,8 @@ BASE_PATH=experiments
 # Experiment 1
 # ============
 
-# Question: General hyperparameter tuning
+# Question 1 (main): General hyperparameter tuning
+# Question 2 (side): Does batch size matter?
 
 EPOCH_MAX=200
 
@@ -41,7 +42,8 @@ done
 # Experiment 2
 # ============
 
-# Question: Does train-time augmentation improve model performance?
+# Question 1 (main): Does train-time augmentation improve model performance?
+# Question 2 (side): Do different model seeds change results?
 
 EPOCH_MAX=100
 
