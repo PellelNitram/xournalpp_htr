@@ -168,3 +168,5 @@ cython_debug/
 best_model.pth
 
 .DS_Store
+
+xournalpp_htr/training/word_detector/experiments

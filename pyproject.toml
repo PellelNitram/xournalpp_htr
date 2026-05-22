@@ -18,10 +18,10 @@ dependencies = [
     "gitpython",
     "htr-pipeline",
     "setuptools<80",  # required by htr-pipeline (pkg_resources); removed in setuptools 80+
-    "torch",
-    "torchvision",
     "testcontainers>=4.14.1",
     "huggingface-hub",
+    "scikit-learn",
+    "onnxruntime",
 ]
 
 [project.optional-dependencies]
@@ -30,6 +30,16 @@ hf = [
     "pdf2image",
     "supabase",
     "python-dotenv",
+]
+# Per-model training extras (ADR 006 section 3). Inference only needs the base
+# package; training a specific model pulls in that model's extra. There is
+# deliberately no umbrella `training` extra.
+training-word-detector = [
+    "torch",
+    "torchvision",
+    "tensorboard",
+    "onnx",
+    "gradio",  # local demo (ADR 007); run locally, not as a HF Space
 ]
 dev = [
     "jupyter",
@@ -51,12 +61,12 @@ docs = [
 
 [tool.uv.sources]
 htr-pipeline = { path = "external/htr_pipeline/HTRPipeline" }
-torch = { index = "pytorch-cpu" }
-torchvision = { index = "pytorch-cpu" }
+torch = { index = "pytorch-cu128" }
+torchvision = { index = "pytorch-cu128" }
 
 [[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
 explicit = true
 
 [tool.pytest.ini_options]

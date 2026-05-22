@@ -3,7 +3,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from xournalpp_htr.training.data.datasets import IAM_OnDB_Dataset
+pytest.importorskip("torch")
+
+from xournalpp_htr.training.data.datasets import IAM_OnDB_Dataset  # noqa: E402
 
 # TODO: Maybe add check to check for certain samples in IAM_OnDB using the name of a sample?
 

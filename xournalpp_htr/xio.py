@@ -165,6 +165,34 @@ def load_IAM_OnDB_dataset() -> Path:
     )
 
 
+def load_IAM_DB_dataset() -> Path:
+    """Return path to the IAM-DB dataset, downloading from HuggingFace Hub if needed.
+
+    The IAM Handwriting Database (offline forms) is stored as raw files, so it is
+    resolved via ``snapshot_download`` rather than ``load_dataset``. Form images
+    live in ``data/forms`` and ground-truth XML in ``data/xml``.
+
+    Requires a valid HuggingFace token with access to the private repository,
+    set via the ``HF_TOKEN`` environment variable or ``huggingface-cli login``.
+
+    :returns: Path to the root of the IAM-DB dataset (the ``data/`` subfolder
+              of the HuggingFace repo).
+    """
+    if not huggingface_hub_available:
+        raise ImportError(
+            "The `huggingface_hub` package is required to load the IAM-DB dataset."
+        )
+    return (
+        Path(
+            snapshot_download(
+                repo_id="PellelNitram/xournalpp_htr_IAM_DB",
+                repo_type="dataset",
+            )
+        )
+        / "data"
+    )
+
+
 def load_examples(exclude_empty: bool = False):
     if not huggingface_hub_available:
         raise ImportError(
