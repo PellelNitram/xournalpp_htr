@@ -101,6 +101,16 @@ def _apply_geometric_augmentation(
 
 
 def _apply_photometric_augmentation(img: np.ndarray) -> np.ndarray:
+    if np.random.random() < 0.25:
+        h, w = img.shape[:2]
+        n_lines = np.random.randint(1, 20)
+        for _ in range(n_lines):
+            pt1 = (np.random.randint(0, w), np.random.randint(0, h))
+            pt2 = (np.random.randint(0, w), np.random.randint(0, h))
+            color = float(np.random.triangular(-0.5, 0.0, 0.5))
+            thickness = np.random.randint(1, 3)
+            cv2.line(img, pt1, pt2, color, thickness)
+
     if np.random.random() < 0.75:
         img_min, img_max = img.min(), img.max()
         if img_max - img_min > 1e-6:
@@ -111,16 +121,6 @@ def _apply_photometric_augmentation(img: np.ndarray) -> np.ndarray:
     if np.random.random() < 0.25:
         noise = np.random.uniform(-0.1, 0.1, size=img.shape).astype(np.float32)
         img = img + noise
-
-    if np.random.random() < 0.25:
-        h, w = img.shape[:2]
-        n_lines = np.random.randint(1, 20)
-        for _ in range(n_lines):
-            pt1 = (np.random.randint(0, w), np.random.randint(0, h))
-            pt2 = (np.random.randint(0, w), np.random.randint(0, h))
-            color = float(np.random.triangular(-0.5, 0.0, 0.5))
-            thickness = np.random.randint(1, 3)
-            cv2.line(img, pt1, pt2, color, thickness)
 
     if np.random.random() < 0.25:
         kernel = np.ones((3, 3), np.uint8)
