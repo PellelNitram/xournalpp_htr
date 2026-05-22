@@ -37,12 +37,37 @@ do
     done
 done
 
+# ============
+# Experiment 2
+# ============
+
+# Question: Does train-time augmentation improve model performance?
+
+EPOCH_MAX=100
+
+for AUGMENT in false true
+do
+    for SEED_SPLIT in 42 43 44
+    do
+
+        echo "AUGMENT=${AUGMENT}, SEED=${SEED_SPLIT}"
+
+        OUT="${BASE_PATH}/experiment2/aug${AUGMENT}_seed${SEED_SPLIT}"
+        mkdir -p "${OUT}"
+
+        uv run python -m xournalpp_htr.training.word_detector.train \
+            augmentation.enabled="${AUGMENT}" \
+            seed.split="${SEED_SPLIT}" \
+            training.epoch_max="${EPOCH_MAX}" \
+            output_path="${OUT}" 2>&1 | tee "${OUT}/train.log"
+
+    done
+done
+
 # ==================
 # Future experiments
 # ==================
 
 # Other questions to answer by conducting additional experiments:
-# - Do different model seeds change results?
-# - Does batch size matter? -> already covered in general hyperparameter tuning
 # - Longer training help w/ more patience?
 # - Cheap as k-fold on data to get good estimate of true performance
