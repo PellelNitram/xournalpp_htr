@@ -49,12 +49,18 @@ def encode(input_size: ImageDimensions, output_size: ImageDimensions, gt):
             int(aabb_word.x_min) : int(aabb_word.x_max) + 1,
         ] = 1
 
-        for x in range(int(aabb_word.x_min), int(aabb_word.x_max) + 1):
-            for y in range(int(aabb_word.y_min), int(aabb_word.y_max) + 1):
-                gt_map[MapOrdering.GEO_TOP, y, x] = y - aabb.y_min
-                gt_map[MapOrdering.GEO_BOTTOM, y, x] = aabb.y_max - y
-                gt_map[MapOrdering.GEO_LEFT, y, x] = x - aabb.x_min
-                gt_map[MapOrdering.GEO_RIGHT, y, x] = aabb.x_max - x
+        y_min_w, y_max_w = int(aabb_word.y_min), int(aabb_word.y_max) + 1
+        x_min_w, x_max_w = int(aabb_word.x_min), int(aabb_word.x_max) + 1
+        ys = np.arange(y_min_w, y_max_w)[:, None]
+        xs = np.arange(x_min_w, x_max_w)[None, :]
+        gt_map[MapOrdering.GEO_TOP, y_min_w:y_max_w, x_min_w:x_max_w] = ys - aabb.y_min
+        gt_map[MapOrdering.GEO_BOTTOM, y_min_w:y_max_w, x_min_w:x_max_w] = (
+            aabb.y_max - ys
+        )
+        gt_map[MapOrdering.GEO_LEFT, y_min_w:y_max_w, x_min_w:x_max_w] = xs - aabb.x_min
+        gt_map[MapOrdering.GEO_RIGHT, y_min_w:y_max_w, x_min_w:x_max_w] = (
+            aabb.x_max - xs
+        )
 
     gt_map[MapOrdering.SEG_BACKGROUND] = np.clip(
         1 - gt_map[MapOrdering.SEG_WORD] - gt_map[MapOrdering.SEG_SURROUNDING], 0, 1
