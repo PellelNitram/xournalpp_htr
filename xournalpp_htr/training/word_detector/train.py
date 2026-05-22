@@ -294,6 +294,7 @@ def train_network(
             "seed_split": cfg.seed.split,
             "seed_model": cfg.seed.model,
             "patience_max": cfg.training.patience_max,
+            "augmentation_enabled": cfg.augmentation.enabled,
         },
         {"best_val_f1": best_val_f1},
     )
