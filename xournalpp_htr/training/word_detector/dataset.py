@@ -3,6 +3,7 @@
 Requires the ``training-word-detector`` extra (torch).
 """
 
+import logging
 import pickle
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -15,7 +16,14 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 
 from xournalpp_htr.training.shared.bounding_box import BoundingBox, ImageDimensions
-from xournalpp_htr.training.shared.postprocessing import MapOrdering
+from xournalpp_htr.training.shared.postprocessing import (
+    MapOrdering,
+    normalize_image_transform,
+)
+
+logger = logging.getLogger(__name__)
+
+CACHE_VERSION = "v2"
 
 
 def encode(input_size: ImageDimensions, output_size: ImageDimensions, gt):
@@ -44,17 +52,98 @@ def encode(input_size: ImageDimensions, output_size: ImageDimensions, gt):
             int(aabb_word.x_min) : int(aabb_word.x_max) + 1,
         ] = 1
 
-        for x in range(int(aabb_word.x_min), int(aabb_word.x_max) + 1):
-            for y in range(int(aabb_word.y_min), int(aabb_word.y_max) + 1):
-                gt_map[MapOrdering.GEO_TOP, y, x] = y - aabb.y_min
-                gt_map[MapOrdering.GEO_BOTTOM, y, x] = aabb.y_max - y
-                gt_map[MapOrdering.GEO_LEFT, y, x] = x - aabb.x_min
-                gt_map[MapOrdering.GEO_RIGHT, y, x] = aabb.x_max - x
+        y_min_w, y_max_w = int(aabb_word.y_min), int(aabb_word.y_max) + 1
+        x_min_w, x_max_w = int(aabb_word.x_min), int(aabb_word.x_max) + 1
+        ys = np.arange(y_min_w, y_max_w)[:, None]
+        xs = np.arange(x_min_w, x_max_w)[None, :]
+        gt_map[MapOrdering.GEO_TOP, y_min_w:y_max_w, x_min_w:x_max_w] = ys - aabb.y_min
+        gt_map[MapOrdering.GEO_BOTTOM, y_min_w:y_max_w, x_min_w:x_max_w] = (
+            aabb.y_max - ys
+        )
+        gt_map[MapOrdering.GEO_LEFT, y_min_w:y_max_w, x_min_w:x_max_w] = xs - aabb.x_min
+        gt_map[MapOrdering.GEO_RIGHT, y_min_w:y_max_w, x_min_w:x_max_w] = (
+            aabb.x_max - xs
+        )
 
     gt_map[MapOrdering.SEG_BACKGROUND] = np.clip(
         1 - gt_map[MapOrdering.SEG_WORD] - gt_map[MapOrdering.SEG_SURROUNDING], 0, 1
     )
     return gt_map
+
+
+def _apply_geometric_augmentation(
+    img: np.ndarray, aabbs: List[BoundingBox]
+) -> Tuple[np.ndarray, List[BoundingBox]]:
+    h, w = img.shape[:2]
+    fx = np.random.uniform(0.5, 1.5)
+    fy = np.random.uniform(0.5, 1.5)
+    jitter_x = np.random.randint(-w // 10, w // 10 + 1)
+    jitter_y = np.random.randint(-h // 10, h // 10 + 1)
+
+    cx, cy = w / 2, h / 2
+    tx = cx * (1 - fx) + jitter_x
+    ty = cy * (1 - fy) + jitter_y
+    M = np.array([[fx, 0, tx], [0, fy, ty]], dtype=np.float32)
+    img_aug = cv2.warpAffine(img, M, (w, h), borderValue=255)
+
+    aabbs_aug = []
+    clip_box = BoundingBox(0, 0, w - 1, h - 1)
+    for aabb in aabbs:
+        new = BoundingBox(
+            aabb.x_min * fx + tx,
+            aabb.y_min * fy + ty,
+            aabb.x_max * fx + tx,
+            aabb.y_max * fy + ty,
+        ).clip(clip_box)
+        if new.area() > 0:
+            aabbs_aug.append(new)
+    return img_aug, aabbs_aug
+
+
+def _apply_photometric_augmentation(img: np.ndarray) -> np.ndarray:
+    if np.random.random() < 0.25:
+        h, w = img.shape[:2]
+        n_lines = np.random.randint(1, 20)
+        for _ in range(n_lines):
+            pt1 = (np.random.randint(0, w), np.random.randint(0, h))
+            pt2 = (np.random.randint(0, w), np.random.randint(0, h))
+            color = float(np.random.triangular(-0.5, 0.0, 0.5))
+            thickness = np.random.randint(1, 3)
+            cv2.line(img, pt1, pt2, color, thickness)
+
+    if np.random.random() < 0.75:
+        img_min, img_max = img.min(), img.max()
+        if img_max - img_min > 1e-6:
+            img = (img - img_min) / (img_max - img_min) - 0.5
+        factor = np.random.triangular(0.1, 0.9, 1.0)
+        img = img * factor
+
+    if np.random.random() < 0.25:
+        noise = np.random.uniform(-0.1, 0.1, size=img.shape).astype(np.float32)
+        img = img + noise
+
+    if np.random.random() < 0.25:
+        kernel = np.ones((3, 3), np.uint8)
+        img = cv2.erode(img, kernel, iterations=1)
+
+    if np.random.random() < 0.25:
+        kernel = np.ones((3, 3), np.uint8)
+        img = cv2.dilate(img, kernel, iterations=1)
+
+    if np.random.random() < 0.25:
+        img = 0.5 - img
+
+    return img
+
+
+def train_augmentation_transform(
+    img: np.ndarray, aabbs: List[BoundingBox]
+) -> Tuple[np.ndarray, List[BoundingBox]]:
+    if np.random.random() < 0.75:
+        img, aabbs = _apply_geometric_augmentation(img, aabbs)
+    img, aabbs = normalize_image_transform(img, aabbs)
+    img = _apply_photometric_augmentation(img)
+    return img, aabbs
 
 
 class IAM_Dataset_Element(TypedDict):
@@ -106,15 +195,20 @@ class IAM_Dataset(Dataset):
         self.filename_cache: List[str] = []
 
         if cache_path.exists() and not force_rebuild_cache:
-            print(f"Loading cached data from {cache_path}...")
-            self._load_from_cache(cache_path)
-        else:
-            print(f"Cache not found. Building and caching data from {self.root_dir}...")
-            self._preprocess_and_cache(cache_path)
+            if self._load_from_cache(cache_path):
+                return
+            logger.warning("Cache version mismatch, rebuilding.")
+        print(f"Building and caching data from {self.root_dir}...")
+        self._preprocess_and_cache(cache_path)
 
-    def _load_from_cache(self, cache_path: Path):
+    def _load_from_cache(self, cache_path: Path) -> bool:
+        print(f"Loading cached data from {cache_path}...")
         with open(cache_path, "rb") as f:
-            self.img_cache, self.gt_cache, self.filename_cache = pickle.load(f)
+            payload = pickle.load(f)
+        if isinstance(payload, dict) and payload.get("version") == CACHE_VERSION:
+            self.img_cache, self.gt_cache, self.filename_cache = payload["data"]
+            return True
+        return False
 
     def _preprocess_and_cache(self, cache_path: Path):
         gt_dir = self.root_dir / self._GT_DIR_NAME
@@ -140,7 +234,13 @@ class IAM_Dataset(Dataset):
 
         print(f"Preprocessing complete. Saving cache to {cache_path}...")
         with open(cache_path, "wb") as f:
-            pickle.dump([self.img_cache, self.gt_cache, self.filename_cache], f)
+            pickle.dump(
+                {
+                    "version": CACHE_VERSION,
+                    "data": [self.img_cache, self.gt_cache, self.filename_cache],
+                },
+                f,
+            )
         print("Cache saved successfully.")
 
     def _parse_gt(self, fn_gt: Path) -> List[BoundingBox]:
@@ -236,11 +336,4 @@ def custom_collate_fn(batch: List[IAM_Dataset_Element]) -> Dataloader_Element:
         "images": batch_images,
         "gt_encoded": batch_gt_encodeds,
         "bounding_boxes": batch_bounding_boxes,
-    }
-
-
-def count_parameters(net) -> dict:
-    return {
-        "total_params": sum(p.numel() for p in net.parameters()),
-        "trainable_params": sum(p.numel() for p in net.parameters() if p.requires_grad),
     }

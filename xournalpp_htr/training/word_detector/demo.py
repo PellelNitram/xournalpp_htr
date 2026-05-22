@@ -13,11 +13,10 @@ from pathlib import Path
 import cv2
 import gradio as gr
 import numpy as np
-import torch
 
 from xournalpp_htr.training.shared.postprocessing import draw_bboxes_on_image
 from xournalpp_htr.training.word_detector.infer import run_image_through_network
-from xournalpp_htr.training.word_detector.utils import get_example_list
+from xournalpp_htr.training.word_detector.utils import get_device, get_example_list
 
 
 def build_demo(model_path: Path, device_selection: str) -> gr.Interface:
@@ -28,10 +27,7 @@ def build_demo(model_path: Path, device_selection: str) -> gr.Interface:
         image_bgr = cv2.cvtColor(image.copy(), cv2.COLOR_RGB2BGR)
         image_gray = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY)
 
-        if device_selection == "auto":
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-        else:
-            device = device_selection
+        device = get_device(device_selection)
 
         result = run_image_through_network(
             image_grayscale=image_gray,

@@ -10,7 +10,15 @@ import urllib.request
 from pathlib import Path
 from typing import List
 
+import torch
 from git import Repo
+
+
+def get_device(preference: str = "auto") -> str:
+    """Resolve a device string, with auto-detection for ``"auto"``."""
+    if preference == "auto":
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    return preference
 
 
 class CustomEncoder(json.JSONEncoder):

@@ -19,14 +19,19 @@ from xournalpp_htr.training.shared.postprocessing import (
     fg_by_cc,
     normalize_image_transform,
 )
+from xournalpp_htr.training.word_detector.config import DetectionConfig
 from xournalpp_htr.training.word_detector.network import WordDetectorNet
+from xournalpp_htr.training.word_detector.utils import get_device
+
+_DETECTION_DEFAULTS = DetectionConfig()
 
 
 def run_image_through_network(
     image_grayscale: np.ndarray,
     model_path: Path = Path("best_model.pth"),
-    device: str = "cuda",
+    device: str = "auto",
 ) -> dict:
+    device = get_device(device)
     model = WordDetectorNet()
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.to(device)
@@ -49,7 +54,10 @@ def run_image_through_network(
     decoded_aabbs = decode(
         output_image,
         scale=WordDetectorNet.input_size[0] / WordDetectorNet.output_size[0],
-        comp_fg=fg_by_cc(thres=0.5, max_num=1000),
+        comp_fg=fg_by_cc(
+            thres=_DETECTION_DEFAULTS.fg_threshold,
+            max_num=_DETECTION_DEFAULTS.max_detections,
+        ),
     )
     model_input_image = image_transformed[0, 0, :, :].to("cpu").numpy()
     h, w = model_input_image.shape
