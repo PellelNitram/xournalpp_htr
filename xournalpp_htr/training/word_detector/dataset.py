@@ -16,7 +16,10 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 
 from xournalpp_htr.training.shared.bounding_box import BoundingBox, ImageDimensions
-from xournalpp_htr.training.shared.postprocessing import MapOrdering
+from xournalpp_htr.training.shared.postprocessing import (
+    MapOrdering,
+    normalize_image_transform,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +69,81 @@ def encode(input_size: ImageDimensions, output_size: ImageDimensions, gt):
         1 - gt_map[MapOrdering.SEG_WORD] - gt_map[MapOrdering.SEG_SURROUNDING], 0, 1
     )
     return gt_map
+
+
+def _apply_geometric_augmentation(
+    img: np.ndarray, aabbs: List[BoundingBox]
+) -> Tuple[np.ndarray, List[BoundingBox]]:
+    h, w = img.shape[:2]
+    fx = np.random.uniform(0.5, 1.5)
+    fy = np.random.uniform(0.5, 1.5)
+    jitter_x = np.random.randint(-w // 10, w // 10 + 1)
+    jitter_y = np.random.randint(-h // 10, h // 10 + 1)
+
+    cx, cy = w / 2, h / 2
+    tx = cx * (1 - fx) + jitter_x
+    ty = cy * (1 - fy) + jitter_y
+    M = np.array([[fx, 0, tx], [0, fy, ty]], dtype=np.float32)
+    img_aug = cv2.warpAffine(img, M, (w, h), borderValue=255)
+
+    aabbs_aug = []
+    clip_box = BoundingBox(0, 0, w - 1, h - 1)
+    for aabb in aabbs:
+        new = BoundingBox(
+            aabb.x_min * fx + tx,
+            aabb.y_min * fy + ty,
+            aabb.x_max * fx + tx,
+            aabb.y_max * fy + ty,
+        ).clip(clip_box)
+        if new.area() > 0:
+            aabbs_aug.append(new)
+    return img_aug, aabbs_aug
+
+
+def _apply_photometric_augmentation(img: np.ndarray) -> np.ndarray:
+    if np.random.random() < 0.75:
+        img_min, img_max = img.min(), img.max()
+        if img_max - img_min > 1e-6:
+            img = (img - img_min) / (img_max - img_min) - 0.5
+        factor = np.random.triangular(0.1, 0.9, 1.0)
+        img = img * factor
+
+    if np.random.random() < 0.25:
+        noise = np.random.uniform(-0.1, 0.1, size=img.shape).astype(np.float32)
+        img = img + noise
+
+    if np.random.random() < 0.25:
+        h, w = img.shape[:2]
+        n_lines = np.random.randint(1, 20)
+        for _ in range(n_lines):
+            pt1 = (np.random.randint(0, w), np.random.randint(0, h))
+            pt2 = (np.random.randint(0, w), np.random.randint(0, h))
+            color = float(np.random.triangular(-0.5, 0.0, 0.5))
+            thickness = np.random.randint(1, 3)
+            cv2.line(img, pt1, pt2, color, thickness)
+
+    if np.random.random() < 0.25:
+        kernel = np.ones((3, 3), np.uint8)
+        img = cv2.erode(img, kernel, iterations=1)
+
+    if np.random.random() < 0.25:
+        kernel = np.ones((3, 3), np.uint8)
+        img = cv2.dilate(img, kernel, iterations=1)
+
+    if np.random.random() < 0.25:
+        img = 0.5 - img
+
+    return img
+
+
+def train_augmentation_transform(
+    img: np.ndarray, aabbs: List[BoundingBox]
+) -> Tuple[np.ndarray, List[BoundingBox]]:
+    if np.random.random() < 0.75:
+        img, aabbs = _apply_geometric_augmentation(img, aabbs)
+    img, aabbs = normalize_image_transform(img, aabbs)
+    img = _apply_photometric_augmentation(img)
+    return img, aabbs
 
 
 class IAM_Dataset_Element(TypedDict):

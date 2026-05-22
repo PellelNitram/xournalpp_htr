@@ -32,6 +32,7 @@ from xournalpp_htr.training.word_detector.config import WordDetectorConfig
 from xournalpp_htr.training.word_detector.dataset import (
     IAM_Dataset,
     custom_collate_fn,
+    train_augmentation_transform,
 )
 from xournalpp_htr.training.word_detector.network import (
     WordDetectorNet,
@@ -70,9 +71,8 @@ def get_dataloaders(
     output_path: Path,
     cache_path: Path,
 ) -> dict:
-    train_transform = normalize_image_transform
+    train_transform = train_augmentation_transform
     val_transform = normalize_image_transform
-    # TODO: Implement augmentations, changing at every batch.
 
     train_dataset = IAM_Dataset(
         root_dir=data_path,
