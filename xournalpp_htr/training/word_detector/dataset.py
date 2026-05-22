@@ -3,6 +3,7 @@
 Requires the ``training-word-detector`` extra (torch).
 """
 
+import logging
 import pickle
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -16,6 +17,10 @@ from tqdm import tqdm
 
 from xournalpp_htr.training.shared.bounding_box import BoundingBox, ImageDimensions
 from xournalpp_htr.training.shared.postprocessing import MapOrdering
+
+logger = logging.getLogger(__name__)
+
+CACHE_VERSION = "v2"
 
 
 def encode(input_size: ImageDimensions, output_size: ImageDimensions, gt):
@@ -106,15 +111,20 @@ class IAM_Dataset(Dataset):
         self.filename_cache: List[str] = []
 
         if cache_path.exists() and not force_rebuild_cache:
-            print(f"Loading cached data from {cache_path}...")
-            self._load_from_cache(cache_path)
-        else:
-            print(f"Cache not found. Building and caching data from {self.root_dir}...")
-            self._preprocess_and_cache(cache_path)
+            if self._load_from_cache(cache_path):
+                return
+            logger.warning("Cache version mismatch, rebuilding.")
+        print(f"Building and caching data from {self.root_dir}...")
+        self._preprocess_and_cache(cache_path)
 
-    def _load_from_cache(self, cache_path: Path):
+    def _load_from_cache(self, cache_path: Path) -> bool:
+        print(f"Loading cached data from {cache_path}...")
         with open(cache_path, "rb") as f:
-            self.img_cache, self.gt_cache, self.filename_cache = pickle.load(f)
+            payload = pickle.load(f)
+        if isinstance(payload, dict) and payload.get("version") == CACHE_VERSION:
+            self.img_cache, self.gt_cache, self.filename_cache = payload["data"]
+            return True
+        return False
 
     def _preprocess_and_cache(self, cache_path: Path):
         gt_dir = self.root_dir / self._GT_DIR_NAME
@@ -140,7 +150,13 @@ class IAM_Dataset(Dataset):
 
         print(f"Preprocessing complete. Saving cache to {cache_path}...")
         with open(cache_path, "wb") as f:
-            pickle.dump([self.img_cache, self.gt_cache, self.filename_cache], f)
+            pickle.dump(
+                {
+                    "version": CACHE_VERSION,
+                    "data": [self.img_cache, self.gt_cache, self.filename_cache],
+                },
+                f,
+            )
         print("Cache saved successfully.")
 
     def _parse_gt(self, fn_gt: Path) -> List[BoundingBox]:
