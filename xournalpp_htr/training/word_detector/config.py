@@ -53,6 +53,11 @@ class SeedConfig:
 
 
 @dataclass
+class AugmentationConfig:
+    enabled: bool = False
+
+
+@dataclass
 class WordDetectorConfig:
     model: ModelConfig = field(default_factory=ModelConfig)
     detection: DetectionConfig = field(default_factory=DetectionConfig)
@@ -60,4 +65,5 @@ class WordDetectorConfig:
     training: TrainingConfig = field(default_factory=TrainingConfig)
     data: DataConfig = field(default_factory=DataConfig)
     seed: SeedConfig = field(default_factory=SeedConfig)
+    augmentation: AugmentationConfig = field(default_factory=AugmentationConfig)
     output_path: str = "outputs"

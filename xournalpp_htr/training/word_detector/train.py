@@ -70,8 +70,11 @@ def get_dataloaders(
     num_workers: int,
     output_path: Path,
     cache_path: Path,
+    augment: bool = False,
 ) -> dict:
-    train_transform = train_augmentation_transform
+    train_transform = (
+        train_augmentation_transform if augment else normalize_image_transform
+    )
     val_transform = normalize_image_transform
 
     train_dataset = IAM_Dataset(
@@ -330,6 +333,7 @@ def main(cfg: WordDetectorConfig):
         num_workers=cfg.training.num_workers,
         output_path=output_path,
         cache_path=cache_path,
+        augment=cfg.augmentation.enabled,
     )
     dataloaders_time = time.time() - t0
 
