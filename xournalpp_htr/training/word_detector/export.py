@@ -23,7 +23,14 @@ from pathlib import Path
 import torch
 
 from xournalpp_htr.training.shared.postprocessing import MapOrdering
+from xournalpp_htr.training.word_detector.config import (
+    DetectionConfig,
+    NormalizationConfig,
+)
 from xournalpp_htr.training.word_detector.network import WordDetectorNet
+
+_DETECTION_DEFAULTS = DetectionConfig()
+_NORMALIZATION_DEFAULTS = NormalizationConfig()
 
 HF_REPO_ID = "PellelNitram/xournalpp-htr-word-detector"
 
@@ -51,11 +58,14 @@ def build_config() -> dict:
             "height": WordDetectorNet.output_size[0],
             "width": WordDetectorNet.output_size[1],
         },
-        "fg_cc_threshold": 0.5,
-        "fg_cc_max_num": 1000,
+        "fg_cc_threshold": _DETECTION_DEFAULTS.fg_threshold,
+        "fg_cc_max_num": _DETECTION_DEFAULTS.max_detections,
         # Image normalisation: (pixel / scale) + shift  -> see
         # shared.postprocessing.normalize_image_transform.
-        "normalization": {"scale": 255.0, "shift": -0.5},
+        "normalization": {
+            "scale": _NORMALIZATION_DEFAULTS.scale,
+            "shift": _NORMALIZATION_DEFAULTS.shift,
+        },
         "map_ordering": {
             "SEG_WORD": MapOrdering.SEG_WORD,
             "SEG_SURROUNDING": MapOrdering.SEG_SURROUNDING,

@@ -12,6 +12,7 @@ from torchvision.models.resnet import BasicBlock, ResNet
 
 from xournalpp_htr.training.shared.bounding_box import ImageDimensions
 from xournalpp_htr.training.shared.postprocessing import MapOrdering
+from xournalpp_htr.training.word_detector.config import ModelConfig
 
 
 class ModifiedResNet18(ResNet):
@@ -69,11 +70,14 @@ class UpscaleAndConcatLayer(torch.nn.Module):
 
 
 class WordDetectorNet(torch.nn.Module):
-    input_size = (448, 448)
-    output_size = (224, 224)
-    input_size_ImageDimensions: ImageDimensions = ImageDimensions(width=448, height=448)
+    _defaults = ModelConfig()
+    input_size = (_defaults.input_height, _defaults.input_width)
+    output_size = (_defaults.output_height, _defaults.output_width)
+    input_size_ImageDimensions: ImageDimensions = ImageDimensions(
+        width=_defaults.input_width, height=_defaults.input_height
+    )
     output_size_ImageDimensions: ImageDimensions = ImageDimensions(
-        width=224, height=224
+        width=_defaults.output_width, height=_defaults.output_height
     )
 
     def __init__(self):

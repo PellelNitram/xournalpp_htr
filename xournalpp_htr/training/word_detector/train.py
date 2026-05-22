@@ -5,15 +5,16 @@ Requires the ``training-word-detector`` extra. Run with::
     uv run python -m xournalpp_htr.training.word_detector.train --help
 """
 
-import argparse
 import json
 import random
 import time
-from datetime import datetime  # noqa: F401  (kept for parity with logs)
 from pathlib import Path
 
+import hydra
 import numpy as np
 import torch
+from hydra.core.config_store import ConfigStore
+from omegaconf import OmegaConf
 from torch.utils.data import DataLoader, Subset
 from torch.utils.tensorboard import SummaryWriter
 
@@ -27,6 +28,7 @@ from xournalpp_htr.training.shared.postprocessing import (
     fg_by_cc,
     normalize_image_transform,
 )
+from xournalpp_htr.training.word_detector.config import WordDetectorConfig
 from xournalpp_htr.training.word_detector.dataset import (
     IAM_Dataset,
     custom_collate_fn,
@@ -41,82 +43,8 @@ from xournalpp_htr.training.word_detector.utils import (
 )
 from xournalpp_htr.xio import load_IAM_DB_dataset
 
-
-def parse_args() -> dict:
-    parser = argparse.ArgumentParser(
-        description="Train a WordDetectorNet model.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-
-    training_group = parser.add_argument_group("Training Settings")
-    training_group.add_argument(
-        "--learning_rate", type=float, default=0.001, help="Learning rate"
-    )
-    training_group.add_argument(
-        "--val_epoch", type=int, default=1, help="Validation frequency in epochs"
-    )
-    training_group.add_argument(
-        "--epoch_max", type=int, default=3, help="Maximum number of epochs"
-    )
-    training_group.add_argument(
-        "--patience_max", type=int, default=50, help="Early stopping patience"
-    )
-    training_group.add_argument("--batch_size", type=int, default=32, help="Batch size")
-    training_group.add_argument(
-        "--num_workers", type=int, default=1, help="Number of data loader workers"
-    )
-
-    data_group = parser.add_argument_group("Data Settings")
-    data_group.add_argument(
-        "--data_path",
-        type=Path,
-        default=None,
-        help=(
-            "Path to the IAM-DB dataset root (the directory containing "
-            "'forms/' and 'xml/'). If omitted, the dataset is resolved from "
-            "the HuggingFace Hub via load_IAM_DB_dataset() (cached locally)."
-        ),
-    )
-    data_group.add_argument(
-        "--percent_train_data",
-        type=int,
-        default=80,
-        help="Percentage of data used for training",
-    )
-    data_group.add_argument(
-        "--no-shuffle-data-loader",
-        dest="shuffle_data_loader",
-        action="store_false",
-        help="Disable shuffling of data loader (default: enabled)",
-    )
-    parser.set_defaults(shuffle_data_loader=True)
-    data_group.add_argument(
-        "--cache_path",
-        type=Path,
-        default=Path.home() / "dataset_cache.pickle",
-        help="Path to dataset cache file",
-    )
-
-    seed_group = parser.add_argument_group("Reproducibility Settings")
-    seed_group.add_argument(
-        "--seed_split", type=int, default=42, help="Random seed for dataset splitting"
-    )
-    seed_group.add_argument(
-        "--seed_model",
-        type=int,
-        default=1337,
-        help="Random seed for model initialization",
-    )
-
-    output_group = parser.add_argument_group("Output Settings")
-    output_group.add_argument(
-        "--output_path",
-        type=Path,
-        default=Path("test_output_path"),
-        help="Output directory (created if it doesn't exist)",
-    )
-
-    return vars(parser.parse_args())
+cs = ConfigStore.instance()
+cs.store(name="word_detector", node=WordDetectorConfig)
 
 
 def seed_everything(numpy_seed=42, torch_seed=1234, random_seed=7):
@@ -211,6 +139,7 @@ def validate(
     input_size,
     output_size,
     global_step,
+    cfg_detection,
     regularisation=1e-8,
 ):
     net.eval()
@@ -238,7 +167,10 @@ def validate(
             decoded_aabbs = decode(
                 y_element,
                 scale=input_size.width / output_size.width,
-                comp_fg=fg_by_cc(thres=0.5, max_num=1000),
+                comp_fg=fg_by_cc(
+                    thres=cfg_detection.fg_threshold,
+                    max_num=cfg_detection.max_detections,
+                ),
             )
             img_np = batch["images"][i_element_in_batch, 0, :, :].to("cpu").numpy()
             h, w = img_np.shape
@@ -287,22 +219,16 @@ def train(net, optimizer, loader, writer, device, global_step):
 def train_network(
     output_path: Path,
     device: str,
-    learning_rate: float,
-    batch_size: int,
+    cfg: WordDetectorConfig,
     dataloader_train,
     dataloader_val,
-    epoch_max: int,
-    patience_max: int,
-    val_epoch: int,
-    seed_split: int,
-    seed_model: int,
 ):
     writer = SummaryWriter(output_path / "summary_writer")
 
     net = WordDetectorNet()
     net.to(device)
 
-    optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(net.parameters(), lr=cfg.training.learning_rate)
 
     global_step = 0
     epoch = 0
@@ -314,7 +240,7 @@ def train_network(
         global_step = train(
             net, optimizer, dataloader_train, writer, device, global_step
         )
-        if epoch % val_epoch == 0:
+        if epoch % cfg.training.val_epoch == 0:
             f1 = validate(
                 net,
                 dataloader_val,
@@ -323,6 +249,7 @@ def train_network(
                 WordDetectorNet.input_size_ImageDimensions,
                 WordDetectorNet.output_size_ImageDimensions,
                 global_step,
+                cfg.detection,
             )
 
             if f1 > best_val_f1:
@@ -345,79 +272,79 @@ def train_network(
             else:
                 patience_counter += 1
 
-        if patience_counter >= patience_max:
+        if patience_counter >= cfg.training.patience_max:
             print("Early stopping triggered.")
             break
 
-        if epoch >= epoch_max:
-            print(f"Reached max epoch {epoch_max}, stopping training.")
+        if epoch >= cfg.training.epoch_max:
+            print(f"Reached max epoch {cfg.training.epoch_max}, stopping training.")
             break
 
     writer.add_hparams(
         {
-            "learning_rate": learning_rate,
-            "batch_size": batch_size,
-            "seed_split": seed_split,
-            "seed_model": seed_model,
-            "patience_max": patience_max,
+            "learning_rate": cfg.training.learning_rate,
+            "batch_size": cfg.training.batch_size,
+            "seed_split": cfg.seed.split,
+            "seed_model": cfg.seed.model,
+            "patience_max": cfg.training.patience_max,
         },
         {"best_val_f1": best_val_f1},
     )
     writer.close()
 
 
-def main(args: dict):
-    if args["data_path"] is None and not args["cache_path"].exists():
-        args["data_path"] = load_IAM_DB_dataset()
-        print(f"Resolved IAM-DB dataset from HuggingFace Hub: {args['data_path']}")
+@hydra.main(version_base=None, config_name="word_detector")
+def main(cfg: WordDetectorConfig):
+    output_path = Path(cfg.output_path)
 
-    args["output_path"].mkdir(exist_ok=True, parents=True)
+    data_path = Path(cfg.data.data_path) if cfg.data.data_path else None
+    cache_path = Path(cfg.data.cache_path)
 
-    with open(args["output_path"] / "args.json", "w") as f:
-        json.dump(args, f, indent=4, cls=CustomEncoder)
+    if data_path is None and not cache_path.exists():
+        data_path = load_IAM_DB_dataset()
+        print(f"Resolved IAM-DB dataset from HuggingFace Hub: {data_path}")
+
+    output_path.mkdir(exist_ok=True, parents=True)
+
+    with open(output_path / "config.yaml", "w") as f:
+        f.write(OmegaConf.to_yaml(cfg))
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     seed_everything(
-        numpy_seed=args["seed_split"],
-        torch_seed=args["seed_model"],
-        random_seed=args["seed_model"],
+        numpy_seed=cfg.seed.split,
+        torch_seed=cfg.seed.model,
+        random_seed=cfg.seed.model,
     )
 
     t0 = time.time()
     dataloaders = get_dataloaders(
-        data_path=args["data_path"],
-        percent_train_data=args["percent_train_data"],
-        batch_size=args["batch_size"],
-        shuffle_data_loader=args["shuffle_data_loader"],
-        num_workers=args["num_workers"],
-        output_path=args["output_path"],
-        cache_path=args["cache_path"],
+        data_path=data_path,
+        percent_train_data=cfg.data.percent_train_data,
+        batch_size=cfg.training.batch_size,
+        shuffle_data_loader=cfg.data.shuffle_data_loader,
+        num_workers=cfg.training.num_workers,
+        output_path=output_path,
+        cache_path=cache_path,
     )
     dataloaders_time = time.time() - t0
 
     t0 = time.time()
     train_network(
-        output_path=args["output_path"],
+        output_path=output_path,
         device=device,
-        learning_rate=args["learning_rate"],
-        batch_size=args["batch_size"],
+        cfg=cfg,
         dataloader_train=dataloaders["train"],
         dataloader_val=dataloaders["val"],
-        epoch_max=args["epoch_max"],
-        patience_max=args["patience_max"],
-        val_epoch=args["val_epoch"],
-        seed_split=args["seed_split"],
-        seed_model=args["seed_model"],
     )
     training_time = time.time() - t0
 
-    with open(args["output_path"] / "git_commit_hash.json", "w") as f:
+    with open(output_path / "git_commit_hash.json", "w") as f:
         json.dump(
             {"git_commit_hash": get_git_commit_hash()}, f, indent=4, cls=CustomEncoder
         )
 
-    with open(args["output_path"] / "times.json", "w") as f:
+    with open(output_path / "times.json", "w") as f:
         json.dump(
             {"dataloaders": dataloaders_time, "training": training_time},
             f,
@@ -427,4 +354,4 @@ def main(args: dict):
 
 
 if __name__ == "__main__":
-    main(parse_args())
+    main()

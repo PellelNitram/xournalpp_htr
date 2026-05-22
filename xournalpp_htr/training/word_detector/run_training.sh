@@ -29,10 +29,10 @@ do
         mkdir -p "${OUT}"
 
         uv run python -m xournalpp_htr.training.word_detector.train \
-            --learning_rate "${LEARNING_RATE}" \
-            --batch_size "${BATCH_SIZE}" \
-            --output_path "${OUT}" \
-            --epoch_max "${EPOCH_MAX}" 2>&1 | tee "${OUT}/train.log"
+            training.learning_rate="${LEARNING_RATE}" \
+            training.batch_size="${BATCH_SIZE}" \
+            output_path="${OUT}" \
+            training.epoch_max="${EPOCH_MAX}" 2>&1 | tee "${OUT}/train.log"
 
     done
 done
