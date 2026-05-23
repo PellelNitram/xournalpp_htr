@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/bootstrap_worktree.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
