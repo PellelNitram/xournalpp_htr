@@ -37,6 +37,9 @@ nav:
       - 006 Model registry and training environment: 'ADRs/006_model_registry_and_training_environment.md'
     - PoCs:
       - Simplify Installation with single file executable: 'PoCs/simplify_installation_with_single_file_executable.md'
+  - Models:
+    - Overview: 'models/index.md'
+    - WordDetector: 'models/word_detector.md'
   - Contributing: 'contributing.md'
   - Roadmap: 'roadmap.md'
   - Funding: 'funding.md'
