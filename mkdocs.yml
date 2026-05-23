@@ -41,6 +41,7 @@ nav:
     - Overview: 'models/index.md'
     - WordDetector: 'models/word_detector.md'
   - Contributing: 'contributing.md'
+  - Issue Labels: 'labels.md'
   - Roadmap: 'roadmap.md'
   - Funding: 'funding.md'
 
