@@ -104,9 +104,9 @@ experiment3() {
 # Run experiments
 # ==================
 
-# experiment1
-# experiment2
-experiment3
+# time experiment1
+# time experiment2
+time experiment3
 
 # ==================
 # Future experiments
