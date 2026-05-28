@@ -23,12 +23,10 @@ documentation stay uniform across models.
 ### Source layout
 
 - Per-model code lives in `xournalpp_htr/training/<model_name>/`.
-- Generic geometry, decoders, clustering and metrics live in
-  `xournalpp_htr/training/shared/` (base deps only, so they remain
-  importable in the lean inference install).
-- The HF-Hub-backed inference class lives in
-  `xournalpp_htr/inference_models.py` and is exposed as
-  `XxxModel.from_pretrained()`, returning typed outputs. No
+- Reusable code lives in `xournalpp_htr/training/shared/` (base deps only,
+  so they remain importable in the lean inference install).
+- The HF-Hub-backed inference class lives in `xournalpp_htr/inference_models.py`
+  and is exposed as `XxxModel.from_pretrained()`, returning typed outputs. No
   `transformers` dependency — inference is uniform across all custom models
   (see ADR 003 for the pipeline contract: word-level boxes *and*
   transcriptions).
@@ -37,36 +35,22 @@ documentation stay uniform across models.
 - Demos are local Gradio apps invoked via `python -m
   xournalpp_htr.training.<model_name>.demo`, not HF Spaces (ADR 007).
 
-### Expected modules
-
-Each model directory should contain (names may vary slightly, but the roles
-should map 1:1):
-
-| File | Purpose |
-| --- | --- |
-| `config.py` | Hydra structured config — single source of truth for all constants |
-| `network.py` | Architecture + training loss |
-| `dataset.py` | Dataset loading + ground-truth encoding |
-| `train.py` | Training entrypoint (Hydra CLI) |
-| `export.py` | ONNX + `config.json` export, with `--upload` for HF Hub |
-| `infer.py` | Local torch inference from a `.pth` checkpoint |
-| `demo.py` | Local Gradio demo (ADR 007) |
-| `utils.py` | Git-hash, JSON encoder, example-image list |
-| `test_best_model.ipynb` | Offline ONNX-vs-PyTorch parity check |
-| `run_training.sh` | Hyperparameter sweep (grid search) |
-| `run_training.eval.sh` | Find the best model from a sweep |
-
 ### Training, export and publish workflow
 
-1. Configure via Hydra (`config.py` is authoritative; CLI overrides only).
-2. Run a sweep with `run_training.sh`; evaluate with `run_training.eval.sh`.
-3. Sweep results land under `experiments/<experiment>/<run>/` with
-   `best_model.pth`, `best_model.json` (best val metric + epoch),
-   TensorBoard logs in `summary_writer/`, and `config.yaml`.
-4. Inspect the best model visually with the Gradio `demo.py`.
-5. Export to ONNX + `config.json` via `export.py`; validate against the
-   PyTorch checkpoint with `test_best_model.ipynb`.
-6. Upload via `export.py --upload`.
+- Configure via Hydra.
+- Call the actual training script in a `run_training.sh` bash script.
+- Store experiments under `experiment/<experiment>/<run>` inside
+  the model folder.
+- In each run's output folder, store TensorBoard logs, the trained model
+  and its config.
+- I want to inspect the best model visually with the Gradio `demo.py`.
+- I want to export the model to ONNX and `config.json` via `export.py`
+  to be able to load it in the inference code after uploading to HF-Hub.
+  The export script should take `--checkpoint`, `--output-dir` and
+  `--export` flags.
+- Validate the ONNX export against PyTorch checkpoint with a Jupyter notebook.
+  I am reviewing the notebook manually.
+- Upload the ONNX model via `export.py --upload` after validation passes.
 
 ### HuggingFace artifact naming
 
@@ -78,22 +62,20 @@ should map 1:1):
 Each `docs/models/<model_name>.md` page should contain, in order:
 
 1. Short intro (what the model does, source link, ADR refs).
-2. **Structure** — the per-module table above, with the `uv` extra each
-   module needs.
-3. **GPU training setup** — step-by-step from clone → install → dataset →
+2. **GPU training setup** — step-by-step from clone → install → dataset →
    train → eval → demo → export → validate → upload.
-4. **Inference** — minimal `from_pretrained()` usage example.
-5. **Experiments** — log of training experiments, newest first, using the
+3. **Inference** — minimal `from_pretrained()` usage example.
+4. **Experiments** — log of training experiments, newest first, using the
    template below.
-6. **Current status** — what is implemented, known issues.
-7. **Outlook** — planned follow-ups.
+5. **Current status** — what is implemented, known issues.
+6. **Outlook** — planned follow-ups.
 
 ### Experiments log template
 
 ```
 ### <date> — <short title>
 
-- **Goal:** what question this experiment is meant to answer.
+- **Hypothesis:** what question this experiment is meant to answer.
 - **Setup:** dataset split, config overrides, code revision (commit hash).
 - **Command:** the exact training/eval command used.
 - **Results:** key metrics, path to artefacts under `experiments/`,
