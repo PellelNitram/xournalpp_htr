@@ -246,6 +246,30 @@ Suggested entry template:
 
 <!-- Add new experiments below, newest first. -->
 
+### 2026-05-28 — Experiment 2: augmentation ablation
+
+- **Goal:** does train-time data augmentation improve word detector performance?
+- **Setup:** IAM-DB, 80/20 random split, lr=0.001, bs=32, epoch_max=100,
+  patience_max=50, input 448x448. Augmentation on vs off, 3 seeds each
+  (42, 43, 44). Code revision `58a26e4`.
+- **Command:** `bash run_training.sh` (experiment2 function).
+- **Results:**
+
+  | Augmentation | Seed 42 | Seed 43 | Seed 44 | Mean F1 |
+  |---|---|---|---|---|
+  | Off | 0.8596 | 0.8681 | 0.8590 | **0.8622** |
+  | On | 0.8571 | 0.8574 | 0.8609 | **0.8584** |
+
+  Artefacts: `experiments/experiment2/aug{true,false}_seed{42,43,44}/`.
+
+- **Conclusion:** augmentation slightly hurts performance (~0.4 pp lower
+  mean F1). However, our training regime differs from the
+  [original WordDetectorNN](https://github.com/githubharald/WordDetectorNN)
+  (bs=10, unbounded epochs with early stopping, first-20-sample val split,
+  350x350 input). Experiment 3 will test augmentation under an
+  original-like regime (bs=10, unbounded epochs) to see if augmentation
+  helps there.
+
 ## Current status
 
 Everything from the original WordDetectorNN model is reimplemented, including
