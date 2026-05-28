@@ -18,7 +18,8 @@ back to its docs page.
 
 These conventions apply to every model under `xournalpp_htr/training/<model_name>/`
 and its docs page. They exist so that training, export, inference and
-documentation stay uniform across models.
+documentation stay uniform across models. See the
+[WordDetector page](word_detector.md) as a reference example.
 
 ### Source layout
 
