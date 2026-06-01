@@ -40,23 +40,23 @@ class SimpleHTRNet(nn.Module):
             nn.BatchNorm2d(channels[1]),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, 2),
-            # Layer 3: 64 -> 128, pool 1x2 (only pool width)
+            # Layer 3: 64 -> 128, pool height only (2x1)
             nn.Conv2d(channels[1], channels[2], kernel_size=3, padding=1),
             nn.BatchNorm2d(channels[2]),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d((2, 2)),
+            nn.MaxPool2d((2, 1)),
             # Layer 4: 128 -> 128, no pooling
             nn.Conv2d(channels[2], channels[3], kernel_size=3, padding=1),
             nn.BatchNorm2d(channels[3]),
             nn.ReLU(inplace=True),
-            # Layer 5: 128 -> 256, pool 1x2 (only pool width)
+            # Layer 5: 128 -> 256, pool height only (2x1)
             nn.Conv2d(channels[3], channels[4], kernel_size=3, padding=1),
             nn.BatchNorm2d(channels[4]),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d((2, 2)),
+            nn.MaxPool2d((2, 1)),
         )
 
-        # After CNN: height = 32 / (2*2*2*2) = 2, width = 128 / (2*2*2*2) = 8
+        # After CNN: height = 32 / (2*2*2*2) = 2, width = 128 / (2*2) = 32
         cnn_out_height = cfg.input_height // 16
         rnn_input_size = channels[4] * cnn_out_height
 
