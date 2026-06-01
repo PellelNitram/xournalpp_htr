@@ -7,7 +7,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from xournalpp_htr.inference_models import HFHubInferenceModel, WordDetectorModel
+from xournalpp_htr.inference_models import (
+    HFHubInferenceModel,
+    SimpleHTRModel,
+    WordDetectorModel,
+)
 from xournalpp_htr.training.shared.bounding_box import BoundingBox
 
 CHECKPOINT = (
@@ -15,6 +19,14 @@ CHECKPOINT = (
     / "xournalpp_htr"
     / "training"
     / "word_detector"
+    / "best_model.pth"
+)
+
+SIMPLE_HTR_CHECKPOINT = (
+    Path(__file__).parents[1]
+    / "xournalpp_htr"
+    / "training"
+    / "simple_htr"
     / "best_model.pth"
 )
 
@@ -55,6 +67,13 @@ def test_word_detector_repo_id_follows_adr006_naming():
     assert WordDetectorModel.HF_REPO_ID == "PellelNitram/xournalpp-htr-word-detector"
     assert re.fullmatch(
         r"PellelNitram/xournalpp-htr-[a-z0-9-]+", WordDetectorModel.HF_REPO_ID
+    )
+
+
+def test_simple_htr_repo_id_follows_adr006_naming():
+    assert SimpleHTRModel.HF_REPO_ID == "PellelNitram/xournalpp-htr-simple-htr"
+    assert re.fullmatch(
+        r"PellelNitram/xournalpp-htr-[a-z0-9-]+", SimpleHTRModel.HF_REPO_ID
     )
 
 
@@ -103,3 +122,38 @@ def test_word_detector_onnx_roundtrip_offline(tmp_path: Path):
         assert np.isfinite([b.x_min, b.y_min, b.x_max, b.y_max]).all()
         assert -1 <= b.x_min and b.x_max <= w + 1
         assert -1 <= b.y_min and b.y_max <= h + 1
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(
+    not SIMPLE_HTR_CHECKPOINT.exists(),
+    reason="best_model.pth is gitignored / local-only; skip ONNX round-trip in CI",
+)
+def test_simple_htr_onnx_roundtrip_offline(tmp_path: Path):
+    import onnxruntime as ort
+
+    pytest.importorskip(
+        "tensorboard",
+        reason="needs the training-simple-htr extra to export the checkpoint",
+    )
+    from xournalpp_htr.training.simple_htr.export import export
+
+    paths = export(SIMPLE_HTR_CHECKPOINT, tmp_path)
+    assert paths["onnx"].exists() and paths["config"].exists()
+
+    with open(paths["config"]) as f:
+        config = json.load(f)
+
+    model = SimpleHTRModel(
+        session=ort.InferenceSession(str(paths["onnx"])),
+        config=config,
+        revision="local",
+    )
+    assert "simple-htr" in repr(model)
+
+    h, w = 32, 100
+    rng = np.random.default_rng(0)
+    img = rng.integers(0, 255, size=(h, w), dtype=np.uint8)
+
+    text = model.recognize(img)
+    assert isinstance(text, str)
