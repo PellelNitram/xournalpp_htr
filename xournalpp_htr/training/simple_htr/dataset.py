@@ -96,15 +96,14 @@ class IAM_Words_Dataset(Dataset):
 
     def __init__(
         self,
-        root_dir: Path,
         target_height: int,
         target_width: int,
+        root_dir: Path | None = None,
         force_rebuild_cache: bool = False,
         augment: bool = False,
         cache_path: Path = Path("dataset_cache.pickle"),
     ):
         super().__init__()
-        self.root_dir = root_dir
         self.target_height = target_height
         self.target_width = target_width
         self.augment = augment
@@ -117,6 +116,14 @@ class IAM_Words_Dataset(Dataset):
             if self._load_from_cache(cache_path):
                 return
             logger.warning("Cache version mismatch, rebuilding.")
+
+        if root_dir is None:
+            from xournalpp_htr.xio import load_IAM_DB_dataset
+
+            root_dir = load_IAM_DB_dataset()
+            print(f"Resolved IAM-DB dataset from HuggingFace Hub: {root_dir}")
+
+        self.root_dir = root_dir
         print(f"Building and caching data from {self.root_dir}...")
         self._preprocess_and_cache(cache_path)
 

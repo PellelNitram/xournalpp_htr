@@ -33,7 +33,6 @@ from xournalpp_htr.training.simple_htr.utils import (
     get_device,
     get_git_commit_hash,
 )
-from xournalpp_htr.xio import load_IAM_DB_dataset
 
 cs = ConfigStore.instance()
 cs.store(name="simple_htr", node=SimpleHTRConfig)
@@ -71,7 +70,7 @@ def compute_cer(predicted: str, target: str) -> float:
 
 
 def get_dataloaders(
-    data_path: Path,
+    data_path: Path | None,
     percent_train_data: int,
     batch_size: int,
     shuffle_data_loader: bool,
@@ -83,17 +82,17 @@ def get_dataloaders(
     augment: bool = False,
 ) -> dict:
     train_dataset = IAM_Words_Dataset(
-        root_dir=data_path,
         target_height=target_height,
         target_width=target_width,
+        root_dir=data_path,
         force_rebuild_cache=False,
         augment=augment,
         cache_path=cache_path,
     )
     val_dataset = IAM_Words_Dataset(
-        root_dir=data_path,
         target_height=target_height,
         target_width=target_width,
+        root_dir=data_path,
         force_rebuild_cache=False,
         augment=False,
         cache_path=cache_path,
@@ -265,10 +264,6 @@ def main(cfg: SimpleHTRConfig):
 
     data_path = Path(cfg.data.data_path) if cfg.data.data_path else None
     cache_path = Path(cfg.data.cache_path)
-
-    if data_path is None:
-        data_path = load_IAM_DB_dataset()
-        print(f"Resolved IAM-DB dataset from HuggingFace Hub: {data_path}")
 
     output_path.mkdir(exist_ok=True, parents=True)
 
