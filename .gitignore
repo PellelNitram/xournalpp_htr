@@ -3,6 +3,7 @@ tests/data/
 data/datasets/
 .ipynb_checkpoints/
 .claude/worktrees/
+.claude/handover.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
