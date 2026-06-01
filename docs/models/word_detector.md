@@ -246,6 +246,38 @@ Suggested entry template:
 
 <!-- Add new experiments below, newest first. -->
 
+### 2026-06-01 — Experiment 3: augmentation under original training regime
+
+- **Goal:** does augmentation help when training closer to the original
+  WordDetectorNN regime (bs=10, unbounded epochs with early stopping)?
+  Experiment 2 showed augmentation hurting under our regime (bs=32,
+  epoch_max=100), but the original repo always uses augmentation with a
+  much smaller batch size and no epoch cap.
+- **Setup:** IAM-DB, 80/20 random split, lr=0.001, bs=10, epoch_max=10000
+  (effectively unbounded, relies on patience_max=50), input 448x448.
+  Augmentation on vs off, 3 seeds each (42, 43, 44). Code revision
+  `948f48f`.
+- **Command:** `bash run_training.sh` (experiment3 function).
+- **Results:**
+
+  | Augmentation | Seed 42 | Seed 43 | Seed 44 | Mean F1 |
+  |---|---|---|---|---|
+  | Off | 0.8750 | 0.8786 | 0.8799 | **0.8779** |
+  | On | 0.8896 | 0.8819 | 0.8787 | **0.8834** |
+
+  Augmented runs trained longer before early stopping (139–416 epochs vs
+  95–165 epochs), indicating augmentation adds useful diversity the model
+  can exploit given enough training time.
+
+  Artefacts: `experiments/experiment3/aug{true,false}_seed{42,43,44}/`.
+
+- **Conclusion:** under the original-like regime (bs=10, unbounded epochs),
+  augmentation helps (+0.55 pp mean F1). Both conditions also outperform
+  experiment 2 overall (mean F1 ~0.88 vs ~0.86), confirming that the
+  smaller batch size with longer training is beneficial. The recommended
+  final training configuration is **bs=10, augmentation on, unbounded
+  epochs with early stopping (patience 50)**.
+
 ### 2026-05-28 — Experiment 2: augmentation ablation
 
 - **Goal:** does train-time data augmentation improve word detector performance?
