@@ -266,7 +266,7 @@ def main(cfg: SimpleHTRConfig):
     data_path = Path(cfg.data.data_path) if cfg.data.data_path else None
     cache_path = Path(cfg.data.cache_path)
 
-    if data_path is None and not cache_path.exists():
+    if data_path is None:
         data_path = load_IAM_DB_dataset()
         print(f"Resolved IAM-DB dataset from HuggingFace Hub: {data_path}")
 
