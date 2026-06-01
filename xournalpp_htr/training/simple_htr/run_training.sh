@@ -43,7 +43,7 @@ experiment1() {
 # Run experiments
 # ==================
 
-experiment1
+time experiment1
 
 # ==================
 # Future experiments
