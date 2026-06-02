@@ -19,21 +19,28 @@ from xournalpp_htr.training.simple_htr.dataset import CHARSET
 from xournalpp_htr.training.simple_htr.infer import run_image_through_network
 
 
-def _plot_ctc_matrix(log_probs: np.ndarray) -> plt.Figure:
-    """Visualise the CTC output matrix (seq_len x num_classes) as a heatmap."""
+def _plot_ctc_matrix(log_probs: np.ndarray, top_k: int = 10) -> plt.Figure:
+    """Visualise the CTC output matrix, showing only the top-k characters."""
     probs = np.exp(log_probs)  # (seq_len, num_classes)
 
     labels = list(CHARSET) + ["∅"]
 
-    fig, ax = plt.subplots(figsize=(max(10, probs.shape[0] * 0.4), 6))
-    im = ax.imshow(probs.T, aspect="auto", cmap="Blues", vmin=0, vmax=1)
+    total_prob = probs.sum(axis=0)
+    top_indices = np.argsort(total_prob)[::-1][:top_k]
+    top_indices = np.sort(top_indices)
+
+    probs_top = probs[:, top_indices]
+    labels_top = [labels[i] for i in top_indices]
+
+    fig, ax = plt.subplots(figsize=(max(10, probs.shape[0] * 0.4), 4))
+    im = ax.imshow(probs_top.T, aspect="auto", cmap="Blues", vmin=0, vmax=1)
     ax.set_xlabel("Timestep", fontsize=12)
     ax.set_ylabel("Character", fontsize=12)
-    ax.set_title("CTC output probabilities", fontsize=14)
+    ax.set_title(f"CTC output probabilities (top {top_k} characters)", fontsize=14)
     ax.set_xticks(range(probs.shape[0]))
-    ax.set_xticklabels(range(probs.shape[0]), fontsize=7)
-    ax.set_yticks(range(len(labels)))
-    ax.set_yticklabels(labels, fontsize=7, fontfamily="monospace")
+    ax.set_xticklabels(range(probs.shape[0]), fontsize=8)
+    ax.set_yticks(range(len(labels_top)))
+    ax.set_yticklabels(labels_top, fontsize=11, fontfamily="monospace")
     fig.colorbar(im, ax=ax, label="Probability", shrink=0.8)
     fig.tight_layout()
     return fig
