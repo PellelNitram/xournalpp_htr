@@ -17,9 +17,14 @@ import numpy as np
 from xournalpp_htr.training.simple_htr.infer import run_image_through_network
 
 
-def build_demo(model_path: Path, device_selection: str) -> gr.Interface:
+def build_demo(model_path: Path, device_selection: str) -> gr.Blocks:
     def process_image(image: np.ndarray) -> str:
-        image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        if image is None:
+            return ""
+        if len(image.shape) == 3:
+            image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        else:
+            image_gray = image
         result = run_image_through_network(
             image_grayscale=image_gray,
             model_path=model_path,
@@ -27,25 +32,53 @@ def build_demo(model_path: Path, device_selection: str) -> gr.Interface:
         )
         return result["text"]
 
-    return gr.Interface(
-        fn=process_image,
-        inputs=gr.Image(type="numpy", label="Word image"),
-        outputs=gr.Textbox(label="Recognised text"),
-        title="SimpleHTR: Handwritten Word Recognition (local)",
-        description="Recognise a single handwritten word. Upload an image of "
-        "a handwritten word to get the predicted text.",
-        article="""
-        ### About this project
-        Part of **[Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr)**,
-        an open-source effort to bring handwritten text recognition to
-        [Xournal++](https://github.com/xournalpp/xournalpp).
+    def process_sketch(sketch: dict) -> str:
+        if sketch is None:
+            return ""
+        composite = sketch["composite"]
+        if composite is None:
+            return ""
+        return process_image(composite)
 
-        The original SimpleHTR model was created by **Harald Scheidl**
-        ([SimpleHTR](https://github.com/githubharald/SimpleHTR)) and is
-        reimplemented here with PyTorch. Thanks Harald!
-        """,
-        cache_examples=False,
-    )
+    article = """
+    ### About this project
+    Part of **[Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr)**,
+    an open-source effort to bring handwritten text recognition to
+    [Xournal++](https://github.com/xournalpp/xournalpp).
+
+    The original SimpleHTR model was created by **Harald Scheidl**
+    ([SimpleHTR](https://github.com/githubharald/SimpleHTR)) and is
+    reimplemented here with PyTorch. Thanks Harald!
+    """
+
+    with gr.Blocks(title="SimpleHTR: Handwritten Word Recognition (local)") as demo:
+        gr.Markdown("# SimpleHTR: Handwritten Word Recognition (local)")
+        gr.Markdown("Recognise a single handwritten word. Upload an image or draw one.")
+
+        with gr.Tabs():
+            with gr.TabItem("Upload image"):
+                upload_input = gr.Image(type="numpy", label="Word image")
+                upload_output = gr.Textbox(label="Recognised text")
+                upload_btn = gr.Button("Recognise")
+                upload_btn.click(
+                    process_image, inputs=upload_input, outputs=upload_output
+                )
+
+            with gr.TabItem("Draw"):
+                sketch_input = gr.Sketchpad(
+                    label="Draw a word",
+                    brush=gr.Brush(default_size=3, colors=["black"]),
+                    canvas_size=(400, 100),
+                )
+                sketch_output = gr.Textbox(label="Recognised text")
+                sketch_btn = gr.Button("Recognise")
+                sketch_btn.click(
+                    process_sketch, inputs=sketch_input, outputs=sketch_output
+                )
+
+        gr.Markdown(article)
+
+    return demo
 
 
 def main() -> None:
