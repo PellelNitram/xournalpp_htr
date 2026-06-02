@@ -155,21 +155,24 @@ class SimpleHTRModel(HFHubInferenceModel):
         """Recognise text in a grayscale word image.
 
         The image is resized to the network's expected input dimensions
-        (height-preserving with padding) and normalised before inference.
+        (uniform scale, centered on white canvas) and normalised before inference.
         """
         input_size = self.config["input_size"]
         in_h, in_w = input_size["height"], input_size["width"]
         norm = self.config["normalization"]
 
         h, w = image_grayscale.shape[:2]
-        scale = in_h / h
-        new_w = min(int(w * scale), in_w)
-        resized = cv2.resize(image_grayscale, (new_w, in_h))
+        scale = min(in_w / w, in_h / h)
+        new_w = int(w * scale)
+        new_h = int(h * scale)
+        resized = cv2.resize(image_grayscale, (new_w, new_h))
 
-        padded = np.ones((in_h, in_w), dtype=np.uint8) * 255
-        padded[:, :new_w] = resized
+        canvas = np.ones((in_h, in_w), dtype=np.uint8) * 255
+        y_off = (in_h - new_h) // 2
+        x_off = (in_w - new_w) // 2
+        canvas[y_off : y_off + new_h, x_off : x_off + new_w] = resized
 
-        normalised = padded.astype(np.float32) / norm["scale"] + norm["shift"]
+        normalised = canvas.astype(np.float32) / norm["scale"] + norm["shift"]
         net_input = normalised[None, None, :, :]
 
         log_probs = self.session.run(None, {self._input_name: net_input})[0]

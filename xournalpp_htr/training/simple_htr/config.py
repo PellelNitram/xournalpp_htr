@@ -23,7 +23,7 @@ class TrainingConfig:
     learning_rate: float = 0.001
     batch_size: int = 64
     epoch_max: int = 100
-    patience_max: int = 15
+    patience_max: int = 25
     val_epoch: int = 1
     num_workers: int = 4
 

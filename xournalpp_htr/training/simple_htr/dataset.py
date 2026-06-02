@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
-CACHE_VERSION = "v2"
+CACHE_VERSION = "v3"
 
 
 def build_charset(texts: List[str]) -> List[str]:
@@ -37,16 +37,28 @@ def preprocess_image(
     img: np.ndarray, target_height: int, target_width: int
 ) -> np.ndarray:
     h, w = img.shape[:2]
-    scale = target_height / h
-    new_w = min(int(w * scale), target_width)
-    resized = cv2.resize(img, (new_w, target_height))
+    scale = min(target_width / w, target_height / h)
+    new_w = int(w * scale)
+    new_h = int(h * scale)
+    resized = cv2.resize(img, (new_w, new_h))
 
-    padded = np.ones((target_height, target_width), dtype=np.uint8) * 255
-    padded[:, :new_w] = resized
-    return padded
+    canvas = np.ones((target_height, target_width), dtype=np.uint8) * 255
+    y_off = (target_height - new_h) // 2
+    x_off = (target_width - new_w) // 2
+    canvas[y_off : y_off + new_h, x_off : x_off + new_w] = resized
+    return canvas
 
 
 def _apply_augmentation(img: np.ndarray) -> np.ndarray:
+    if np.random.random() < 0.25:
+        kernel_size = np.random.choice([3, 5, 7])
+        if img.dtype != np.uint8:
+            img_uint8 = ((img + 0.5) * 255).clip(0, 255).astype(np.uint8)
+            img_uint8 = cv2.GaussianBlur(img_uint8, (kernel_size, kernel_size), 0)
+            img = img_uint8.astype(np.float32) / 255.0 - 0.5
+        else:
+            img = cv2.GaussianBlur(img, (kernel_size, kernel_size), 0)
+
     if np.random.random() < 0.5:
         img_min, img_max = img.min(), img.max()
         if img_max - img_min > 1e-6:
@@ -59,7 +71,7 @@ def _apply_augmentation(img: np.ndarray) -> np.ndarray:
         img = img + noise
 
     if np.random.random() < 0.2:
-        kernel = np.ones((2, 2), np.uint8)
+        kernel = np.ones((3, 3), np.uint8)
         if img.dtype != np.uint8:
             img_uint8 = ((img + 0.5) * 255).clip(0, 255).astype(np.uint8)
         else:
@@ -72,6 +84,28 @@ def _apply_augmentation(img: np.ndarray) -> np.ndarray:
             img = img_uint8.astype(np.float32) / 255.0 - 0.5
         else:
             img = img_uint8
+
+    if np.random.random() < 0.5:
+        h, w = img.shape[:2]
+        if img.dtype != np.uint8:
+            img_uint8 = ((img + 0.5) * 255).clip(0, 255).astype(np.uint8)
+        else:
+            img_uint8 = img
+        scale = np.random.uniform(0.75, 1.05)
+        new_h, new_w = int(h * scale), int(w * scale)
+        resized = cv2.resize(img_uint8, (new_w, new_h))
+        # Random position on white canvas
+        canvas = np.ones((h, w), dtype=np.uint8) * 255
+        paste_h, paste_w = min(new_h, h), min(new_w, w)
+        max_y = max(h - paste_h, 0)
+        max_x = max(w - paste_w, 0)
+        y = np.random.randint(0, max_y + 1)
+        x = np.random.randint(0, max_x + 1)
+        canvas[y : y + paste_h, x : x + paste_w] = resized[:paste_h, :paste_w]
+        if img.dtype != np.uint8:
+            img = canvas.astype(np.float32) / 255.0 - 0.5
+        else:
+            img = canvas
 
     return img
 
