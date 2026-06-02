@@ -18,22 +18,19 @@ from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
-CACHE_VERSION = "v1"
-
-CHARSET = list(
-    " !\"#&'()*+,-./0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-)
-
-CHAR_TO_IDX = {c: i for i, c in enumerate(CHARSET)}
-IDX_TO_CHAR = dict(enumerate(CHARSET))
+CACHE_VERSION = "v2"
 
 
-def encode_text(text: str) -> List[int]:
-    return [CHAR_TO_IDX[c] for c in text if c in CHAR_TO_IDX]
+def build_charset(texts: List[str]) -> List[str]:
+    return sorted({c for t in texts for c in t})
 
 
-def decode_indices(indices: List[int]) -> str:
-    return "".join(IDX_TO_CHAR[i] for i in indices if i in IDX_TO_CHAR)
+def encode_text(text: str, char_to_idx: dict) -> List[int]:
+    return [char_to_idx[c] for c in text if c in char_to_idx]
+
+
+def decode_indices(indices: List[int], idx_to_char: dict) -> str:
+    return "".join(idx_to_char[i] for i in indices if i in idx_to_char)
 
 
 def preprocess_image(
@@ -111,6 +108,9 @@ class IAM_Words_Dataset(Dataset):
         self.img_cache: List[np.ndarray] = []
         self.text_cache: List[str] = []
         self.filename_cache: List[str] = []
+        self.charset: List[str] = []
+        self.char_to_idx: dict = {}
+        self.idx_to_char: dict = {}
 
         if cache_path.exists() and not force_rebuild_cache:
             if self._load_from_cache(cache_path):
@@ -127,12 +127,18 @@ class IAM_Words_Dataset(Dataset):
         print(f"Building and caching data from {self.root_dir}...")
         self._preprocess_and_cache(cache_path)
 
+    def _init_charset(self, charset: List[str]):
+        self.charset = charset
+        self.char_to_idx = {c: i for i, c in enumerate(charset)}
+        self.idx_to_char = dict(enumerate(charset))
+
     def _load_from_cache(self, cache_path: Path) -> bool:
         print(f"Loading cached data from {cache_path}...")
         with open(cache_path, "rb") as f:
             payload = pickle.load(f)
         if isinstance(payload, dict) and payload.get("version") == CACHE_VERSION:
             self.img_cache, self.text_cache, self.filename_cache = payload["data"]
+            self._init_charset(payload["charset"])
             return True
         return False
 
@@ -160,12 +166,17 @@ class IAM_Words_Dataset(Dataset):
             self.text_cache.append(text)
             self.filename_cache.append(word_id)
 
-        print(f"Preprocessing complete. {len(self.img_cache)} samples loaded.")
+        self._init_charset(build_charset(self.text_cache))
+        print(
+            f"Preprocessing complete. {len(self.img_cache)} samples loaded, "
+            f"{len(self.charset)} unique characters."
+        )
         print(f"Saving cache to {cache_path}...")
         with open(cache_path, "wb") as f:
             pickle.dump(
                 {
                     "version": CACHE_VERSION,
+                    "charset": self.charset,
                     "data": [
                         self.img_cache,
                         self.text_cache,
@@ -192,10 +203,8 @@ class IAM_Words_Dataset(Dataset):
                     continue
                 word_id = parts[0]
                 text = parts[-1]
-                # words.txt uses | for space within a word (rare)
                 text = text.replace("|", " ")
-                if all(c in CHAR_TO_IDX for c in text):
-                    entries.append((word_id, text))
+                entries.append((word_id, text))
         return entries
 
     def __len__(self) -> int:
@@ -210,7 +219,7 @@ class IAM_Words_Dataset(Dataset):
         if self.augment:
             image = _apply_augmentation(image)
 
-        encoded = encode_text(text)
+        encoded = encode_text(text, self.char_to_idx)
         return {
             "image": image,
             "text": text,

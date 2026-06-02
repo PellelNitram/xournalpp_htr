@@ -15,15 +15,16 @@ import gradio as gr
 import matplotlib.pyplot as plt
 import numpy as np
 
-from xournalpp_htr.training.simple_htr.dataset import CHARSET
 from xournalpp_htr.training.simple_htr.infer import run_image_through_network
 
 
-def _plot_ctc_matrix(log_probs: np.ndarray, top_k: int = 10) -> plt.Figure:
+def _plot_ctc_matrix(
+    log_probs: np.ndarray, charset: list[str], top_k: int = 10
+) -> plt.Figure:
     """Visualise the CTC output matrix, showing only the top-k characters."""
     probs = np.exp(log_probs)  # (seq_len, num_classes)
 
-    labels = list(CHARSET) + ["∅"]
+    labels = list(charset) + ["∅"]
 
     total_prob = probs.sum(axis=0)
     top_indices = np.argsort(total_prob)[::-1][:top_k]
@@ -59,7 +60,7 @@ def build_demo(model_path: Path, device_selection: str) -> gr.Blocks:
             model_path=model_path,
             device=device_selection,
         )
-        fig = _plot_ctc_matrix(result["log_probs"])
+        fig = _plot_ctc_matrix(result["log_probs"], result["charset"])
         return result["text"], fig
 
     def process_sketch(sketch: dict) -> tuple[str, plt.Figure]:

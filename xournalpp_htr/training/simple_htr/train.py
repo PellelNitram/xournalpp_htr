@@ -130,15 +130,20 @@ def get_dataloaders(
         pin_memory=True,
     )
 
-    return {"train": dataloader_train, "val": dataloader_val}
+    return {
+        "train": dataloader_train,
+        "val": dataloader_val,
+        "charset": train_dataset.charset,
+    }
 
 
-def validate(net, dataloader_val, writer, device, global_step):
+def validate(net, dataloader_val, writer, device, global_step, charset):
     net.eval()
     total_loss = 0.0
     total_cer = 0.0
     total_correct = 0
     total_samples = 0
+    blank = len(charset)
 
     for batch in dataloader_val:
         images = batch["images"].to(device)
@@ -148,10 +153,10 @@ def validate(net, dataloader_val, writer, device, global_step):
 
         with torch.no_grad():
             log_probs = net(images)
-            loss = compute_ctc_loss(log_probs, targets, target_lengths)
+            loss = compute_ctc_loss(log_probs, targets, target_lengths, blank)
             total_loss += loss.item()
 
-            decoded = greedy_decode(log_probs)
+            decoded = greedy_decode(log_probs, charset)
             for pred, gt in zip(decoded, texts, strict=False):
                 total_cer += compute_cer(pred, gt)
                 if pred == gt:
@@ -169,8 +174,9 @@ def validate(net, dataloader_val, writer, device, global_step):
     return avg_cer, word_acc
 
 
-def train_epoch(net, optimizer, loader, writer, device, global_step):
+def train_epoch(net, optimizer, loader, writer, device, global_step, charset):
     net.train()
+    blank = len(charset)
     for i, batch in enumerate(loader):
         images = batch["images"].to(device)
         targets = batch["targets"].to(device)
@@ -178,7 +184,7 @@ def train_epoch(net, optimizer, loader, writer, device, global_step):
 
         optimizer.zero_grad()
         log_probs = net(images)
-        loss = compute_ctc_loss(log_probs, targets, target_lengths)
+        loss = compute_ctc_loss(log_probs, targets, target_lengths, blank)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm=5.0)
         optimizer.step()
@@ -195,11 +201,16 @@ def train_network(
     cfg: SimpleHTRConfig,
     dataloader_train,
     dataloader_val,
+    charset: list[str],
 ):
     writer = SummaryWriter(output_path / "summary_writer")
 
-    net = SimpleHTRNet()
+    num_classes = len(charset) + 1  # +1 for CTC blank
+    net = SimpleHTRNet(num_classes=num_classes)
     net.to(device)
+
+    with open(output_path / "charset.json", "w") as f:
+        json.dump(charset, f)
 
     optimizer = torch.optim.Adam(net.parameters(), lr=cfg.training.learning_rate)
 
@@ -211,10 +222,12 @@ def train_network(
         epoch += 1
         print(f"Epoch: {epoch}")
         global_step = train_epoch(
-            net, optimizer, dataloader_train, writer, device, global_step
+            net, optimizer, dataloader_train, writer, device, global_step, charset
         )
         if epoch % cfg.training.val_epoch == 0:
-            cer, word_acc = validate(net, dataloader_val, writer, device, global_step)
+            cer, word_acc = validate(
+                net, dataloader_val, writer, device, global_step, charset
+            )
             print(f"  Val CER: {cer:.4f}, Word Accuracy: {word_acc:.4f}")
 
             if cer < best_val_cer:
@@ -293,6 +306,9 @@ def main(cfg: SimpleHTRConfig):
     )
     dataloaders_time = time.time() - t0
 
+    charset = dataloaders["charset"]
+    print(f"Charset: {len(charset)} characters")
+
     t0 = time.time()
     train_network(
         output_path=output_path,
@@ -300,6 +316,7 @@ def main(cfg: SimpleHTRConfig):
         cfg=cfg,
         dataloader_train=dataloaders["train"],
         dataloader_val=dataloaders["val"],
+        charset=charset,
     )
     training_time = time.time() - t0
 

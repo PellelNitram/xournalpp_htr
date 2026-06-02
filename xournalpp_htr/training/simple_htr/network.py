@@ -8,25 +8,26 @@ character-level logits for CTC decoding.
 Requires the ``training-simple-htr`` extra (torch).
 """
 
+from typing import List
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from xournalpp_htr.training.simple_htr.config import ModelConfig
-from xournalpp_htr.training.simple_htr.dataset import CHARSET
 
 
 class SimpleHTRNet(nn.Module):
     _defaults = ModelConfig()
     input_height = _defaults.input_height
     input_width = _defaults.input_width
-    num_classes = len(CHARSET) + 1  # +1 for CTC blank
 
-    def __init__(self, cfg: ModelConfig | None = None):
+    def __init__(self, num_classes: int, cfg: ModelConfig | None = None):
         super().__init__()
         if cfg is None:
             cfg = ModelConfig()
 
+        self.num_classes = num_classes
         channels = cfg.cnn_channels
 
         self.cnn = nn.Sequential(
@@ -69,7 +70,7 @@ class SimpleHTRNet(nn.Module):
             dropout=cfg.dropout if cfg.rnn_layers > 1 else 0.0,
         )
 
-        self.fc = nn.Linear(cfg.rnn_hidden * 2, self.num_classes)
+        self.fc = nn.Linear(cfg.rnn_hidden * 2, num_classes)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass.
@@ -95,25 +96,25 @@ def compute_ctc_loss(
     log_probs: torch.Tensor,
     targets: torch.Tensor,
     target_lengths: torch.Tensor,
+    blank: int,
 ) -> torch.Tensor:
     input_lengths = torch.full(
         (log_probs.size(1),), log_probs.size(0), dtype=torch.long
     )
-    return F.ctc_loss(
-        log_probs, targets, input_lengths, target_lengths, blank=len(CHARSET)
-    )
+    return F.ctc_loss(log_probs, targets, input_lengths, target_lengths, blank=blank)
 
 
-def greedy_decode(log_probs: torch.Tensor) -> list[str]:
+def greedy_decode(log_probs: torch.Tensor, charset: List[str]) -> list[str]:
     """Best-path CTC decoding.
 
     Args:
         log_probs: (seq_len, batch, num_classes) from ``forward()``.
+        charset: list of characters (blank index = len(charset)).
 
     Returns:
         List of decoded strings, one per batch element.
     """
-    blank = len(CHARSET)
+    blank = len(charset)
     predictions = log_probs.argmax(dim=2).permute(1, 0)  # (batch, seq_len)
     results = []
     for pred in predictions:
@@ -122,7 +123,7 @@ def greedy_decode(log_probs: torch.Tensor) -> list[str]:
         for idx in pred:
             idx = idx.item()
             if idx != prev and idx != blank:
-                chars.append(CHARSET[idx])
+                chars.append(charset[idx])
             prev = idx
         results.append("".join(chars))
     return results

@@ -18,21 +18,22 @@ from pathlib import Path
 
 import torch
 
-from xournalpp_htr.training.simple_htr.dataset import CHARSET
+from xournalpp_htr.training.simple_htr.infer import load_charset
 from xournalpp_htr.training.simple_htr.network import SimpleHTRNet
 
 HF_REPO_ID = "PellelNitram/xournalpp-htr-simple-htr"
 
 
-def build_config() -> dict:
+def build_config(charset: list[str]) -> dict:
+    num_classes = len(charset) + 1
     return {
         "model_name": "simple_htr",
         "input_size": {
             "height": SimpleHTRNet.input_height,
             "width": SimpleHTRNet.input_width,
         },
-        "charset": CHARSET,
-        "num_classes": SimpleHTRNet.num_classes,
+        "charset": charset,
+        "num_classes": num_classes,
         "normalization": {
             "scale": 255.0,
             "shift": -0.5,
@@ -44,7 +45,10 @@ def export(checkpoint: Path, output_dir: Path) -> dict:
     """Export ``checkpoint`` to ``output_dir`` as ``model.onnx`` + ``config.json``."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    net = SimpleHTRNet()
+    charset = load_charset(checkpoint)
+    num_classes = len(charset) + 1
+
+    net = SimpleHTRNet(num_classes=num_classes)
     net.load_state_dict(torch.load(checkpoint, map_location="cpu"))
     net.eval()
 
@@ -65,7 +69,7 @@ def export(checkpoint: Path, output_dir: Path) -> dict:
 
     config_path = output_dir / "config.json"
     with open(config_path, "w") as f:
-        json.dump(build_config(), f, indent=2)
+        json.dump(build_config(charset), f, indent=2)
 
     print(f"Wrote {onnx_path} and {config_path}")
     return {"onnx": onnx_path, "config": config_path}

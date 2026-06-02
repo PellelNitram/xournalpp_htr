@@ -5,6 +5,7 @@ checkpoint* directly (before/without an ONNX export). Production inference uses
 the ONNX path via :class:`xournalpp_htr.inference_models.SimpleHTRModel`.
 """
 
+import json
 from pathlib import Path
 
 import numpy as np
@@ -15,13 +16,22 @@ from xournalpp_htr.training.simple_htr.network import SimpleHTRNet, greedy_decod
 from xournalpp_htr.training.simple_htr.utils import get_device
 
 
+def load_charset(model_path: Path) -> list[str]:
+    charset_path = model_path.parent / "charset.json"
+    with open(charset_path) as f:
+        return json.load(f)
+
+
 def run_image_through_network(
     image_grayscale: np.ndarray,
     model_path: Path = Path("best_model.pth"),
     device: str = "auto",
 ) -> dict:
     device = get_device(device)
-    model = SimpleHTRNet()
+    charset = load_charset(model_path)
+    num_classes = len(charset) + 1
+
+    model = SimpleHTRNet(num_classes=num_classes)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.to(device)
     model.eval()
@@ -35,10 +45,11 @@ def run_image_through_network(
     with torch.no_grad():
         log_probs = model(tensor_input)
 
-    decoded = greedy_decode(log_probs)
+    decoded = greedy_decode(log_probs, charset)
 
     return {
         "text": decoded[0],
         "model_input_image": normalized,
         "log_probs": log_probs[:, 0, :].cpu().numpy(),
+        "charset": charset,
     }
