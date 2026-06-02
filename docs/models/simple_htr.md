@@ -123,7 +123,35 @@ print(text)
 
 ## Experiments
 
-_No experiments logged yet._
+### 2026-06-02 — Experiment 1: learning rate and batch size sweep
+
+- **Hypothesis:** Find the best learning rate and batch size combination
+  for the default SimpleHTR architecture on IAM words.
+- **Setup:** IAM word-level dataset, 95/5 train/val split, no augmentation,
+  early stopping with patience 15, max 100 epochs. Grid: LR ∈ {0.0005,
+  0.001, 0.002} × BS ∈ {32, 64, 128}. NVIDIA A100 40GB.
+- **Command:** `bash xournalpp_htr/training/simple_htr/run_training.sh`
+- **Code revision:** `a72b64c`
+- **Results:**
+
+| LR | BS | Best Epoch | CER | Word Acc | Path |
+|---|---|---|---|---|---|
+| 0.001 | 64 | 64 | **0.072** | **78.9%** | `experiments/experiment1/lr0.001_bs64/` |
+| 0.0005 | 32 | 15 | 0.075 | 78.1% | `experiments/experiment1/lr0.0005_bs32/` |
+| 0.0005 | 64 | 28 | 0.076 | 77.1% | `experiments/experiment1/lr0.0005_bs64/` |
+| 0.001 | 32 | 37 | 0.078 | 77.4% | `experiments/experiment1/lr0.001_bs32/` |
+| 0.001 | 128 | 29 | 0.078 | 77.7% | `experiments/experiment1/lr0.001_bs128/` |
+| 0.0005 | 128 | 20 | 0.078 | 77.2% | `experiments/experiment1/lr0.0005_bs128/` |
+| 0.002 | 128 | 41 | 0.078 | 77.1% | `experiments/experiment1/lr0.002_bs128/` |
+| 0.002 | 64 | 32 | 0.080 | 76.4% | `experiments/experiment1/lr0.002_bs64/` |
+| 0.002 | 32 | 44 | 0.081 | 76.3% | `experiments/experiment1/lr0.002_bs32/` |
+
+- **Conclusion:** LR=0.001 with BS=64 achieves the best CER (0.072) and
+  word accuracy (78.9%), matching the original SimpleHTR's reported ~75%.
+  Performance is fairly stable across configurations (CER 0.072–0.081).
+  Lower learning rates (0.0005) converge in fewer epochs but reach similar
+  accuracy; higher LR (0.002) slightly underperforms. Recommended defaults:
+  LR=0.001, BS=64.
 
 ## Current status
 
@@ -134,12 +162,11 @@ _No experiments logged yet._
 - [x] Inference model (`SimpleHTRModel`)
 - [x] Local Gradio demo
 - [x] Hyperparameter sweep script
-- [ ] First training run and experiment log
+- [x] First training run and experiment log
 - [ ] ONNX validation notebook
 
 ## Outlook
 
-- Run experiment 1 (LR/BS sweep) and document results
 - Add augmentation experiment
 - Add beam search decoding
 - Integrate into full pipeline (word detection + recognition)
