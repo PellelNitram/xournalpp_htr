@@ -12,15 +12,37 @@ from pathlib import Path
 
 import cv2
 import gradio as gr
+import matplotlib.pyplot as plt
 import numpy as np
 
+from xournalpp_htr.training.simple_htr.dataset import CHARSET
 from xournalpp_htr.training.simple_htr.infer import run_image_through_network
 
 
+def _plot_ctc_matrix(log_probs: np.ndarray) -> plt.Figure:
+    """Visualise the CTC output matrix (seq_len x num_classes) as a heatmap."""
+    probs = np.exp(log_probs)  # (seq_len, num_classes)
+
+    labels = list(CHARSET) + ["∅"]
+
+    fig, ax = plt.subplots(figsize=(max(10, probs.shape[0] * 0.4), 6))
+    im = ax.imshow(probs.T, aspect="auto", cmap="Blues", vmin=0, vmax=1)
+    ax.set_xlabel("Timestep", fontsize=12)
+    ax.set_ylabel("Character", fontsize=12)
+    ax.set_title("CTC output probabilities", fontsize=14)
+    ax.set_xticks(range(probs.shape[0]))
+    ax.set_xticklabels(range(probs.shape[0]), fontsize=7)
+    ax.set_yticks(range(len(labels)))
+    ax.set_yticklabels(labels, fontsize=7, fontfamily="monospace")
+    fig.colorbar(im, ax=ax, label="Probability", shrink=0.8)
+    fig.tight_layout()
+    return fig
+
+
 def build_demo(model_path: Path, device_selection: str) -> gr.Blocks:
-    def process_image(image: np.ndarray) -> str:
+    def process_image(image: np.ndarray) -> tuple[str, plt.Figure]:
         if image is None:
-            return ""
+            return "", None
         if len(image.shape) == 3:
             image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         else:
@@ -30,14 +52,15 @@ def build_demo(model_path: Path, device_selection: str) -> gr.Blocks:
             model_path=model_path,
             device=device_selection,
         )
-        return result["text"]
+        fig = _plot_ctc_matrix(result["log_probs"])
+        return result["text"], fig
 
-    def process_sketch(sketch: dict) -> str:
+    def process_sketch(sketch: dict) -> tuple[str, plt.Figure]:
         if sketch is None:
-            return ""
+            return "", None
         composite = sketch["composite"]
         if composite is None:
-            return ""
+            return "", None
         return process_image(composite)
 
     article = """
@@ -59,9 +82,12 @@ def build_demo(model_path: Path, device_selection: str) -> gr.Blocks:
             with gr.TabItem("Upload image"):
                 upload_input = gr.Image(type="numpy", label="Word image")
                 upload_output = gr.Textbox(label="Recognised text")
+                upload_plot = gr.Plot(label="CTC output probabilities")
                 upload_btn = gr.Button("Recognise")
                 upload_btn.click(
-                    process_image, inputs=upload_input, outputs=upload_output
+                    process_image,
+                    inputs=upload_input,
+                    outputs=[upload_output, upload_plot],
                 )
 
             with gr.TabItem("Draw"):
@@ -71,9 +97,12 @@ def build_demo(model_path: Path, device_selection: str) -> gr.Blocks:
                     canvas_size=(400, 100),
                 )
                 sketch_output = gr.Textbox(label="Recognised text")
+                sketch_plot = gr.Plot(label="CTC output probabilities")
                 sketch_btn = gr.Button("Recognise")
                 sketch_btn.click(
-                    process_sketch, inputs=sketch_input, outputs=sketch_output
+                    process_sketch,
+                    inputs=sketch_input,
+                    outputs=[sketch_output, sketch_plot],
                 )
 
         gr.Markdown(article)

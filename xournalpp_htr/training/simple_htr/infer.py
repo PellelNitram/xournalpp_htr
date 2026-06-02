@@ -40,4 +40,5 @@ def run_image_through_network(
     return {
         "text": decoded[0],
         "model_input_image": normalized,
+        "log_probs": log_probs[:, 0, :].cpu().numpy(),
     }
