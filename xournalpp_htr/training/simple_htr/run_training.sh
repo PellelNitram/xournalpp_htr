@@ -39,17 +39,78 @@ experiment1() {
     done
 }
 
+# ============
+# Experiment 2
+# ============
+
+# Question: Does augmentation help?
+# Uses best LR from experiment 1 (0.0005), sweeps batch size with augmentation
+# on vs off. Longer training (200 epochs) to let augmented runs converge.
+
+experiment2() {
+    local EPOCH_MAX=200
+    local LEARNING_RATE=0.0005
+
+    for AUGMENTATION in false true
+    do
+        for BATCH_SIZE in 32 64 128
+        do
+
+            echo "AUG=${AUGMENTATION}, BS=${BATCH_SIZE}"
+
+            OUT="${BASE_PATH}/experiment2/aug${AUGMENTATION}_bs${BATCH_SIZE}"
+            mkdir -p "${OUT}"
+
+            time uv run python -m xournalpp_htr.training.simple_htr.train \
+                training.learning_rate="${LEARNING_RATE}" \
+                training.batch_size="${BATCH_SIZE}" \
+                augmentation.enabled="${AUGMENTATION}" \
+                output_path="${OUT}" \
+                training.epoch_max="${EPOCH_MAX}" 2>&1 | tee "${OUT}/train.log"
+
+        done
+    done
+}
+
+# ============
+# Experiment 3
+# ============
+
+# Question: Does dropout help?
+# Uses best LR from experiment 1 (0.0005) and best augmentation setting from
+# experiment 2. Sweeps dropout rates.
+
+experiment3() {
+    local EPOCH_MAX=200
+    local LEARNING_RATE=0.0005
+    local BATCH_SIZE=64
+
+    for DROPOUT in 0.0 0.2 0.5
+    do
+        for AUGMENTATION in false true
+        do
+
+            echo "DO=${DROPOUT}, AUG=${AUGMENTATION}"
+
+            OUT="${BASE_PATH}/experiment3/do${DROPOUT}_aug${AUGMENTATION}"
+            mkdir -p "${OUT}"
+
+            time uv run python -m xournalpp_htr.training.simple_htr.train \
+                training.learning_rate="${LEARNING_RATE}" \
+                training.batch_size="${BATCH_SIZE}" \
+                model.dropout="${DROPOUT}" \
+                augmentation.enabled="${AUGMENTATION}" \
+                output_path="${OUT}" \
+                training.epoch_max="${EPOCH_MAX}" 2>&1 | tee "${OUT}/train.log"
+
+        done
+    done
+}
+
 # ==================
 # Run experiments
 # ==================
 
-time experiment1
-
-# ==================
-# Future experiments
-# ==================
-
-# Other questions to answer by conducting additional experiments:
-# - Does augmentation help?
-# - Longer training with more patience?
-# - Effect of dropout?
+# time experiment1
+time experiment2
+time experiment3
