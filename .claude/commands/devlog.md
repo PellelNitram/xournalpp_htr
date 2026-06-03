@@ -24,24 +24,28 @@ Commits are the foundation of all progress. Merged PRs group commits into shippe
 
 ## Synthesise
 
-Produce a full bullet list where each bullet:
+Cross-reference the three data sources. For each bullet, classify how the work shipped:
+- **PR + issue:** a merged PR that closes an issue — reference both, e.g. `(PR #114, #113)`.
+- **PR only:** a merged PR with no linked issue — reference the PR, e.g. `(PR #111)`.
+- **Issue only:** a closed issue with no merged PR — this is a decision, research outcome, or planning milestone. Tag it as such, e.g. `Decided on X (#71, decision)`.
+- **Commits only:** notable commits not covered by any PR or issue. Name the specific change, e.g. `Added time prefix to experiment scripts (948f48f)`. Skip trivial or mechanical commits.
+
+Each bullet:
 - Summarises one logical piece of completed work (may combine a PR with its linked issue).
-- References PR and/or issue numbers in parentheses, e.g. `(PR #114, #113)`.
 - Is written in past tense, concise, and non-technical enough for a devlog audience.
-- Standalone commits get their own bullet only if they represent meaningful work not already covered.
 
 ## Output
 
 Print the following sections under a `## Devlog — <start-date> to <end-date>` heading. Do not include items outside the date range.
 
 ### TL;DR
-Summarise all completed work into exactly **3 bullet points**. Each bullet should capture a broad theme, not a single issue. Written in past tense.
+Exactly **3 bullet points**, each a single punchy sentence (max ~15 words). Capture broad themes, not lists of changes. Written in past tense.
 
 ### Top 5 — User perspective
-Pick the 5 most impactful items from the user's point of view (bug fixes, visible features, UX improvements). Each bullet references the relevant PR/issue number(s).
+The 5 most impactful items from an **end-user's** point of view: bug fixes they'd notice, visible features, UX improvements, accuracy gains. Exclude internal refactors, tooling, and architecture — those belong in the developer section. Each bullet references the relevant PR/issue number(s). Write these as editorial highlights, not just repeating the "All changes" entry — explain *why* it matters to the user. End each bullet with a `(talk: ...)` hint — a short phrase suggesting how to present it on camera, e.g. "show before/after", "live demo", "mention the impact on accuracy", "explain the motivation".
 
 ### Top 5 — Developer perspective
-Pick the 5 most impactful items from a developer's point of view (architecture, tooling, CI/CD, code quality, docs). Each bullet references the relevant PR/issue number(s).
+The 5 most impactful items from a **developer's** point of view: architecture decisions, tooling, CI/CD, code quality, docs, DX improvements. Each bullet references the relevant PR/issue number(s). Write these as editorial highlights — explain *why* it matters for development. End each bullet with a `(talk: ...)` hint — a short phrase suggesting how to present it on camera, e.g. "show the CI dashboard", "walk through the ADR", "explain the tradeoff".
 
 ### All changes
-The full bullet list from the synthesise step.
+The full bullet list from the synthesise step. Keep these factual and concise.
