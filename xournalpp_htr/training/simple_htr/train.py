@@ -206,7 +206,7 @@ def train_network(
     writer = SummaryWriter(output_path / "summary_writer")
 
     num_classes = len(charset) + 1  # +1 for CTC blank
-    net = SimpleHTRNet(num_classes=num_classes)
+    net = SimpleHTRNet(num_classes=num_classes, cfg=cfg.model)
     net.to(device)
 
     with open(output_path / "charset.json", "w") as f:
