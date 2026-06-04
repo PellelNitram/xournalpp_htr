@@ -18,10 +18,6 @@ from xournalpp_htr.training.simple_htr.config import ModelConfig
 
 
 class SimpleHTRNet(nn.Module):
-    _defaults = ModelConfig()
-    input_height = _defaults.input_height
-    input_width = _defaults.input_width
-
     def __init__(self, num_classes: int, cfg: ModelConfig | None = None):
         super().__init__()
         if cfg is None:

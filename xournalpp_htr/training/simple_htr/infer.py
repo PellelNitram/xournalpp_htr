@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from xournalpp_htr.training.simple_htr.config import load_model_config
 from xournalpp_htr.training.simple_htr.dataset import preprocess_image
 from xournalpp_htr.training.simple_htr.network import SimpleHTRNet, greedy_decode
 from xournalpp_htr.training.simple_htr.utils import get_device
@@ -30,14 +31,15 @@ def run_image_through_network(
     device = get_device(device)
     charset = load_charset(model_path)
     num_classes = len(charset) + 1
+    model_cfg = load_model_config(model_path.parent)
 
-    model = SimpleHTRNet(num_classes=num_classes)
+    model = SimpleHTRNet(num_classes=num_classes, cfg=model_cfg)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.to(device)
     model.eval()
 
     preprocessed = preprocess_image(
-        image_grayscale, SimpleHTRNet.input_height, SimpleHTRNet.input_width
+        image_grayscale, model_cfg.input_height, model_cfg.input_width
     )
     normalized = preprocessed.astype(np.float32) / 255.0 - 0.5
     tensor_input = torch.from_numpy(normalized[None, None, :, :]).to(device)

@@ -6,6 +6,7 @@ other scripts (infer, export, demo) import the defaults directly.
 """
 
 from dataclasses import dataclass, field
+from pathlib import Path
 
 
 @dataclass
@@ -55,3 +56,11 @@ class SimpleHTRConfig:
     seed: SeedConfig = field(default_factory=SeedConfig)
     augmentation: AugmentationConfig = field(default_factory=AugmentationConfig)
     output_path: str = "outputs"
+
+
+def load_model_config(checkpoint_dir: Path) -> ModelConfig:
+    """Load ``ModelConfig`` from a training run's ``config.yaml``."""
+    from omegaconf import OmegaConf
+
+    cfg = OmegaConf.load(checkpoint_dir / "config.yaml")
+    return ModelConfig(**OmegaConf.to_container(cfg.model))
