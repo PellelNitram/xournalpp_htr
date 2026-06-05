@@ -263,6 +263,8 @@ def train_network(
             "batch_size": cfg.training.batch_size,
             "seed_split": cfg.seed.split,
             "seed_model": cfg.seed.model,
+            "dropout": cfg.model.dropout,
+            "epoch_max": cfg.training.epoch_max,
             "patience_max": cfg.training.patience_max,
             "augmentation_enabled": cfg.augmentation.enabled,
         },
