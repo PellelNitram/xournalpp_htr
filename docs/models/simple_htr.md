@@ -151,6 +151,56 @@ print(text)
   lower learning rates consistently outperform. LR=0.002 clearly
   underperforms. Recommended defaults: LR=0.0005, BS=64.
 
+### 2026-06-05 — Experiment 2: augmentation
+
+- **Hypothesis:** Data augmentation (Gaussian blur, geometric transforms,
+  morphological ops, contrast/noise) improves generalisation.
+- **Setup:** LR=0.0005 (best from exp1), BS ∈ {32, 64, 128} ×
+  augmentation {on, off}. Max 200 epochs, patience 25. NVIDIA A100 40GB.
+- **Command:** `bash xournalpp_htr/training/simple_htr/run_training.sh`
+- **Code revision:** `f5f8c60`
+- **Results:**
+
+| Aug | BS | Best Epoch | CER | Word Acc | Path |
+|---|---|---|---|---|---|
+| true | 128 | 142 | **0.060** | **82.9%** | `experiments/experiment2/augtrue_bs128/` |
+| true | 32 | 91 | 0.061 | 82.7% | `experiments/experiment2/augtrue_bs32/` |
+| true | 64 | 62 | 0.062 | 81.8% | `experiments/experiment2/augtrue_bs64/` |
+| false | 32 | 27 | 0.070 | 79.3% | `experiments/experiment2/augfalse_bs32/` |
+| false | 64 | 54 | 0.070 | 79.2% | `experiments/experiment2/augfalse_bs64/` |
+| false | 128 | 83 | 0.073 | 78.8% | `experiments/experiment2/augfalse_bs128/` |
+
+- **Conclusion:** Augmentation consistently improves results across all
+  batch sizes, reducing CER from ~0.070 to ~0.060 and lifting word accuracy
+  from ~79% to ~83%. Augmented runs need more epochs to converge (62–142
+  vs 27–83). Batch size has minimal effect with augmentation enabled.
+
+### 2026-06-05 — Experiment 3: dropout
+
+- **Hypothesis:** Dropout between RNN layers provides additional
+  regularisation, especially when combined with augmentation.
+- **Setup:** LR=0.0005, BS=64. Dropout ∈ {0.0, 0.2, 0.5} ×
+  augmentation {on, off}. Max 200 epochs, patience 25. NVIDIA A100 40GB.
+- **Command:** `bash xournalpp_htr/training/simple_htr/run_training.sh`
+- **Code revision:** `f5f8c60`
+- **Results:**
+
+| Dropout | Aug | Best Epoch | CER | Word Acc | Path |
+|---|---|---|---|---|---|
+| 0.5 | true | 67 | **0.056** | **84.2%** | `experiments/experiment3/do0.5_augtrue/` |
+| 0.2 | true | 79 | 0.058 | 83.2% | `experiments/experiment3/do0.2_augtrue/` |
+| 0.0 | true | 62 | 0.062 | 81.8% | `experiments/experiment3/do0.0_augtrue/` |
+| 0.5 | false | 64 | 0.067 | 80.4% | `experiments/experiment3/do0.5_augfalse/` |
+| 0.2 | false | 22 | 0.070 | 78.8% | `experiments/experiment3/do0.2_augfalse/` |
+| 0.0 | false | 54 | 0.070 | 79.2% | `experiments/experiment3/do0.0_augfalse/` |
+
+- **Conclusion:** Dropout and augmentation are complementary. The best
+  config (dropout=0.5, augmentation on) achieves CER 0.056 and 84.2% word
+  accuracy — a major improvement over the experiment 1 baseline (CER 0.070,
+  79.2%). Higher dropout consistently helps; the effect is strongest when
+  combined with augmentation. Recommended defaults: dropout=0.5,
+  augmentation enabled.
+
 ## Current status
 
 - [x] Network architecture (CNN + BiLSTM + CTC)
@@ -165,6 +215,5 @@ print(text)
 
 ## Outlook
 
-- Add augmentation experiment
-- Add beam search decoding
+- Add beam search decoding (issue #120)
 - Integrate into full pipeline (word detection + recognition)
