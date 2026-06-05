@@ -19,6 +19,7 @@ Source: `xournalpp_htr/training/simple_htr/`
 | `demo.py` | Local Gradio demo (ADR 007) | training |
 | `export.py` | ONNX export + HF Hub upload | training |
 | `utils.py` | Device, git hash, JSON encoder | training |
+| `test_best_model.ipynb` | ONNX validation notebook | training |
 | `run_training.sh` | Hyperparameter sweep script | shell |
 
 ## GPU training setup
@@ -211,7 +212,7 @@ print(text)
 - [x] Local Gradio demo
 - [x] Hyperparameter sweep script
 - [x] First training run and experiment log
-- [ ] ONNX validation notebook
+- [x] ONNX validation notebook
 
 ## Outlook
 
