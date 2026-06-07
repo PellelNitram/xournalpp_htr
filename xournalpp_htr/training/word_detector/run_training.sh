@@ -68,12 +68,45 @@ experiment2() {
     done
 }
 
+# ============
+# Experiment 3
+# ============
+
+# Question: Does augmentation help under the original WordDetectorNN training
+# regime (bs=10, unbounded epochs with early stopping)?
+
+experiment3() {
+    local EPOCH_MAX=10000
+    local BATCH_SIZE=10
+
+    for AUGMENT in false true
+    do
+        for SEED_SPLIT in 42 43 44
+        do
+
+            echo "AUGMENT=${AUGMENT}, SEED=${SEED_SPLIT}"
+
+            OUT="${BASE_PATH}/experiment3/aug${AUGMENT}_seed${SEED_SPLIT}"
+            mkdir -p "${OUT}"
+
+            uv run python -m xournalpp_htr.training.word_detector.train \
+                augmentation.enabled="${AUGMENT}" \
+                seed.split="${SEED_SPLIT}" \
+                training.epoch_max="${EPOCH_MAX}" \
+                training.batch_size="${BATCH_SIZE}" \
+                output_path="${OUT}" 2>&1 | tee "${OUT}/train.log"
+
+        done
+    done
+}
+
 # ==================
 # Run experiments
 # ==================
 
-experiment1
-experiment2
+# time experiment1
+# time experiment2
+time experiment3
 
 # ==================
 # Future experiments

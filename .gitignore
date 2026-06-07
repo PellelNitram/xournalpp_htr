@@ -3,6 +3,7 @@ tests/data/
 data/datasets/
 .ipynb_checkpoints/
 .claude/worktrees/
+.claude/handover.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -171,3 +172,6 @@ best_model.pth
 .DS_Store
 
 xournalpp_htr/training/word_detector/experiments
+
+dataset_cache.pickle
+xournalpp_htr/training/word_detector/outputs/
