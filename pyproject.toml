@@ -42,6 +42,14 @@ training-word-detector = [
     "gradio",  # local demo (ADR 007); run locally, not as a HF Space
     "hydra-core",
 ]
+training-simple-htr = [
+    "torch",
+    "torchvision",
+    "tensorboard",
+    "onnx",
+    "gradio",
+    "hydra-core",
+]
 dev = [
     "jupyter",
 ]

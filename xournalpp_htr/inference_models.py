@@ -120,3 +120,70 @@ class WordDetectorModel(HFHubInferenceModel):
         # Map from the fixed network input space back to the passed image.
         sx, sy = orig_w / in_w, orig_h / in_h
         return [aabb.scale(sx, sy) for aabb in clustered]
+
+
+class SimpleHTRModel(HFHubInferenceModel):
+    """SimpleHTR word-recognition model, loaded from HF Hub as ONNX.
+
+    The repository contains ``model.onnx`` (the CNN+LSTM+CTC network) and
+    ``config.json`` (charset, input dimensions, normalisation). Inference runs
+    the ONNX graph with ``onnxruntime`` and decodes the CTC output into text.
+    """
+
+    HF_REPO_ID = "PellelNitram/xournalpp-htr-simple-htr"
+
+    def __init__(self, session: ort.InferenceSession, config: dict, revision: str):
+        super().__init__(revision)
+        self.session = session
+        self.config = config
+        self._input_name = session.get_inputs()[0].name
+        self._charset = config["charset"]
+
+    @classmethod
+    def from_pretrained(cls, revision: str = "main") -> "SimpleHTRModel":
+        onnx_path = hf_hub_download(cls.HF_REPO_ID, "model.onnx", revision=revision)
+        config_path = hf_hub_download(cls.HF_REPO_ID, "config.json", revision=revision)
+        with open(config_path) as f:
+            config = json.load(f)
+        return cls(
+            session=ort.InferenceSession(onnx_path),
+            config=config,
+            revision=revision,
+        )
+
+    def recognize(self, image_grayscale: np.ndarray) -> str:
+        """Recognise text in a grayscale word image.
+
+        The image is resized to the network's expected input dimensions
+        (uniform scale, centered on white canvas) and normalised before inference.
+        """
+        input_size = self.config["input_size"]
+        in_h, in_w = input_size["height"], input_size["width"]
+        norm = self.config["normalization"]
+
+        h, w = image_grayscale.shape[:2]
+        scale = min(in_w / w, in_h / h)
+        new_w = int(w * scale)
+        new_h = int(h * scale)
+        resized = cv2.resize(image_grayscale, (new_w, new_h))
+
+        canvas = np.ones((in_h, in_w), dtype=np.uint8) * 255
+        y_off = (in_h - new_h) // 2
+        x_off = (in_w - new_w) // 2
+        canvas[y_off : y_off + new_h, x_off : x_off + new_w] = resized
+
+        normalised = canvas.astype(np.float32) / norm["scale"] + norm["shift"]
+        net_input = normalised[None, None, :, :]
+
+        log_probs = self.session.run(None, {self._input_name: net_input})[0]
+        # log_probs shape: (seq_len, batch, num_classes)
+        predictions = log_probs[:, 0, :].argmax(axis=1)
+
+        blank = len(self._charset)
+        chars = []
+        prev = blank
+        for idx in predictions:
+            if idx != prev and idx != blank:
+                chars.append(self._charset[idx])
+            prev = idx
+        return "".join(chars)
