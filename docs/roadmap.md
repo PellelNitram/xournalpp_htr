@@ -22,11 +22,12 @@ this setup will likely become the preferred installation method in the future.
 
 Additionally, we currently rely on a third-party library called `htr_pipeline` for model delivery.
 While effective, it complicates installation and model management. We plan to replace it with an
-in-house implementation. The first component, the WordDetectorNet, has already been internalized
+in-house implementation. Both components have now been internalized: the WordDetectorNet
 (see [explanation of model](https://lellep.xyz/blog/worddetectornet-visually-explained.html),
 [code](https://github.com/PellelNitram/xournalpp_htr/tree/master/xournalpp_htr/training/WordDetectorNN) and
-[demo](https://huggingface.co/spaces/PellelNitram/xournalpp_htr_WordDetectorNN)).
-This transition away from `htr_pipeline` will not be backward compatible.
+[demo](https://huggingface.co/spaces/PellelNitram/xournalpp_htr_WordDetectorNN)) and SimpleHTR, which
+are wired together into the `2025-06-07_local_pipeline` (issue #121). Fully removing the `htr_pipeline`
+dependency is tracked in #125. This transition away from `htr_pipeline` will not be backward compatible.
 
 ## Roadmap as of *2025-05-03*
 
