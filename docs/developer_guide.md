@@ -72,7 +72,7 @@ To benchmark a specific pipeline or change the output format:
 
 ```bash
 uv run python scripts/run_benchmark.py --pipeline 2024-07-18_htr_pipeline
-uv run python scripts/run_benchmark.py --pipeline 2025-06-07_local_pipeline
+uv run python scripts/run_benchmark.py --pipeline 2026-06-07_local_pipeline
 uv run python scripts/run_benchmark.py --format json
 ```
 
