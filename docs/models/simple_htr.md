@@ -213,8 +213,8 @@ print(text)
 - [x] Hyperparameter sweep script
 - [x] First training run and experiment log
 - [x] ONNX validation notebook
+- [x] Integrated into end-to-end pipeline with WordDetectorNet (`2025-06-07_local_pipeline`, issue #121)
 
 ## Outlook
 
 - Add beam search decoding (issue #120)
-- Integrate into full pipeline (word detection + recognition)
