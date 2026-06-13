@@ -26,7 +26,7 @@ in-house implementation. Both components have now been internalized: the WordDet
 (see [explanation of model](https://lellep.xyz/blog/worddetectornet-visually-explained.html),
 [code](https://github.com/PellelNitram/xournalpp_htr/tree/master/xournalpp_htr/training/WordDetectorNN) and
 [demo](https://huggingface.co/spaces/PellelNitram/xournalpp_htr_WordDetectorNN)) and SimpleHTR, which
-are wired together into the `2025-06-07_local_pipeline` (issue #121). Fully removing the `htr_pipeline`
+are wired together into the `2026-06-07_local_pipeline` (issue #121). Fully removing the `htr_pipeline`
 dependency is tracked in #125. This transition away from `htr_pipeline` will not be backward compatible.
 
 ## Roadmap as of *2025-05-03*

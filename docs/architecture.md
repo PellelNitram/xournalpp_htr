@@ -79,7 +79,7 @@ graph TD
 3. **Run HTR** -- `compute_predictions()` dispatches on the `--pipeline` argument to one of two implementations:
 
     - `2024-07-18_htr_pipeline` (default) -- The external `htr_pipeline` library processes each image: an ONNX word detector locates regions (scaled to 40%, 5px margin), DBSCAN groups detections into lines (discarding lines with fewer than 2 words), and a second ONNX model recognises each word via CTC decoding.
-    - `2025-06-07_local_pipeline` -- An in-house pipeline that loads our locally-trained ONNX models from HuggingFace Hub (`WordDetectorModel` + `SimpleHTRModel`, see `xournalpp_htr/inference_models.py`) and runs detection + per-word recognition without `htr_pipeline`. Replacing the external dependency entirely is tracked in #125.
+    - `2026-06-07_local_pipeline` -- An in-house pipeline that loads our locally-trained ONNX models from HuggingFace Hub (`WordDetectorModel` + `SimpleHTRModel`, see `xournalpp_htr/inference_models.py`) and runs detection + per-word recognition without `htr_pipeline`. Replacing the external dependency entirely is tracked in #125.
 
     Output is a dictionary mapping page indices to lists of predictions (text + bounding box coordinates in image pixels).
 
