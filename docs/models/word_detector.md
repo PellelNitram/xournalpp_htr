@@ -225,6 +225,13 @@ pipeline (ADR 003), which contracts word-level boxes *and* transcriptions. The
 `WordDetectorModel` class is the integration point; wiring it into a full
 pipeline waits on a recognition stage that adds labels.
 
+## Best model
+
+Experiment 3, augmentation on, seed 42 — **F1 0.8896**.
+Checkpoint: `experiments/experiment3/augtrue_seed42/best_model.pth`.
+Configuration: bs=10, lr=0.001, augmentation enabled, epoch_max=10000
+(early stopping with patience 50).
+
 ## Experiments
 
 A log of training experiments run on this model. Each entry should capture

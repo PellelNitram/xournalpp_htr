@@ -122,6 +122,13 @@ text = model.recognize(word_image_grayscale)
 print(text)
 ```
 
+## Best model
+
+Experiment 3, dropout=0.5, augmentation on — **CER 0.056, word accuracy 84.2%**.
+Checkpoint: `experiments/experiment3/do0.5_augtrue/best_model.pth`.
+Configuration: lr=0.0005, bs=64, dropout=0.5, augmentation enabled,
+epoch_max=200 (early stopping with patience 25).
+
 ## Experiments
 
 ### 2026-06-03 — Experiment 1: learning rate and batch size sweep
