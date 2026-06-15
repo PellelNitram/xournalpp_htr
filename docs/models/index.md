@@ -69,10 +69,13 @@ Each `docs/models/<model_name>.md` page should contain, in order:
 2. **GPU training setup** — step-by-step from clone → install → dataset →
    train → eval → demo → export → validate → upload.
 3. **Inference** — minimal `from_pretrained()` usage example.
-4. **Experiments** — log of training experiments, newest first, using the
+4. **Best model** — checkpoint path, key metric and experiment reference of
+   the current overall best performing model. Update this section whenever a
+   new experiment beats the previous best.
+5. **Experiments** — log of training experiments, newest first, using the
    template below.
-5. **Current status** — what is implemented, known issues.
-6. **Outlook** — planned follow-ups.
+6. **Current status** — what is implemented, known issues.
+7. **Outlook** — planned follow-ups.
 
 ### Experiments log template
 
@@ -84,5 +87,9 @@ Each `docs/models/<model_name>.md` page should contain, in order:
 - **Command:** the exact training/eval command used.
 - **Results:** key metrics, path to artefacts under `experiments/`,
   TensorBoard run name.
+- **Best model:** checkpoint path and metric value of the best performing
+  model from this experiment (e.g. `experiments/exp1/run3/best.ckpt —
+  CER 4.2%`). If this is the overall best model across all experiments,
+  note that explicitly.
 - **Conclusion:** what was learned and what to try next.
 ```
