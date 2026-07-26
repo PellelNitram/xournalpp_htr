@@ -1,7 +1,7 @@
 # Annotation Guide
 
 Conventions for annotating HTR ground truth. Schema: [ADR 004](ADRs/004_ground_truth_schema.md)
-(`1.0.0`). Rules marked \* are proposed — settle them before bulk annotation.
+(`1.0.0`).
 
 ## Workflow
 
@@ -45,13 +45,13 @@ spelling mistakes.
 | Overwritten | One `word` over all strokes, final reading; if unreadable → `correction` |
 | Illegible | `other`, never a guessed `word` — a guess makes a correct prediction score as an error |
 | Underline | `separator`, never part of the `word` |
-| Diagram labels | `word`, not part of `diagram` \* |
+| Diagram labels | Text annotated normally, kept out of the `diagram` |
 
 Avoid selections spanning layers — they split per layer on export.
 
 ## Quality control
 
-- Annotate 3 documents, revisit the \* rules, *then* go bulk.
+- Annotate 3 documents, revisit these rules, *then* go bulk.
 - Double-annotate ~10 pages under a second `annotator_id`, else a CER can't be separated
   from annotation disagreement.
 - Evaluation-only: never train on benchmark data. Check for personal information before
