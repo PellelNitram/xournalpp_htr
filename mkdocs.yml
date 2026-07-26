@@ -28,6 +28,7 @@ nav:
     - Developer Guide: 'developer_guide.md'
     - Architecture: 'architecture.md'
     - Demo Setup: 'demo_setup.md'
+    - Annotation Guide: 'annotation_guide.md'
     - ADRs:
       - 001 Design of HuggingFace Space Dockerfile: 'ADRs/001_design_of_huggingface_space_dockerfile.md'
       - 002 Use HuggingFace ecosystem for ML: 'ADRs/002_use_HuggingFace_ecosystem_for_ML.md'
