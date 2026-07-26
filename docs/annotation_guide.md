@@ -1,7 +1,9 @@
 # Annotation Guide
 
-Conventions for annotating HTR ground truth. Schema: [ADR 004](ADRs/004_ground_truth_schema.md)
-(`1.0.0`).
+Conventions for annotating HTR ground truth. This guide is the operational reference — the
+schema (`1.0.0`), the granularity decision and the reasoning behind these rules live in
+[ADR 004](ADRs/004_ground_truth_schema.md). Read it when a rule here looks arbitrary, or
+before proposing a change to one.
 
 ## Workflow
 

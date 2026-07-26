@@ -131,6 +131,11 @@ it.
 
 ## Annotation Conventions
 
+The conventions below record decisions with lasting consequences for the dataset. They are
+not the complete set of annotation rules — the full operational reference, including
+punctuation, hyphenation, illegible text and diagram labels, is
+[`docs/annotation_guide.md`](../annotation_guide.md), which annotators should work from.
+
 The following conventions must be followed consistently across annotators:
 
 - **`digit` granularity.** A sequence of digits written as a single connected unit (e.g.
