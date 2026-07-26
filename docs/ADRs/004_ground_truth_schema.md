@@ -131,6 +131,11 @@ it.
 
 ## Annotation Conventions
 
+The conventions below record decisions with lasting consequences for the dataset. They are
+not the complete set of annotation rules — the full operational reference, including
+punctuation, hyphenation, illegible text and diagram labels, is
+[`docs/annotation_guide.md`](../annotation_guide.md), which annotators should work from.
+
 The following conventions must be followed consistently across annotators:
 
 - **`digit` granularity.** A sequence of digits written as a single connected unit (e.g.
@@ -138,6 +143,18 @@ The following conventions must be followed consistently across annotators:
   Digits that are spatially separated (e.g. `1    2    3`) are each a separate `digit`
   annotation. The determining factor is whether the digits form one visually grouped unit
   or multiple distinct ones.
+
+- **`separator` semantics.** A `separator` is a stroke group that carries structural or
+  layout meaning but no transcribable content — e.g. horizontal rules, dividing lines, and
+  bullet markers. It takes no `text` field.
+
+- **Bullet markers.** The marker of a bullet point list item (`-`, `*`, `•`) is annotated
+  as a `separator`, as its own annotation, and is never merged into the stroke group of the
+  following word. It is deliberately not annotated as a `word` with `text: "-"`, which would
+  make list markers count towards CER/WER and penalise the model for a glyph that is layout
+  rather than content. The consequence is that the ground truth does not record that a page
+  contained a list; if list-structure evaluation is needed later, it must be recovered from
+  the geometry of the separator strokes.
 
 ## Alternatives
 

@@ -1,7 +1,9 @@
 # Annotation Guide
 
-Conventions for annotating HTR ground truth. Schema: [ADR 004](ADRs/004_ground_truth_schema.md)
-(`1.0.0`).
+Conventions for annotating HTR ground truth. This guide is the operational reference — the
+schema (`1.0.0`), the granularity decision and the reasoning behind these rules live in
+[ADR 004](ADRs/004_ground_truth_schema.md). Read it when a rule here looks arbitrary, or
+before proposing a change to one.
 
 ## Workflow
 
@@ -26,7 +28,7 @@ Word level, never character level. `word`, `digit` and `mathematical_expression`
 | `digit` | Purely numeric |
 | `mathematical_expression` | One whole formula, not per symbol |
 | `arrow` `drawing` `diagram` | Pointers · doodles · graphs, flowcharts |
-| `table` `separator` | Grid lines · rules, dividers, underlines |
+| `table` `separator` | Grid lines · rules, dividers, underlines, bullet markers |
 | `correction` | Struck-through or scribbled-out content |
 | `other` | Nothing else fits |
 
@@ -45,6 +47,7 @@ spelling mistakes.
 | Overwritten | One `word` over all strokes, final reading; if unreadable → `correction` |
 | Illegible | `other`, never a guessed `word` — a guess makes a correct prediction score as an error |
 | Underline | `separator`, never part of the `word` |
+| Bullet marker | `-` `*` `•` → `separator`, own annotation, never merged into the following word |
 | Diagram labels | Text annotated normally, kept out of the `diagram` |
 
 Avoid selections spanning layers — they split per layer on export.
