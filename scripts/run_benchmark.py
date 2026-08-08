@@ -2,8 +2,9 @@
 
 import argparse
 import json
+from pathlib import Path
 
-from xournalpp_htr.benchmark import run_benchmark
+from xournalpp_htr.benchmark import run_benchmark, write_html_report
 
 
 def parse_arguments(cli_string: None | str = None):
@@ -28,12 +29,29 @@ def parse_arguments(cli_string: None | str = None):
         default="human",
         help="Output format.",
     )
+    parser.add_argument(
+        "-o",
+        "--html-report",
+        type=Path,
+        required=False,
+        default=None,
+        help=(
+            "Write a self-contained HTML report with page renders, prediction "
+            "overlays and per-word analysis to this file. Passing it enables the "
+            "extra analysis, which is slower; omitting it keeps the plain run."
+        ),
+    )
     return vars(parser.parse_args(cli_string.split() if cli_string else None))
 
 
 if __name__ == "__main__":
     args = parse_arguments()
-    result = run_benchmark(args["pipeline"])
+    result = run_benchmark(
+        args["pipeline"], collect_details=args["html_report"] is not None
+    )
+
+    if args["html_report"] is not None:
+        write_html_report(result, args["html_report"])
 
     if args["format"] == "json":
         print(
@@ -47,6 +65,9 @@ if __name__ == "__main__":
                     "n_gt_words": result.n_gt_words,
                     "n_predicted_words": result.n_predicted_words,
                     "n_matched": result.n_matched,
+                    "html_report": str(args["html_report"])
+                    if args["html_report"]
+                    else None,
                 },
                 indent=2,
             )
@@ -61,3 +82,5 @@ if __name__ == "__main__":
         )
         print(f"CER      : {result.cer:.1%}  (case-sensitive)")
         print(f"CER      : {result.cer_case_insensitive:.1%}  (case-insensitive)")
+        if args["html_report"] is not None:
+            print(f"Report   : {args['html_report']}")

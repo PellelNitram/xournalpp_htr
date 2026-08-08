@@ -36,6 +36,7 @@ nav:
       - 004 Ground truth schema: 'ADRs/004_ground_truth_schema.md'
       - 005 Prediction bounding box coordinate system: 'ADRs/005_prediction_bounding_box_coordinate_system.md'
       - 006 Model registry and training environment: 'ADRs/006_model_registry_and_training_environment.md'
+      - 007 Model demos local only: 'ADRs/007_model_demos_local_only.md'
     - PoCs:
       - Simplify Installation with single file executable: 'PoCs/simplify_installation_with_single_file_executable.md'
   - Models:

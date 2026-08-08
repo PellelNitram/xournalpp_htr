@@ -76,4 +76,20 @@ uv run python scripts/run_benchmark.py --pipeline 2026-06-07_local_pipeline
 uv run python scripts/run_benchmark.py --format json
 ```
 
-The benchmark reports precision, recall, and CER (case-sensitive and case-insensitive) over matched word pairs. See `xournalpp_htr/benchmark.py` and ADR 005 for details on the evaluation methodology.
+To inspect the predictions visually, pass an output file with `-o`/`--html-report`:
+
+```bash
+uv run python scripts/run_benchmark.py --html-report report.html
+```
+
+This renders every page of every benchmark sample and draws the pipeline's predictions on top of the handwriting, coloured by outcome: the text was read correctly, the text was misread, or the prediction has no ground truth word behind it. Ground truth words the pipeline did not find are underlined instead. The report is a single self-contained HTML file (roughly 1 MB for the current dataset) that needs no network access to view. Collecting the data and rendering the pages costs extra time, so it only happens when the flag is given.
+
+### Evaluation methodology
+
+The benchmark reports precision, recall, and CER (case-sensitive and case-insensitive).
+
+A prediction counts as having found a ground truth word when it covers at least 80% of that word's bounding box and is at most 8 times its area. Predictions and ground truth words are then paired greedily, one to one within a page, tightest fit first. Intersection over union is deliberately not the criterion: word detectors pad their boxes, and because IoU divides by the union, that padding is negligible on long words but overwhelming on short ones — a perfectly placed box around "is" scores about 0.2 and would be counted as both a miss and a false positive.
+
+Precision and recall are computed over these pairs, so they measure detection. CER is computed only over matched pairs, so a word the pipeline never found does not contribute to it — detection failures show up in recall, not in CER.
+
+See `xournalpp_htr/benchmark.py` for the implementation, and ADR 005 for the coordinate system that ground truth and predictions share.
