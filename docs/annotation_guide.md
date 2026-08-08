@@ -59,3 +59,7 @@ Avoid selections spanning layers — they split per layer on export.
   from annotation disagreement.
 - Evaluation-only: never train on benchmark data. Check for personal information before
   publishing.
+
+TODO:
+- <text> := <text> - then classify ":=" as text
+- <math> = <text>, then make "=" part of the <math>
