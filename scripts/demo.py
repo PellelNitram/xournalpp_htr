@@ -198,9 +198,20 @@ def save_HTR_document_for_download(session_id):
 
 # --- Gradio UI Layout ---
 
+# Highlight the data donation checkbox in red. The visible box is the `div.form`
+# wrapper Gradio puts around a standalone Checkbox, not the element carrying
+# `elem_id`, hence the `:has()` selector to reach it.
+CSS = """
+.form:has(#donate-data-box),
+#donate-data-box {
+    border-color: #d32f2f;
+}
+"""
+
 with gr.Blocks(
     # theme=gr.themes.Soft(),
     title="Xournal++ HTR Demo",
+    css=CSS,
 ) as demo:
     gr.Markdown(
         """
@@ -257,6 +268,7 @@ with gr.Blocks(
     donate_data_checkbox = gr.Checkbox(
         label="Donate Data: Help us to improve our open-source models by donating your uploaded document. Everything will be released as open-source!",
         value=False,
+        elem_id="donate-data-box",
     )
 
     upload_button = gr.UploadButton(
