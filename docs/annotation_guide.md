@@ -44,6 +44,8 @@ spelling mistakes.
 | Digit grouping | `123` → one; `1  2  3` → three |
 | `digit` vs `word` | `digit` only if purely numeric (`-1.234,50`); any letter → `word` |
 | Math | LaTeX, no delimiters (`\frac{a}{b}`) |
+| Operator between words | Both sides text → own `word` (`Wort := Begriff` → `Wort`, `:=`, `Begriff`) |
+| Operator beside math | One side math → operator joins the `mathematical_expression` (`x^2 = ` + `Fläche`) |
 | Overwritten | One `word` over all strokes, final reading; if unreadable → `correction` |
 | Illegible | `other`, never a guessed `word` — a guess makes a correct prediction score as an error |
 | Underline | `separator`, never part of the `word` |
@@ -59,7 +61,3 @@ Avoid selections spanning layers — they split per layer on export.
   from annotation disagreement.
 - Evaluation-only: never train on benchmark data. Check for personal information before
   publishing.
-
-TODO:
-- <text> := <text> - then classify ":=" as text
-- <math> = <text>, then make "=" part of the <math>
