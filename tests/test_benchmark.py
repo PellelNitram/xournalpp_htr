@@ -107,6 +107,22 @@ def test_matches_accepts_at_coverage_boundary():
     assert _matches(g, p)
 
 
+def test_matches_rejects_just_below_coverage_boundary():
+    # 79% covered -- one percent short of the boundary above.
+    g = gt(xmin=0, xmax=100, ymin=0, ymax=10)
+    p = pred(xmin=0, xmax=79, ymin=0, ymax=10)
+    assert not _matches(g, p)
+
+
+def test_matches_rejects_prediction_smaller_than_word():
+    # A box sitting inside the word, e.g. the detector split it in half. The
+    # criterion is one-directional: covering the prediction is not enough,
+    # the prediction has to cover the word.
+    g = gt(xmin=0, xmax=40, ymin=0, ymax=10)
+    p = pred(xmin=0, xmax=15, ymin=0, ymax=10)
+    assert not _matches(g, p)
+
+
 def test_matches_zero_area_ground_truth():
     # A single point annotation must not blow up the ratio computations.
     g = gt(xmin=5, xmax=5, ymin=5, ymax=5)
@@ -131,19 +147,27 @@ def test_match_no_overlap():
 
 
 def test_match_one_gt_two_preds_assigns_higher_iou():
+    # Both predictions cover the word, so both are acceptable matches; the
+    # tighter one has to win on IoU.
     g = gt(xmin=0, xmax=10, ymin=0, ymax=10)
     p_close = pred(xmin=0, xmax=10, ymin=0, ymax=10)  # iou=1.0
-    p_far = pred(xmin=5, xmax=15, ymin=0, ymax=10)  # iou<1.0
-    pairs = _match([g], {0: [p_close, p_far]})
+    p_padded = pred(xmin=-4, xmax=14, ymin=0, ymax=10)  # iou≈0.56
+    assert _matches(g, p_close) and _matches(g, p_padded)
+
+    pairs = _match([g], {0: [p_close, p_padded]})
     assert len(pairs) == 1
     assert pairs[0][1] is p_close
 
 
 def test_match_one_pred_two_gts_assigns_higher_iou():
+    # The prediction is an acceptable match for both words; it has to go to
+    # the one it fits tightest.
     g_close = gt(xmin=0, xmax=10, ymin=0, ymax=10)
-    g_far = gt(xmin=5, xmax=15, ymin=0, ymax=10)
+    g_inside = gt(xmin=2, xmax=9, ymin=2, ymax=9)
     p = pred(xmin=0, xmax=10, ymin=0, ymax=10)  # iou=1.0 with g_close
-    pairs = _match([g_close, g_far], {0: [p]})
+    assert _matches(g_close, p) and _matches(g_inside, p)
+
+    pairs = _match([g_close, g_inside], {0: [p]})
     assert len(pairs) == 1
     assert pairs[0][0] is g_close
 
@@ -223,6 +247,23 @@ def test_collect_pages_status_is_case_sensitive():
     p = pred(text="hello")
     pages = _collect_pages(FakeDocument(), [g], {0: [p]}, _match([g], {0: [p]}))
     assert pages[0].rows[0].status == "wrong"
+
+
+def test_collect_pages_distinguishes_equal_predictions():
+    # `WordPrediction` is a dataclass, so two identical predictions compare
+    # equal. Only one of them can be matched; the other has to come back as
+    # spurious rather than being conflated with it.
+    g = gt(text="hello")
+    p_first = pred(text="hello")
+    p_second = pred(text="hello")
+    assert p_first == p_second
+
+    predictions = {0: [p_first, p_second]}
+    pairs = _match([g], predictions)
+    assert len(pairs) == 1
+
+    rows = _collect_pages(FakeDocument(), [g], predictions, pairs)[0].rows
+    assert sorted(row.status for row in rows) == ["correct", "spurious"]
 
 
 def test_collect_pages_covers_pages_without_predictions():
