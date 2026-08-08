@@ -5092,6 +5092,14 @@ hf = [
     { name = "python-dotenv" },
     { name = "supabase" },
 ]
+training-simple-htr = [
+    { name = "gradio" },
+    { name = "hydra-core" },
+    { name = "onnx" },
+    { name = "tensorboard" },
+    { name = "torch" },
+    { name = "torchvision" },
+]
 training-word-detector = [
     { name = "gradio" },
     { name = "hydra-core" },
@@ -5113,14 +5121,17 @@ requires-dist = [
     { name = "beautifulsoup4" },
     { name = "gitpython" },
     { name = "gradio", marker = "extra == 'hf'" },
+    { name = "gradio", marker = "extra == 'training-simple-htr'" },
     { name = "gradio", marker = "extra == 'training-word-detector'" },
     { name = "htr-pipeline", directory = "external/htr_pipeline/HTRPipeline" },
     { name = "huggingface-hub" },
+    { name = "hydra-core", marker = "extra == 'training-simple-htr'" },
     { name = "hydra-core", marker = "extra == 'training-word-detector'" },
     { name = "jupyter", marker = "extra == 'dev'" },
     { name = "lxml" },
     { name = "matplotlib" },
     { name = "numpy" },
+    { name = "onnx", marker = "extra == 'training-simple-htr'" },
     { name = "onnx", marker = "extra == 'training-word-detector'" },
     { name = "onnxruntime" },
     { name = "opencv-python" },
@@ -5133,13 +5144,16 @@ requires-dist = [
     { name = "scikit-learn" },
     { name = "setuptools", specifier = "<80" },
     { name = "supabase", marker = "extra == 'hf'" },
+    { name = "tensorboard", marker = "extra == 'training-simple-htr'" },
     { name = "tensorboard", marker = "extra == 'training-word-detector'" },
     { name = "testcontainers", specifier = ">=4.14.1" },
+    { name = "torch", marker = "extra == 'training-simple-htr'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torch", marker = "extra == 'training-word-detector'", index = "https://download.pytorch.org/whl/cu128" },
+    { name = "torchvision", marker = "extra == 'training-simple-htr'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torchvision", marker = "extra == 'training-word-detector'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "tqdm" },
 ]
-provides-extras = ["hf", "training-word-detector", "dev"]
+provides-extras = ["hf", "training-word-detector", "training-simple-htr", "dev"]
 
 [package.metadata.requires-dev]
 docs = [
