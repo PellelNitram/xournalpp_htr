@@ -10,8 +10,18 @@ from xournalpp_htr.xio import load_benchmark
 # Annotation classes that carry a text transcription (per ground_truth.schema.json).
 _TEXT_CLASSES = {"word", "digit", "mathematical_expression"}
 
-# Minimum IoU to consider a prediction matched to a GT word.
-_IOU_THRESHOLD = 0.5
+# A prediction matches a ground truth word when it covers most of that word and
+# is not wildly larger than it.
+#
+# IoU is deliberately not used as the criterion. Word detectors pad their boxes
+# (see the `margin` in `compute_predictions`), and because IoU divides by the
+# union, that padding costs little on long words but is fatal on short ones: a
+# perfectly centred box around "is" scores ~0.2 purely because the word is
+# small. Coverage asks the question we actually care about -- did the pipeline
+# find this word? -- and is unaffected by padding. The area cap stops a single
+# oversized box, such as one spanning a whole line, from counting as a match.
+_MIN_COVERAGE = 0.8  # fraction of the GT box that must lie inside the prediction
+_MAX_AREA_RATIO = 8.0  # prediction area may exceed the GT area by at most this
 
 
 @dataclass
@@ -65,6 +75,7 @@ def _load_gt_words(gt_path, document) -> list[GroundTruthWord]:
 
 
 def _iou(a: GroundTruthWord, b: WordPrediction) -> float:
+    """Intersection over union. Ranks candidate matches, it does not accept them."""
     ix1 = max(a.xmin, b.xmin)
     iy1 = max(a.ymin, b.ymin)
     ix2 = min(a.xmax, b.xmax)
@@ -75,6 +86,20 @@ def _iou(a: GroundTruthWord, b: WordPrediction) -> float:
     area_a = (a.xmax - a.xmin) * (a.ymax - a.ymin)
     area_b = (b.xmax - b.xmin) * (b.ymax - b.ymin)
     return intersection / (area_a + area_b - intersection)
+
+
+def _matches(a: GroundTruthWord, b: WordPrediction) -> bool:
+    """Whether a prediction covers enough of a GT word to count as finding it."""
+    ix1 = max(a.xmin, b.xmin)
+    iy1 = max(a.ymin, b.ymin)
+    ix2 = min(a.xmax, b.xmax)
+    iy2 = min(a.ymax, b.ymax)
+    intersection = max(0.0, ix2 - ix1) * max(0.0, iy2 - iy1)
+    area_a = (a.xmax - a.xmin) * (a.ymax - a.ymin)
+    area_b = (b.xmax - b.xmin) * (b.ymax - b.ymin)
+    if area_a == 0.0:
+        return False
+    return intersection / area_a >= _MIN_COVERAGE and area_b / area_a <= _MAX_AREA_RATIO
 
 
 def _cer(reference: str, hypothesis: str) -> float:
@@ -96,13 +121,17 @@ def _match(
     gt_words: list[GroundTruthWord],
     predictions: dict[PageIndex, list[WordPrediction]],
 ) -> list[tuple[GroundTruthWord, WordPrediction]]:
-    """Greedy IoU matching: highest IoU pairs are matched first."""
+    """Greedily pair ground truth words with predictions, one to one per page.
+
+    Acceptable pairs are decided by `_matches`; among those, the pair with the
+    tightest fit (highest IoU) is taken first so that a prediction goes to the
+    word it sits on rather than to a neighbour it merely overlaps.
+    """
     candidates = []
     for gt in gt_words:
         for pred in predictions.get(gt.page_index, []):
-            iou = _iou(gt, pred)
-            if iou >= _IOU_THRESHOLD:
-                candidates.append((iou, gt, pred))
+            if _matches(gt, pred):
+                candidates.append((_iou(gt, pred), gt, pred))
 
     candidates.sort(key=lambda x: x[0], reverse=True)
 
