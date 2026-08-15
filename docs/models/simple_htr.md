@@ -220,7 +220,7 @@ epoch_max=200 (early stopping with patience 25).
 - [x] Hyperparameter sweep script
 - [x] First training run and experiment log
 - [x] ONNX validation notebook
-- [x] Integrated into end-to-end pipeline with WordDetectorNet (`2026-06-07_local_pipeline`, issue #121)
+- [x] Integrated into end-to-end pipeline with WordDetectorNet (`2026-06-07_htr_pipeline_native`, issue #121)
 
 ## Outlook
 

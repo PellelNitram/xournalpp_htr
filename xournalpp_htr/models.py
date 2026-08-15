@@ -96,7 +96,7 @@ def compute_predictions(
                         )
                 predictions[page_index] = predictions_page
 
-    elif pipeline_name == "2026-06-07_local_pipeline":
+    elif pipeline_name == "2026-06-07_htr_pipeline_native":
         RENDER_DPI = 150
         nr_pages = len(document.pages)
 
