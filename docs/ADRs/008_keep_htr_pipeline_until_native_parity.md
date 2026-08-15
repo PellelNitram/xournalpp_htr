@@ -41,9 +41,9 @@ against the native pipeline's 14.5%, roughly three times as much.
 
 ## Rationale
 
-Parity with today's behaviour is the conservative floor: easing installation must
-not silently degrade what users can find. An undetected word is permanently
-unfindable, so missing 59% of words cannot be hidden behind a flag.
+Parity with today's behaviour is the conservative floor. A search miss looks
+exactly like an absent word, so users cannot tell that recognition failed, nor
+work around it. Easing installation must not silently shrink what they can find.
 
 The decision does not depend on the unresolved metric question, because every
 candidate metric in #145 is bounded above by recall -- none can rank the native
@@ -63,8 +63,8 @@ under-detects.
 - Users keep today's recognition quality.
 - A pre-committed threshold removes the temptation to rationalise "close enough".
 - Detector recall is named as the single blocking metric.
-- The PyInstaller question stays independently testable: bundle with the native
-  pipeline as the only included path, without removing anything.
+- The PyInstaller question stays independently testable against the current
+  default pipeline, so packaging work can proceed while #125 is blocked.
 
 ### Cons
 
@@ -80,8 +80,9 @@ under-detects.
 
 - **Remove `htr_pipeline` now and accept the regression.** Rejected: 41.2% recall
   leaves most handwriting unsearchable.
-- **Wait for #145 first.** Rejected: the ranking does not depend on the metric
-  choice, so blocking would have stalled #125 and the model work.
+- **Wait for #145 first.** Rejected: external wins under every candidate metric,
+  so we already had enough to decide. Waiting would have left #125 blocked with
+  no stated way to unblock it, and the detector work without a target.
 - **Ship native behind an opt-in flag.** Rejected: does not remove the dependency,
   so it buys none of the installation simplification, and adds a third
   configuration to support.
