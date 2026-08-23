@@ -21,7 +21,7 @@ experiment1() {
 
     for LEARNING_RATE in 0.0005 0.001 0.002
     do
-        for BATCH_SIZE in 16 32 64 128
+        for BATCH_SIZE in 16 32 64
         do
 
             echo "LR=${LEARNING_RATE}, BS=${BATCH_SIZE}"
@@ -104,8 +104,8 @@ experiment3() {
 # Run experiments
 # ==================
 
-# time experiment1
-# time experiment2
+time experiment1
+time experiment2
 time experiment3
 
 # ==================
