@@ -86,17 +86,6 @@ class WordDetectorModel(HFHubInferenceModel):
             revision=revision,
         )
 
-    @classmethod
-    def from_local(cls, onnx_path: str, config_path: str) -> "WordDetectorModel":
-        """Load from local files instead of HF Hub (for testing new exports)."""
-        with open(config_path) as f:
-            config = json.load(f)
-        return cls(
-            session=ort.InferenceSession(onnx_path),
-            config=config,
-            revision="local",
-        )
-
     @staticmethod
     def _ceil32(val: int) -> int:
         return val if val % 32 == 0 else (val // 32 + 1) * 32
