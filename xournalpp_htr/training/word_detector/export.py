@@ -98,7 +98,10 @@ def export(checkpoint: Path, output_dir: Path) -> dict:
         str(onnx_path),
         input_names=["image"],
         output_names=["maps"],
-        dynamic_axes={"image": {0: "batch"}, "maps": {0: "batch"}},
+        dynamic_axes={
+            "image": {0: "batch", 2: "height", 3: "width"},
+            "maps": {0: "batch", 2: "out_height", 3: "out_width"},
+        },
         opset_version=17,
         # WordDetectorNet has no data-dependent control flow, so the stable
         # legacy TorchScript exporter traces it cleanly and avoids the

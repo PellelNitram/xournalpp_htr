@@ -1,6 +1,7 @@
 # Add code related to models here. Mostly for inference as there will exist
 # another module for training or loading custom models.
 
+import os
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -100,7 +101,12 @@ def compute_predictions(
         RENDER_DPI = 150
         nr_pages = len(document.pages)
 
-        detector = WordDetectorModel.from_pretrained()
+        local_onnx = os.environ.get("WORD_DETECTOR_ONNX")
+        local_config = os.environ.get("WORD_DETECTOR_CONFIG")
+        if local_onnx and local_config:
+            detector = WordDetectorModel.from_local(local_onnx, local_config)
+        else:
+            detector = WordDetectorModel.from_pretrained()
         recognizer = SimpleHTRModel.from_pretrained()
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):

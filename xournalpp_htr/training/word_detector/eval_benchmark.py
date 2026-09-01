@@ -6,26 +6,47 @@ precision/recall using the same matching logic as ``xournalpp_htr.benchmark``.
 
 Usage::
 
+    # Fixed 448x448 resize (default, matches training):
     uv run python -m xournalpp_htr.training.word_detector.eval_benchmark \
         --checkpoint experiments/experiment3/augtrue_seed44/best_model.pth
+
+    # Scale-and-pad (matches old HTRPipeline approach):
+    uv run python -m xournalpp_htr.training.word_detector.eval_benchmark \
+        --checkpoint experiments/experiment3/augtrue_seed44/best_model.pth \
+        --scale-and-pad --scale 0.4
 """
 
 import argparse
 import json
+import math
 import tempfile
 from pathlib import Path
 
 import cv2
 import numpy as np
+import torch
 
 from xournalpp_htr.documents import get_document
+from xournalpp_htr.training.shared.bounding_box import BoundingBox
+from xournalpp_htr.training.shared.postprocessing import (
+    MapOrdering,
+    cluster_aabbs,
+    decode,
+    fg_by_cc,
+    normalize_image_transform,
+)
+from xournalpp_htr.training.word_detector.config import DetectionConfig
 from xournalpp_htr.training.word_detector.infer import run_image_through_network
+from xournalpp_htr.training.word_detector.network import WordDetectorNet
+from xournalpp_htr.training.word_detector.utils import get_device
 from xournalpp_htr.xio import load_benchmark
 
 RENDER_DPI = 150
 
 _MIN_COVERAGE = 0.8
 _MAX_AREA_RATIO = 8.0
+
+_DETECTION_DEFAULTS = DetectionConfig()
 
 
 def _parse_gt_words(gt_path, document):
@@ -106,7 +127,12 @@ def _match(gt_words, predictions):
     return pairs
 
 
-def detect_page(img_gray, checkpoint, device):
+def _ceil_multiple(x, m):
+    return int(math.ceil(x / m) * m)
+
+
+def detect_page_fixed(img_gray, checkpoint, device):
+    """Detect words using the standard fixed 448x448 resize."""
     result = run_image_through_network(
         image_grayscale=img_gray,
         model_path=checkpoint,
@@ -118,12 +144,76 @@ def detect_page(img_gray, checkpoint, device):
     return [aabb.scale(*scaling_factors[::-1]) for aabb in result["aabbs"]]
 
 
-def run(checkpoint, device):
+def detect_page_scale_and_pad(img_gray, model, device_str, scale=0.4):
+    """Detect words using proportional scaling + padding to multiples of 32.
+
+    Preserves aspect ratio and feeds the network a variable-size input, matching
+    the approach used by the original HTRPipeline.
+    """
+    h_orig, w_orig = img_gray.shape
+
+    h_scaled = max(32, _ceil_multiple(int(h_orig * scale), 32))
+    w_scaled = max(32, _ceil_multiple(int(w_orig * scale), 32))
+
+    img_scaled = cv2.resize(img_gray, (w_scaled, h_scaled))
+
+    img_norm, _ = normalize_image_transform(img_scaled, None)
+    img_tensor = torch.from_numpy(img_norm.astype(np.float32)[None, None, :, :]).to(
+        device_str
+    )
+
+    with torch.no_grad():
+        output = model(img_tensor, apply_softmax=True)
+
+    output_np = output.cpu().numpy()[0]
+
+    # The network's output_activation multiplies geometry by self.input_size[0]
+    # (448), but the actual input is h_scaled. Correct the geometry channels.
+    geo_correction = h_scaled / WordDetectorNet.input_size[0]
+    output_np[MapOrdering.GEO_TOP :] *= geo_correction
+
+    # Output is at half resolution of input.
+    decode_scale = h_scaled / output_np.shape[1]
+
+    decoded_aabbs = decode(
+        output_np,
+        scale=decode_scale,
+        comp_fg=fg_by_cc(
+            thres=_DETECTION_DEFAULTS.fg_threshold,
+            max_num=_DETECTION_DEFAULTS.max_detections,
+        ),
+    )
+    aabbs = [
+        aabb.clip(BoundingBox(0, 0, w_scaled - 1, h_scaled - 1))
+        for aabb in decoded_aabbs
+    ]
+    clustered = cluster_aabbs(aabbs)
+
+    # Scale boxes back to original image coordinates.
+    sx = w_orig / w_scaled
+    sy = h_orig / h_scaled
+    return [aabb.scale(sx, sy) for aabb in clustered]
+
+
+def run(checkpoint, device, use_scale_and_pad, scale):
     samples = load_benchmark()
+
+    device_str = get_device(device)
+    model = None
+    if use_scale_and_pad:
+        model = WordDetectorNet()
+        model.load_state_dict(torch.load(checkpoint, map_location=device_str))
+        model.to(device_str)
+        model.eval()
 
     total_gt = 0
     total_pred = 0
     total_matched = 0
+
+    mode = f"scale-and-pad (scale={scale})" if use_scale_and_pad else "fixed 448x448"
+    print(f"Mode: {mode}")
+    print(f"Checkpoint: {checkpoint}")
+    print()
 
     for sample in samples:
         document = get_document(sample.xopp_path)
@@ -152,7 +242,11 @@ def run(checkpoint, device):
             img = cv2.imread(str(tmp_path), cv2.IMREAD_GRAYSCALE)
             tmp_path.unlink(missing_ok=True)
 
-            boxes = detect_page(img, checkpoint, device)
+            if use_scale_and_pad:
+                boxes = detect_page_scale_and_pad(img, model, device_str, scale)
+            else:
+                boxes = detect_page_fixed(img, checkpoint, device)
+
             predictions[page_index] = [
                 {
                     "xmin": b.x_min * coord_scale,
@@ -187,7 +281,7 @@ def run(checkpoint, device):
     )
 
     print()
-    print(f"Detection benchmark results ({checkpoint}):")
+    print(f"Detection benchmark results ({mode}):")
     print(f"  Precision: {precision:.3f}")
     print(f"  Recall:    {recall:.3f}")
     print(f"  F1:        {f1:.3f}")
@@ -209,8 +303,19 @@ def main():
         default="auto",
         help='Inference device. "auto" selects GPU if available.',
     )
+    parser.add_argument(
+        "--scale-and-pad",
+        action="store_true",
+        help="Use proportional scaling + padding instead of fixed 448x448 resize.",
+    )
+    parser.add_argument(
+        "--scale",
+        type=float,
+        default=0.4,
+        help="Scale factor for --scale-and-pad mode (default: 0.4).",
+    )
     args = parser.parse_args()
-    run(args.checkpoint, args.device)
+    run(args.checkpoint, args.device, args.scale_and_pad, args.scale)
 
 
 if __name__ == "__main__":
