@@ -46,9 +46,10 @@ class _SoftmaxBaked(torch.nn.Module):
         return self.net(x, apply_softmax=True)
 
 
-def build_config() -> dict:
+def build_config(checkpoint: Path) -> dict:
     """Pre/post-processing parameters stored alongside ``model.onnx``."""
     return {
+        "checkpoint": str(checkpoint),
         "model_name": "word_detector",
         "input_size": {
             "height": WordDetectorNet.input_size[0],
@@ -111,7 +112,7 @@ def export(checkpoint: Path, output_dir: Path) -> dict:
 
     config_path = output_dir / "config.json"
     with open(config_path, "w") as f:
-        json.dump(build_config(), f, indent=2)
+        json.dump(build_config(checkpoint), f, indent=2)
 
     print(f"Wrote {onnx_path} and {config_path}")
     return {"onnx": onnx_path, "config": config_path}
