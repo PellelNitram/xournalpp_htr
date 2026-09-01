@@ -107,8 +107,6 @@ def compute_predictions(
             detector = WordDetectorModel.from_local(local_onnx, local_config)
         else:
             detector = WordDetectorModel.from_pretrained()
-        detect_scale_env = os.environ.get("WORD_DETECTOR_SCALE")
-        detect_scale = float(detect_scale_env) if detect_scale_env else None
         recognizer = SimpleHTRModel.from_pretrained()
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):
@@ -134,7 +132,7 @@ def compute_predictions(
 
                 img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
 
-                boxes = detector.detect(img, scale=detect_scale)
+                boxes = detector.detect(img)
 
                 coord_scale = document.DPI / RENDER_DPI
                 predictions_page = []
