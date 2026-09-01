@@ -111,7 +111,7 @@ class WordDetectorModel(HFHubInferenceModel):
             scale=in_h / output_size["height"],
             comp_fg=fg_by_cc(
                 thres=self.config["fg_cc_threshold"],
-                max_num=100,
+                max_num=self.config["fg_cc_max_num"],
             ),
         )
         clip_box = BoundingBox(0, 0, in_w - 1, in_h - 1)
