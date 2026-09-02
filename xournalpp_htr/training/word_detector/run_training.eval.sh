@@ -6,7 +6,7 @@ BASE_PATH=experiments
 best_f1=0
 best_dir=""
 
-for json_file in "${BASE_PATH}"/experiment1/*/best_model.json; do
+for json_file in "${BASE_PATH}"/experiment*/*/best_model.json; do
     [ -f "${json_file}" ] || continue
     f1=$(python3 -c "import json; print(json.load(open('${json_file}'))['f1'])")
     dir=$(dirname "${json_file}")

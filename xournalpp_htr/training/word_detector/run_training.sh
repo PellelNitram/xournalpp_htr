@@ -21,7 +21,7 @@ experiment1() {
 
     for LEARNING_RATE in 0.0005 0.001 0.002
     do
-        for BATCH_SIZE in 16 32 64 128
+        for BATCH_SIZE in 16 32 64
         do
 
             echo "LR=${LEARNING_RATE}, BS=${BATCH_SIZE}"
@@ -33,7 +33,8 @@ experiment1() {
                 training.learning_rate="${LEARNING_RATE}" \
                 training.batch_size="${BATCH_SIZE}" \
                 output_path="${OUT}" \
-                training.epoch_max="${EPOCH_MAX}" 2>&1 | tee "${OUT}/train.log"
+                training.epoch_max="${EPOCH_MAX}" \
+                hydra.run.dir="${OUT}" 2>&1 | tee "${OUT}/train.log"
 
         done
     done
@@ -62,7 +63,8 @@ experiment2() {
                 augmentation.enabled="${AUGMENT}" \
                 seed.split="${SEED_SPLIT}" \
                 training.epoch_max="${EPOCH_MAX}" \
-                output_path="${OUT}" 2>&1 | tee "${OUT}/train.log"
+                output_path="${OUT}" \
+                hydra.run.dir="${OUT}" 2>&1 | tee "${OUT}/train.log"
 
         done
     done
@@ -94,7 +96,8 @@ experiment3() {
                 seed.split="${SEED_SPLIT}" \
                 training.epoch_max="${EPOCH_MAX}" \
                 training.batch_size="${BATCH_SIZE}" \
-                output_path="${OUT}" 2>&1 | tee "${OUT}/train.log"
+                output_path="${OUT}" \
+                hydra.run.dir="${OUT}" 2>&1 | tee "${OUT}/train.log"
 
         done
     done
@@ -104,8 +107,8 @@ experiment3() {
 # Run experiments
 # ==================
 
-# time experiment1
-# time experiment2
+time experiment1
+time experiment2
 time experiment3
 
 # ==================

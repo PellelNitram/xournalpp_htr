@@ -66,6 +66,8 @@ class WordDetectorModel(HFHubInferenceModel):
 
     HF_REPO_ID = "PellelNitram/xournalpp-htr-word-detector"
 
+    DEFAULT_SCALE = 0.4
+
     def __init__(self, session: ort.InferenceSession, config: dict, revision: str):
         super().__init__(revision)
         self.session = session
@@ -84,42 +86,51 @@ class WordDetectorModel(HFHubInferenceModel):
             revision=revision,
         )
 
-    def detect(self, image_grayscale: np.ndarray) -> List[BoundingBox]:
+    @staticmethod
+    def _ceil32(val: int) -> int:
+        return val if val % 32 == 0 else (val // 32 + 1) * 32
+
+    def detect(
+        self, image_grayscale: np.ndarray, scale: float | None = None
+    ) -> List[BoundingBox]:
         """Detect word bounding boxes in a grayscale image.
 
-        The returned boxes are in the pixel coordinate system of the *passed*
-        image (the internal fixed-size network resize is undone), so callers
-        only need to convert to their own coordinate system afterwards.
+        The image is scaled by *scale* (default 0.4) and padded to multiples of
+        32, preserving aspect ratio. The returned boxes are in the pixel
+        coordinate system of the *passed* image.
         """
-        orig_h, orig_w = image_grayscale.shape[:2]
-        input_size = self.config["input_size"]
-        output_size = self.config["output_size"]
-        in_h, in_w = input_size["height"], input_size["width"]
+        if scale is None:
+            scale = self.DEFAULT_SCALE
 
-        # Pre-processing: resize to the fixed network input, normalise.
-        resized = cv2.resize(image_grayscale, (in_w, in_h))  # cv2 uses (w, h)
-        normalised, _ = normalize_image_transform(resized, None)
+        orig_h, orig_w = image_grayscale.shape[:2]
+
+        # Pre-processing: scale, pad to multiples of 32, normalise.
+        img_scaled = cv2.resize(image_grayscale, None, fx=scale, fy=scale)
+        padded_h = self._ceil32(img_scaled.shape[0])
+        padded_w = self._ceil32(img_scaled.shape[1])
+        img_padded = np.ones((padded_h, padded_w), dtype=np.uint8) * 255
+        img_padded[: img_scaled.shape[0], : img_scaled.shape[1]] = img_scaled
+        normalised, _ = normalize_image_transform(img_padded, None)
         net_input = normalised.astype(np.float32)[None, None, :, :]
 
         # Inference (softmax is baked into the exported ONNX graph).
         output = self.session.run(None, {self._input_name: net_input})[0]
         output = output[0]  # drop batch dim -> (NUM_MAPS, out_h, out_w)
 
-        # Post-processing: decode maps -> clip to input -> cluster.
+        # Post-processing: decode maps -> scale back -> clip -> cluster.
         decoded = decode(
             output,
-            scale=in_h / output_size["height"],
+            scale=net_input.shape[2] / output.shape[1],
             comp_fg=fg_by_cc(
                 thres=self.config["fg_cc_threshold"],
                 max_num=self.config["fg_cc_max_num"],
             ),
         )
-        clip_box = BoundingBox(0, 0, in_w - 1, in_h - 1)
+        decoded = [aabb.scale(1 / scale, 1 / scale) for aabb in decoded]
+        clip_box = BoundingBox(0, 0, orig_w - 1, orig_h - 1)
         clustered = cluster_aabbs([aabb.clip(clip_box) for aabb in decoded])
 
-        # Map from the fixed network input space back to the passed image.
-        sx, sy = orig_w / in_w, orig_h / in_h
-        return [aabb.scale(sx, sy) for aabb in clustered]
+        return clustered
 
 
 class SimpleHTRModel(HFHubInferenceModel):
