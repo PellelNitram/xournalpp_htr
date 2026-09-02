@@ -1,54 +1,70 @@
 """Convert the IAM Handwriting Database to YOLO detection format.
 
-Prerequisites – download these from https://fki.tic.heia-fr.ch/databases/iam-handwriting-database
-(registration required) and place them in a `raw/` subdirectory:
+Downloads the dataset from HuggingFace Hub (PellelNitram/xournalpp_htr_IAM_DB)
+and converts form images + XML ground truth into YOLO-format labels.
 
-    raw/
-        formsA-D.tgz
-        formsE-H.tgz
-        formsI-Z.tgz
-        words.txt
+Requires a valid HuggingFace token with access to the private repository,
+set via the ``HF_TOKEN`` environment variable or ``huggingface-cli login``.
 
 Usage:
-    uv run python prepare_data.py [--raw-dir raw] [--out-dir dataset] [--val-split 0.15]
+    uv run python prepare_data.py [--out-dir dataset] [--val-split 0.15]
 """
 
 import argparse
 import random
 import shutil
-import tarfile
+import xml.etree.ElementTree as ET
 from collections import defaultdict
 from pathlib import Path
 
+from huggingface_hub import snapshot_download
 from PIL import Image
 
 
-def extract_forms(raw_dir: Path, tmp_dir: Path) -> None:
-    tmp_dir.mkdir(parents=True, exist_ok=True)
-    for archive in sorted(raw_dir.glob("forms*.tgz")):
-        print(f"Extracting {archive.name} ...")
-        with tarfile.open(archive, "r:gz") as tar:
-            tar.extractall(tmp_dir)
+def download_dataset() -> Path:
+    """Download IAM-DB from HuggingFace Hub, return path to data/ folder."""
+    return (
+        Path(
+            snapshot_download(
+                repo_id="PellelNitram/xournalpp_htr_IAM_DB",
+                repo_type="dataset",
+            )
+        )
+        / "data"
+    )
 
 
-def parse_words_txt(words_txt: Path) -> dict[str, list[dict]]:
-    """Return {form_id: [{x, y, w, h}, ...]}."""
+def parse_xml_gt(xml_dir: Path) -> dict[str, list[dict]]:
+    """Return {form_id: [{x, y, w, h}, ...]} from XML ground truth files."""
     forms: dict[str, list[dict]] = defaultdict(list)
-    for line in words_txt.read_text().splitlines():
-        if line.startswith("#") or not line.strip():
-            continue
-        parts = line.split()
-        if len(parts) < 9:
-            continue
-        word_id = parts[0]
-        seg_result = parts[1]
-        if seg_result == "err":
-            continue
-        x, y, w, h = int(parts[3]), int(parts[4]), int(parts[5]), int(parts[6])
-        # word_id format: a01-000u-00-00 -> form = a01-000u
-        segments = word_id.split("-")
-        form_id = f"{segments[0]}-{segments[1]}"
-        forms[form_id].append({"x": x, "y": y, "w": w, "h": h})
+    for xml_path in sorted(xml_dir.glob("*.xml")):
+        form_id = xml_path.stem
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+        for line in root.findall("./handwritten-part/line"):
+            for word in line.findall("./word"):
+                components = word.findall("./cmp")
+                if not components:
+                    continue
+                x_min, x_max = float("inf"), 0
+                y_min, y_max = float("inf"), 0
+                for cmp in components:
+                    x = float(cmp.attrib["x"])
+                    y = float(cmp.attrib["y"])
+                    w = float(cmp.attrib["width"])
+                    h = float(cmp.attrib["height"])
+                    x_min = min(x_min, x)
+                    x_max = max(x_max, x + w)
+                    y_min = min(y_min, y)
+                    y_max = max(y_max, y + h)
+                forms[form_id].append(
+                    {
+                        "x": x_min,
+                        "y": y_min,
+                        "w": x_max - x_min,
+                        "h": y_max - y_min,
+                    }
+                )
     return forms
 
 
@@ -109,37 +125,22 @@ def convert_to_yolo(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Convert IAM to YOLO format")
-    parser.add_argument("--raw-dir", type=Path, default=Path("raw"))
     parser.add_argument("--out-dir", type=Path, default=Path("dataset"))
     parser.add_argument("--val-split", type=float, default=0.15)
     args = parser.parse_args()
 
-    words_txt = args.raw_dir / "words.txt"
-    if not words_txt.exists():
-        raise FileNotFoundError(
-            f"{words_txt} not found. Download it from "
-            "https://fki.tic.heia-fr.ch/databases/iam-handwriting-database"
-        )
+    print("Downloading IAM dataset from HuggingFace Hub...")
+    data_dir = download_dataset()
+    print(f"Dataset available at {data_dir}")
 
-    tmp_forms = Path("_tmp_forms")
-    extract_forms(args.raw_dir, tmp_forms)
+    xml_dir = data_dir / "xml"
+    forms_img_dir = data_dir / "forms"
 
-    forms_img_dir = tmp_forms / "forms"
-    if not forms_img_dir.exists():
-        candidates = list(tmp_forms.rglob("*.png"))
-        if candidates:
-            forms_img_dir = candidates[0].parent
-        else:
-            raise FileNotFoundError("No form images found after extraction.")
-
-    forms = parse_words_txt(words_txt)
+    forms = parse_xml_gt(xml_dir)
     print(
         f"Parsed {sum(len(v) for v in forms.values())} words across {len(forms)} forms."
     )
     convert_to_yolo(forms, forms_img_dir, args.out_dir, args.val_split)
-
-    shutil.rmtree(tmp_forms, ignore_errors=True)
-    print("Cleaned up temp files.")
 
 
 if __name__ == "__main__":
