@@ -23,6 +23,7 @@ from huggingface_hub import hf_hub_download
 
 from xournalpp_htr.training.shared.bounding_box import BoundingBox
 from xournalpp_htr.training.shared.postprocessing import (
+    MapOrdering,
     cluster_aabbs,
     decode,
     fg_by_cc,
@@ -116,6 +117,11 @@ class WordDetectorModel(HFHubInferenceModel):
         # Inference (softmax is baked into the exported ONNX graph).
         output = self.session.run(None, {self._input_name: net_input})[0]
         output = output[0]  # drop batch dim -> (NUM_MAPS, out_h, out_w)
+
+        # Correct geometry channels: the network multiplies by 448 (training
+        # input size), but the actual input may be a different height.
+        geo_correction = net_input.shape[2] / self.config["input_size"]["height"]
+        output[MapOrdering.GEO_TOP :] *= geo_correction
 
         # Post-processing: decode maps -> scale back -> clip -> cluster.
         decoded = decode(
