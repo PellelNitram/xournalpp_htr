@@ -1,0 +1,8 @@
+raw/
+dataset/
+_tmp_forms/
+runs/
+predictions/
+.venv/
+__pycache__/
+*.pyc
