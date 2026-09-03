@@ -50,6 +50,13 @@ training-simple-htr = [
     "gradio",
     "hydra-core",
 ]
+training-word-detector-yolo = [
+    "torch",
+    "torchvision",
+    "ultralytics",
+    "tensorboard",
+    "gradio",
+]
 dev = [
     "jupyter",
 ]
