@@ -16,6 +16,7 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from ultralytics import YOLO
 
+SCRIPT_DIR = Path(__file__).resolve().parent
 N_PREVIEW_IMAGES = 3
 PREVIEW_SEED = 42
 
@@ -65,7 +66,8 @@ def main() -> None:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     name = f"train_{timestamp}"
 
-    preview_images = _select_preview_images("data.yaml")
+    data_yaml = str(SCRIPT_DIR / "data.yaml")
+    preview_images = _select_preview_images(data_yaml)
     print(f"Preview images for TensorBoard: {[p.name for p in preview_images]}")
 
     model = YOLO("yolov8s.pt")
@@ -87,7 +89,7 @@ def main() -> None:
     model.add_callback("on_train_end", on_train_end)
 
     model.train(
-        data="data.yaml",
+        data=data_yaml,
         name=name,
         epochs=args.epochs,
         batch=args.batch,
@@ -111,7 +113,7 @@ def main() -> None:
         scale=0.3,
         fliplr=0.0,
         flipud=0.0,
-        project="runs/detect",
+        project=str(SCRIPT_DIR / "runs" / "detect"),
     )
 
 
