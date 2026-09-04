@@ -243,7 +243,7 @@ def main(cfg: DictConfig) -> None:
         scale=cfg.augmentation.scale,
         fliplr=cfg.augmentation.fliplr,
         flipud=cfg.augmentation.flipud,
-        project=str(SCRIPT_DIR / "runs" / "detect"),
+        project=str((SCRIPT_DIR / cfg.output_path).resolve()),
     )
 
 
