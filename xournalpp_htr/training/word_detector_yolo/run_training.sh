@@ -19,6 +19,26 @@ BASE_PATH=experiments
 experiment1() {
     local EPOCHS=50
 
+    echo "Baseline: default hyperparameters"
+
+    OUT="${BASE_PATH}/experiment1/baseline"
+    mkdir -p "${OUT}"
+
+    uv run python -m xournalpp_htr.training.word_detector_yolo.train \
+        training.epochs="${EPOCHS}" \
+        output_path="${OUT}" \
+        hydra.run.dir="${OUT}" 2>&1 | tee "${OUT}/train.log"
+}
+
+# ============
+# Experiment 2
+# ============
+
+# Question: General hyperparameter tuning
+
+experiment2() {
+    local EPOCHS=50
+
     for BATCH in 8 16
     do
         for LR in 0.0005 0.001
@@ -26,7 +46,7 @@ experiment1() {
 
             echo "BS=${BATCH}, LR=${LR}"
 
-            OUT="${BASE_PATH}/experiment1/bs${BATCH}_lr${LR}"
+            OUT="${BASE_PATH}/experiment2/bs${BATCH}_lr${LR}"
             mkdir -p "${OUT}"
 
             uv run python -m xournalpp_htr.training.word_detector_yolo.train \
@@ -45,6 +65,7 @@ experiment1() {
 # ==================
 
 time experiment1
+time experiment2
 
 # ==================
 # Future experiments
