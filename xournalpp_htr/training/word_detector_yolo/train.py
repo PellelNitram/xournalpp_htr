@@ -26,7 +26,6 @@ from huggingface_hub import snapshot_download
 from hydra.core.config_store import ConfigStore
 from omegaconf import DictConfig
 from PIL import Image
-from torch.utils.tensorboard import SummaryWriter
 from ultralytics import YOLO
 
 from xournalpp_htr.training.word_detector_yolo.config import WordDetectorYOLOConfig
@@ -164,10 +163,24 @@ def _select_preview_images(data_yaml: Path) -> list[Path]:
     return rng.sample(images, min(N_PREVIEW_IMAGES, len(images)))
 
 
+def _get_tb_writer(trainer):
+    """Get ultralytics' built-in TensorBoard SummaryWriter."""
+    for cb in trainer.callbacks.get("on_pretrain_routine_start", []):
+        if hasattr(cb, "__self__") and hasattr(cb.__self__, "writer"):
+            return cb.__self__.writer
+    # Fallback: check common attribute locations.
+    if hasattr(trainer, "tb_writer"):
+        return trainer.tb_writer
+    for logger in getattr(trainer, "loggers", {}).values():
+        if hasattr(logger, "writer"):
+            return logger.writer
+    return None
+
+
 def _log_predictions(trainer):
-    if not hasattr(trainer, "_tb_writer"):
+    writer = _get_tb_writer(trainer)
+    if writer is None:
         return
-    writer = trainer._tb_writer
     preview_imgs = trainer._preview_images
     epoch = trainer.epoch + 1
     checkpoint = Path(trainer.save_dir) / "weights" / "last.pt"
@@ -201,20 +214,13 @@ def main(cfg: DictConfig) -> None:
     model = YOLO(cfg.model.variant)
 
     def on_train_start(trainer):
-        log_dir = Path(trainer.save_dir)
-        trainer._tb_writer = SummaryWriter(log_dir=str(log_dir))
         trainer._preview_images = preview_images
 
     def on_fit_epoch_end(trainer):
         _log_predictions(trainer)
 
-    def on_train_end(trainer):
-        if hasattr(trainer, "_tb_writer"):
-            trainer._tb_writer.close()
-
     model.add_callback("on_train_start", on_train_start)
     model.add_callback("on_fit_epoch_end", on_fit_epoch_end)
-    model.add_callback("on_train_end", on_train_end)
 
     model.train(
         data=str(data_yaml),
