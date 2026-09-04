@@ -12,6 +12,7 @@ Usage::
     uv run python -m xournalpp_htr.training.word_detector_yolo.train --cfg job
 """
 
+import csv
 import random
 import shutil
 import xml.etree.ElementTree as ET
@@ -27,6 +28,7 @@ from hydra.core.config_store import ConfigStore
 from omegaconf import DictConfig
 from PIL import Image
 from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.summary import hparams
 from ultralytics import YOLO, settings
 
 from xournalpp_htr.training.word_detector_yolo.config import WordDetectorYOLOConfig
@@ -166,6 +168,53 @@ def _select_preview_images(data_yaml: Path) -> list[Path]:
     return rng.sample(images, min(N_PREVIEW_IMAGES, len(images)))
 
 
+def _read_final_metrics(results_csv: Path) -> dict[str, float]:
+    with open(results_csv) as f:
+        reader = csv.DictReader(f)
+        rows = list(reader)
+    if not rows:
+        return {}
+    last = rows[-1]
+    return {
+        k.strip(): float(v) for k, v in last.items() if k.strip().startswith("metrics/")
+    }
+
+
+def _log_hparams(trainer, cfg: DictConfig):
+    results_csv = Path(trainer.save_dir) / "results.csv"
+    if not results_csv.exists():
+        return
+
+    hparam_dict = {
+        "model/variant": cfg.model.variant,
+        "model/imgsz": cfg.model.imgsz,
+        "training/epochs": cfg.training.epochs,
+        "training/batch": cfg.training.batch,
+        "training/lr0": cfg.training.lr0,
+        "training/lrf": cfg.training.lrf,
+        "training/optimizer": cfg.training.optimizer,
+        "training/patience": cfg.training.patience,
+        "training/warmup_epochs": cfg.training.warmup_epochs,
+        "augmentation/mosaic": cfg.augmentation.mosaic,
+        "augmentation/hsv_v": cfg.augmentation.hsv_v,
+        "augmentation/degrees": cfg.augmentation.degrees,
+        "augmentation/translate": cfg.augmentation.translate,
+        "augmentation/scale": cfg.augmentation.scale,
+    }
+    metric_dict = _read_final_metrics(results_csv)
+    if not metric_dict:
+        return
+
+    writer = SummaryWriter(log_dir=str(Path(trainer.save_dir)))
+    exp, ssi, sei = hparams(hparam_dict, metric_dict)
+    writer.file_writer.add_summary(exp)
+    writer.file_writer.add_summary(ssi)
+    writer.file_writer.add_summary(sei)
+    for key, value in metric_dict.items():
+        writer.add_scalar(key, value)
+    writer.close()
+
+
 def _log_predictions(trainer):
     if not hasattr(trainer, "_tb_writer"):
         return
@@ -211,6 +260,7 @@ def main(cfg: DictConfig) -> None:
         _log_predictions(trainer)
 
     def on_train_end(trainer):
+        _log_hparams(trainer, cfg)
         if hasattr(trainer, "_tb_writer"):
             trainer._tb_writer.close()
 
