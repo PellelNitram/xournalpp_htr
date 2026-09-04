@@ -27,9 +27,11 @@ from hydra.core.config_store import ConfigStore
 from omegaconf import DictConfig
 from PIL import Image
 from torch.utils.tensorboard import SummaryWriter
-from ultralytics import YOLO
+from ultralytics import YOLO, settings
 
 from xournalpp_htr.training.word_detector_yolo.config import WordDetectorYOLOConfig
+
+settings.update({"tensorboard": True})
 
 cs = ConfigStore.instance()
 cs.store(name="word_detector_yolo", node=WordDetectorYOLOConfig)
