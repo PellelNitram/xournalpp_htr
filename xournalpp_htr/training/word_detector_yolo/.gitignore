@@ -1,8 +1,8 @@
-raw/
 dataset/
-_tmp_forms/
 runs/
 predictions/
+exports/
+experiments/
 .venv/
 __pycache__/
 *.pyc

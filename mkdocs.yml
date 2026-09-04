@@ -44,6 +44,7 @@ nav:
     - Overview: 'models/index.md'
     - WordDetector: 'models/word_detector.md'
     - SimpleHTR: 'models/simple_htr.md'
+    - WordDetectorYOLO: 'models/word_detector_yolo.md'
   - Contributing: 'contributing.md'
   - Issue Labels: 'labels.md'
   - Roadmap: 'roadmap.md'

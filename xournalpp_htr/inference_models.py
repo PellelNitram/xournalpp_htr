@@ -198,3 +198,107 @@ class SimpleHTRModel(HFHubInferenceModel):
                 chars.append(self._charset[idx])
             prev = idx
         return "".join(chars)
+
+
+class YOLOWordDetectorModel(HFHubInferenceModel):
+    """YOLO-based word-detection model, loaded from HF Hub as ONNX.
+
+    The repository contains ``model.onnx`` (exported via ultralytics with NMS
+    baked in) and ``config.json`` (inference parameters). Inference runs the
+    ONNX graph with ``onnxruntime`` and returns word bounding boxes. No
+    ``ultralytics`` dependency (ADR 006).
+    """
+
+    HF_REPO_ID = "PellelNitram/xournalpp-htr-word-detector-yolo"
+
+    def __init__(self, session: ort.InferenceSession, config: dict, revision: str):
+        super().__init__(revision)
+        self.session = session
+        self.config = config
+        self._input_name = session.get_inputs()[0].name
+        self._imgsz = config.get("imgsz", 1024)
+        self._conf = config.get("conf", 0.25)
+
+    @classmethod
+    def from_pretrained(cls, revision: str = "main") -> "YOLOWordDetectorModel":
+        onnx_path = hf_hub_download(cls.HF_REPO_ID, "model.onnx", revision=revision)
+        config_path = hf_hub_download(cls.HF_REPO_ID, "config.json", revision=revision)
+        with open(config_path) as f:
+            config = json.load(f)
+        return cls(
+            session=ort.InferenceSession(onnx_path),
+            config=config,
+            revision=revision,
+        )
+
+    @staticmethod
+    def _letterbox(
+        image: np.ndarray, target_size: int
+    ) -> tuple[np.ndarray, float, tuple[int, int]]:
+        """Resize with aspect ratio preserved, pad to square."""
+        h, w = image.shape[:2]
+        scale = target_size / max(h, w)
+        new_w = int(w * scale)
+        new_h = int(h * scale)
+        resized = cv2.resize(image, (new_w, new_h))
+        pad_w = target_size - new_w
+        pad_h = target_size - new_h
+        top = pad_h // 2
+        left = pad_w // 2
+        padded = cv2.copyMakeBorder(
+            resized,
+            top,
+            pad_h - top,
+            left,
+            pad_w - left,
+            cv2.BORDER_CONSTANT,
+            value=(114, 114, 114),
+        )
+        return padded, scale, (top, left)
+
+    def detect(
+        self, image_grayscale: np.ndarray, conf: float | None = None
+    ) -> List[BoundingBox]:
+        """Detect word bounding boxes in a grayscale image.
+
+        The returned boxes are in the pixel coordinate system of the
+        *passed* image.
+        """
+        if conf is None:
+            conf = self._conf
+
+        if len(image_grayscale.shape) == 2:
+            img_rgb = cv2.cvtColor(image_grayscale, cv2.COLOR_GRAY2RGB)
+        else:
+            img_rgb = image_grayscale
+
+        orig_h, orig_w = img_rgb.shape[:2]
+        padded, scale, (pad_top, pad_left) = self._letterbox(img_rgb, self._imgsz)
+
+        # NCHW float32, normalised to [0, 1].
+        blob = padded.astype(np.float32) / 255.0
+        blob = np.transpose(blob, (2, 0, 1))[None, :, :, :]
+
+        outputs = self.session.run(None, {self._input_name: blob})
+        # ultralytics ONNX output: (1, num_detections, 6)
+        # where 6 = [x1, y1, x2, y2, conf, class_id]
+        preds = outputs[0]
+        if preds.ndim == 3:
+            preds = preds[0]
+
+        boxes = []
+        for det in preds:
+            det_conf = float(det[4])
+            if det_conf < conf:
+                continue
+            x1 = (float(det[0]) - pad_left) / scale
+            y1 = (float(det[1]) - pad_top) / scale
+            x2 = (float(det[2]) - pad_left) / scale
+            y2 = (float(det[3]) - pad_top) / scale
+            x1 = max(0.0, min(float(orig_w), x1))
+            y1 = max(0.0, min(float(orig_h), y1))
+            x2 = max(0.0, min(float(orig_w), x2))
+            y2 = max(0.0, min(float(orig_h), y2))
+            if x2 > x1 and y2 > y1:
+                boxes.append(BoundingBox(x1, y1, x2, y2))
+        return boxes

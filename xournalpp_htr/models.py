@@ -10,7 +10,11 @@ import matplotlib.pyplot as plt
 from htr_pipeline import DetectorConfig, LineClusteringConfig, read_page
 from tqdm import tqdm
 
-from xournalpp_htr.inference_models import SimpleHTRModel, WordDetectorModel
+from xournalpp_htr.inference_models import (
+    SimpleHTRModel,
+    WordDetectorModel,
+    YOLOWordDetectorModel,
+)
 
 PageIndex = int
 
@@ -154,22 +158,10 @@ def compute_predictions(
                 predictions[page_index] = predictions_page
 
     elif pipeline_name == "2026-09-02_yolo_detector":
-        from xournalpp_htr.training.word_detector_yolo.inference import (
-            YOLOWordDetector,
-        )
-
         RENDER_DPI = 150
         nr_pages = len(document.pages)
 
-        yolo_weights = (
-            Path(__file__).resolve().parent
-            / "training"
-            / "word_detector_yolo"
-            / "runs"
-            / "detect"
-            / "best.pt"
-        )
-        detector = YOLOWordDetector(yolo_weights)
+        detector = YOLOWordDetectorModel.from_pretrained()
         recognizer = SimpleHTRModel.from_pretrained()
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):
