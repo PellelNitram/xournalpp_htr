@@ -162,7 +162,7 @@ Benchmark results (`2026-09-02_yolo_detector` pipeline, ONNX inference):
 | CER (case-sensitive) | 34.9% |
 | CER (case-insensitive) | 34.4% |
 | Recall × (1 − CER_ci) | 52.5% |
-| Word accuracy | *run benchmark to fill* |
+| Word accuracy | 39.1% |
 | Predicted words | 229 |
 | GT words | 211 |
 | Matched | 169 |
