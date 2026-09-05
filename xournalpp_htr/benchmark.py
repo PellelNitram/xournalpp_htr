@@ -51,8 +51,8 @@ class BenchmarkResult:
     recall: float
     cer: float
     cer_case_insensitive: float
-    search_quality: float
-    exact_match_rate: float
+    recall_times_accuracy: float
+    word_accuracy: float
     n_gt_words: int
     n_predicted_words: int
     n_matched: int
@@ -269,16 +269,16 @@ def run_benchmark(pipeline_name: str, collect_details: bool = False) -> Benchmar
         else 0.0
     )
 
-    search_quality = recall * (1 - cer_case_insensitive)
-    exact_match_rate = total_exact_matches / total_matched if total_matched > 0 else 0.0
+    recall_times_accuracy = recall * (1 - cer_case_insensitive)
+    word_accuracy = total_exact_matches / total_matched if total_matched > 0 else 0.0
 
     return BenchmarkResult(
         precision=precision,
         recall=recall,
         cer=cer,
         cer_case_insensitive=cer_case_insensitive,
-        search_quality=search_quality,
-        exact_match_rate=exact_match_rate,
+        recall_times_accuracy=recall_times_accuracy,
+        word_accuracy=word_accuracy,
         n_gt_words=total_gt,
         n_predicted_words=total_pred,
         n_matched=total_matched,
@@ -551,8 +551,8 @@ def write_html_report(result: BenchmarkResult, out_path: Path) -> Path:
         f"precision {_pct(result.precision)} · recall {_pct(result.recall)} · "
         f"CER {_pct(result.cer)} ({_pct(result.cer_case_insensitive)} "
         f"case-insensitive) · "
-        f"search quality {_pct(result.search_quality)} · "
-        f"exact match {_pct(result.exact_match_rate)}"
+        f"search quality {_pct(result.recall_times_accuracy)} · "
+        f"exact match {_pct(result.word_accuracy)}"
         "</div>",
         _legend(),
     ]
