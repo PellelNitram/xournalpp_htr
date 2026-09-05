@@ -62,6 +62,8 @@ if __name__ == "__main__":
                     "recall": result.recall,
                     "cer": result.cer,
                     "cer_case_insensitive": result.cer_case_insensitive,
+                    "recall_times_accuracy": result.recall_times_accuracy,
+                    "word_accuracy": result.word_accuracy,
                     "n_gt_words": result.n_gt_words,
                     "n_predicted_words": result.n_predicted_words,
                     "n_matched": result.n_matched,
@@ -82,5 +84,9 @@ if __name__ == "__main__":
         )
         print(f"CER      : {result.cer:.1%}  (case-sensitive)")
         print(f"CER      : {result.cer_case_insensitive:.1%}  (case-insensitive)")
+        print(f"R×(1-CER): {result.recall_times_accuracy:.1%}  (recall × (1 − CER_ci))")
+        print(
+            f"Word Acc : {result.word_accuracy:.1%}  ({round(result.word_accuracy * result.n_matched)}/{result.n_matched} matched words)"
+        )
         if args["html_report"] is not None:
             print(f"Report   : {args['html_report']}")

@@ -10,6 +10,9 @@ model.
 - [SimpleHTR](simple_htr.md) — word-level text recognition
   (reimplementation of
   [SimpleHTR](https://github.com/githubharald/SimpleHTR)).
+- [WordDetectorYOLO](word_detector_yolo.md) — YOLO-based word-level
+  bounding-box detector (fine-tuned
+  [YOLOv8](https://github.com/ultralytics/ultralytics)).
 
 New models added in the future should follow the same structure: a page under
 `docs/models/<model_name>.md` linked from this index and from the `Models`

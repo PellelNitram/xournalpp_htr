@@ -198,3 +198,121 @@ class SimpleHTRModel(HFHubInferenceModel):
                 chars.append(self._charset[idx])
             prev = idx
         return "".join(chars)
+
+
+class YOLOWordDetectorModel(HFHubInferenceModel):
+    """YOLO-based word-detection model, loaded from HF Hub as ONNX.
+
+    The repository contains ``model.onnx`` (exported via ultralytics with NMS
+    baked in) and ``config.json`` (inference parameters). Inference runs the
+    ONNX graph with ``onnxruntime`` and returns word bounding boxes. No
+    ``ultralytics`` dependency (ADR 006).
+    """
+
+    HF_REPO_ID = "PellelNitram/xournalpp-htr-word-detector-yolo"
+
+    def __init__(self, session: ort.InferenceSession, config: dict, revision: str):
+        super().__init__(revision)
+        self.session = session
+        self.config = config
+        self._input_name = session.get_inputs()[0].name
+        self._imgsz = config.get("imgsz", 1024)
+        self._conf = config.get("conf", 0.25)
+
+    @classmethod
+    def from_pretrained(cls, revision: str = "main") -> "YOLOWordDetectorModel":
+        onnx_path = hf_hub_download(cls.HF_REPO_ID, "model.onnx", revision=revision)
+        config_path = hf_hub_download(cls.HF_REPO_ID, "config.json", revision=revision)
+        with open(config_path) as f:
+            config = json.load(f)
+        return cls(
+            session=ort.InferenceSession(onnx_path),
+            config=config,
+            revision=revision,
+        )
+
+    @staticmethod
+    def _letterbox(
+        image: np.ndarray, target_size: int
+    ) -> tuple[np.ndarray, float, tuple[int, int]]:
+        """Resize with aspect ratio preserved, pad to square."""
+        h, w = image.shape[:2]
+        scale = target_size / max(h, w)
+        new_w = int(w * scale)
+        new_h = int(h * scale)
+        resized = cv2.resize(image, (new_w, new_h))
+        pad_w = target_size - new_w
+        pad_h = target_size - new_h
+        top = pad_h // 2
+        left = pad_w // 2
+        padded = cv2.copyMakeBorder(
+            resized,
+            top,
+            pad_h - top,
+            left,
+            pad_w - left,
+            cv2.BORDER_CONSTANT,
+            value=(114, 114, 114),
+        )
+        return padded, scale, (top, left)
+
+    NMS_IOU_THRESHOLD = 0.5
+
+    def detect(
+        self, image_grayscale: np.ndarray, conf: float | None = None
+    ) -> List[BoundingBox]:
+        """Detect word bounding boxes in a grayscale image.
+
+        The returned boxes are in the pixel coordinate system of the
+        *passed* image.
+        """
+        if conf is None:
+            conf = self._conf
+
+        if len(image_grayscale.shape) == 2:
+            img_rgb = cv2.cvtColor(image_grayscale, cv2.COLOR_GRAY2RGB)
+        else:
+            img_rgb = image_grayscale
+
+        orig_h, orig_w = img_rgb.shape[:2]
+        padded, scale, (pad_top, pad_left) = self._letterbox(img_rgb, self._imgsz)
+
+        blob = padded.astype(np.float32) / 255.0
+        blob = np.transpose(blob, (2, 0, 1))[None, :, :, :]
+
+        outputs = self.session.run(None, {self._input_name: blob})
+        # Raw YOLOv8 ONNX output: (1, 4+num_classes, num_anchors).
+        # Transpose to (num_anchors, 4+num_classes).
+        preds = outputs[0][0].T
+
+        # Columns: [cx, cy, w, h, class_scores...]
+        cx = preds[:, 0]
+        cy = preds[:, 1]
+        w = preds[:, 2]
+        h = preds[:, 3]
+        scores = preds[:, 4:].max(axis=1)
+
+        mask = scores > conf
+        cx, cy, w, h, scores = cx[mask], cy[mask], w[mask], h[mask], scores[mask]
+
+        # Convert centre-format to corner-format for NMS.
+        nms_boxes = np.stack([cx - w / 2, cy - h / 2, w, h], axis=1).tolist()
+        indices = cv2.dnn.NMSBoxes(
+            nms_boxes, scores.tolist(), conf, self.NMS_IOU_THRESHOLD
+        )
+        if len(indices) == 0:
+            return []
+
+        boxes = []
+        for i in indices.flatten():
+            x1 = (cx[i] - w[i] / 2 - pad_left) / scale
+            y1 = (cy[i] - h[i] / 2 - pad_top) / scale
+            x2 = (cx[i] + w[i] / 2 - pad_left) / scale
+            y2 = (cy[i] + h[i] / 2 - pad_top) / scale
+            x1 = max(0.0, min(float(orig_w), float(x1)))
+            y1 = max(0.0, min(float(orig_h), float(y1)))
+            x2 = max(0.0, min(float(orig_w), float(x2)))
+            y2 = max(0.0, min(float(orig_h), float(y2)))
+            if x2 > x1 and y2 > y1:
+                boxes.append(BoundingBox(x1, y1, x2, y2))
+        return boxes

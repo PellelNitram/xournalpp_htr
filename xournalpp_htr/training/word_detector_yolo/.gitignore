@@ -1,0 +1,8 @@
+dataset/
+runs/
+predictions/
+exports/
+experiments/
+.venv/
+__pycache__/
+*.pyc
