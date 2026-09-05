@@ -51,6 +51,8 @@ class BenchmarkResult:
     recall: float
     cer: float
     cer_case_insensitive: float
+    search_quality: float
+    exact_match_rate: float
     n_gt_words: int
     n_predicted_words: int
     n_matched: int
@@ -214,6 +216,7 @@ def run_benchmark(pipeline_name: str, collect_details: bool = False) -> Benchmar
     total_edit_chars = 0
     total_edit_chars_case_insensitive = 0
     total_gt_chars_matched = 0
+    total_exact_matches = 0
 
     details = (
         ReportData(
@@ -242,9 +245,10 @@ def run_benchmark(pipeline_name: str, collect_details: bool = False) -> Benchmar
             total_edit_chars += round(
                 _cer(gt_word.text, pred_word.text) * len(gt_word.text)
             )
-            total_edit_chars_case_insensitive += round(
-                _cer(gt_word.text.lower(), pred_word.text.lower()) * len(gt_word.text)
-            )
+            cer_ci = _cer(gt_word.text.lower(), pred_word.text.lower())
+            total_edit_chars_case_insensitive += round(cer_ci * len(gt_word.text))
+            if cer_ci == 0.0:
+                total_exact_matches += 1
 
         if details is not None:
             details.samples.append(
@@ -265,11 +269,16 @@ def run_benchmark(pipeline_name: str, collect_details: bool = False) -> Benchmar
         else 0.0
     )
 
+    search_quality = recall * (1 - cer_case_insensitive)
+    exact_match_rate = total_exact_matches / total_matched if total_matched > 0 else 0.0
+
     return BenchmarkResult(
         precision=precision,
         recall=recall,
         cer=cer,
         cer_case_insensitive=cer_case_insensitive,
+        search_quality=search_quality,
+        exact_match_rate=exact_match_rate,
         n_gt_words=total_gt,
         n_predicted_words=total_pred,
         n_matched=total_matched,
@@ -541,7 +550,9 @@ def write_html_report(result: BenchmarkResult, out_path: Path) -> Path:
         f"{html.escape(details.created_at)}<br>"
         f"precision {_pct(result.precision)} · recall {_pct(result.recall)} · "
         f"CER {_pct(result.cer)} ({_pct(result.cer_case_insensitive)} "
-        f"case-insensitive)"
+        f"case-insensitive) · "
+        f"search quality {_pct(result.search_quality)} · "
+        f"exact match {_pct(result.exact_match_rate)}"
         "</div>",
         _legend(),
     ]
