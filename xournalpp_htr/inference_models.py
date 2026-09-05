@@ -256,6 +256,8 @@ class YOLOWordDetectorModel(HFHubInferenceModel):
         )
         return padded, scale, (top, left)
 
+    NMS_IOU_THRESHOLD = 0.5
+
     def detect(
         self, image_grayscale: np.ndarray, conf: float | None = None
     ) -> List[BoundingBox]:
@@ -275,30 +277,42 @@ class YOLOWordDetectorModel(HFHubInferenceModel):
         orig_h, orig_w = img_rgb.shape[:2]
         padded, scale, (pad_top, pad_left) = self._letterbox(img_rgb, self._imgsz)
 
-        # NCHW float32, normalised to [0, 1].
         blob = padded.astype(np.float32) / 255.0
         blob = np.transpose(blob, (2, 0, 1))[None, :, :, :]
 
         outputs = self.session.run(None, {self._input_name: blob})
-        # ultralytics ONNX output: (1, num_detections, 6)
-        # where 6 = [x1, y1, x2, y2, conf, class_id]
-        preds = outputs[0]
-        if preds.ndim == 3:
-            preds = preds[0]
+        # Raw YOLOv8 ONNX output: (1, 4+num_classes, num_anchors).
+        # Transpose to (num_anchors, 4+num_classes).
+        preds = outputs[0][0].T
+
+        # Columns: [cx, cy, w, h, class_scores...]
+        cx = preds[:, 0]
+        cy = preds[:, 1]
+        w = preds[:, 2]
+        h = preds[:, 3]
+        scores = preds[:, 4:].max(axis=1)
+
+        mask = scores > conf
+        cx, cy, w, h, scores = cx[mask], cy[mask], w[mask], h[mask], scores[mask]
+
+        # Convert centre-format to corner-format for NMS.
+        nms_boxes = np.stack([cx - w / 2, cy - h / 2, w, h], axis=1).tolist()
+        indices = cv2.dnn.NMSBoxes(
+            nms_boxes, scores.tolist(), conf, self.NMS_IOU_THRESHOLD
+        )
+        if len(indices) == 0:
+            return []
 
         boxes = []
-        for det in preds:
-            det_conf = float(det[4])
-            if det_conf < conf:
-                continue
-            x1 = (float(det[0]) - pad_left) / scale
-            y1 = (float(det[1]) - pad_top) / scale
-            x2 = (float(det[2]) - pad_left) / scale
-            y2 = (float(det[3]) - pad_top) / scale
-            x1 = max(0.0, min(float(orig_w), x1))
-            y1 = max(0.0, min(float(orig_h), y1))
-            x2 = max(0.0, min(float(orig_w), x2))
-            y2 = max(0.0, min(float(orig_h), y2))
+        for i in indices.flatten():
+            x1 = (cx[i] - w[i] / 2 - pad_left) / scale
+            y1 = (cy[i] - h[i] / 2 - pad_top) / scale
+            x2 = (cx[i] + w[i] / 2 - pad_left) / scale
+            y2 = (cy[i] + h[i] / 2 - pad_top) / scale
+            x1 = max(0.0, min(float(orig_w), float(x1)))
+            y1 = max(0.0, min(float(orig_h), float(y1)))
+            x2 = max(0.0, min(float(orig_w), float(x2)))
+            y2 = max(0.0, min(float(orig_h), float(y2)))
             if x2 > x1 and y2 > y1:
                 boxes.append(BoundingBox(x1, y1, x2, y2))
         return boxes
