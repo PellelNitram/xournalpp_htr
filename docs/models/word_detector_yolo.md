@@ -149,20 +149,37 @@ with `SimpleHTRModel` for end-to-end HTR.
 
 ## Best model
 
-Initial training, 50 epochs, default hyperparameters.
+Experiment 1 baseline (`experiments/experiment1/baseline/`), exported to
+ONNX and uploaded to
+[PellelNitram/xournalpp-htr-word-detector-yolo](https://huggingface.co/PellelNitram/xournalpp-htr-word-detector-yolo).
 
-Benchmark results (`2026-09-02_yolo_detector` pipeline):
+Benchmark results (`2026-09-02_yolo_detector` pipeline, ONNX inference):
 
 | Metric | Value |
 |---|---|
-| Precision | 71.6% |
+| Precision | 73.8% |
 | Recall | 80.1% |
-| CER (case-sensitive) | 36.1% |
-| CER (case-insensitive) | 35.5% |
+| CER (case-sensitive) | 34.9% |
+| CER (case-insensitive) | 34.4% |
+| Recall × (1 − CER_ci) | 52.5% |
+| Word accuracy | *run benchmark to fill* |
+| Predicted words | 229 |
+| GT words | 211 |
+| Matched | 169 |
 
 ## Experiments
 
 <!-- Add new experiments below, newest first. -->
+
+### 2026-09-04 -- Hydra sweep (experiment 2) and baseline re-run
+
+- **Goal:** compare batch size (8, 16) and learning rate (0.0005, 0.001).
+- **Setup:** same as initial training, Hydra config, output to
+  `experiments/experiment2/`.
+- **Results:** all four runs performed very similarly to the baseline.
+  Experiment 1 baseline selected for deployment.
+- **Selected checkpoint:**
+  `experiments/experiment1/baseline/train_20260904_223247/weights/best.pt`
 
 ### 2026-09-02 -- Initial training
 
@@ -171,18 +188,17 @@ Benchmark results (`2026-09-02_yolo_detector` pipeline):
   YOLOv8s pretrained, lr0=0.001, batch=16, imgsz=1024, 50 epochs,
   patience=10, AdamW optimizer, mosaic=0.5.
 - **Command:** `uv run python train.py --device 0` (pre-Hydra version).
-- **Results:** see Best model section above. The YOLO detector achieves
-  the highest recall (80.1%) among all pipelines, at the cost of lower
-  precision (71.6%) due to more predicted boxes (236 vs ~190).
-- **Conclusion:** YOLO is a viable word detector for this task. Next steps:
-  tune confidence threshold for precision/recall trade-off, try larger
-  models or input sizes, and integrate fully via ONNX export.
+- **Results:** YOLO detector achieves the highest recall (80.1%) among
+  all pipelines, at the cost of lower precision due to more predicted
+  boxes (229 vs ~190).
+- **Conclusion:** YOLO is a viable word detector for this task.
 
 ## Current status
 
-Training, export, demo and ONNX inference are implemented. The model has
-been benchmarked against the existing pipelines and shows the best recall
-and CER. Hydra config and experiment management are in place.
+Training, ONNX export, HF Hub upload, demo and lean ONNX inference (no
+ultralytics dependency) are fully implemented. The model has been
+benchmarked against the existing pipelines and shows the best recall and
+CER. Hydra config and experiment management are in place.
 
 ## Outlook
 
