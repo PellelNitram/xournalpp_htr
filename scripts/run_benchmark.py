@@ -30,6 +30,17 @@ def parse_arguments(cli_string: None | str = None):
         help="Output format.",
     )
     parser.add_argument(
+        "-d",
+        "--dataset-version",
+        type=str,
+        required=False,
+        default=None,
+        help=(
+            "Git tag or commit hash selecting the benchmark dataset revision. "
+            "Defaults to the latest version."
+        ),
+    )
+    parser.add_argument(
         "-o",
         "--html-report",
         type=Path,
@@ -47,7 +58,9 @@ def parse_arguments(cli_string: None | str = None):
 if __name__ == "__main__":
     args = parse_arguments()
     result = run_benchmark(
-        args["pipeline"], collect_details=args["html_report"] is not None
+        args["pipeline"],
+        collect_details=args["html_report"] is not None,
+        dataset_version=args["dataset_version"],
     )
 
     if args["html_report"] is not None:
@@ -58,6 +71,7 @@ if __name__ == "__main__":
             json.dumps(
                 {
                     "pipeline": args["pipeline"],
+                    "dataset_version": args["dataset_version"],
                     "precision": result.precision,
                     "recall": result.recall,
                     "cer": result.cer,

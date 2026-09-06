@@ -122,14 +122,24 @@ def get_temporary_filename() -> Path:
     return output_file_tmp_noOCR
 
 
-def load_benchmark() -> list[BenchmarkSample]:
-    """Return benchmark samples from the xournalpp_htr_benchmark HuggingFace dataset."""
+def load_benchmark(
+    dataset_version: str | None = None,
+) -> list[BenchmarkSample]:
+    """Return benchmark samples from the xournalpp_htr_benchmark HuggingFace dataset.
+
+    :param dataset_version: Git tag or commit hash selecting the dataset
+        revision. ``None`` (the default) uses the latest version.
+    """
     if not huggingface_hub_available:
         raise ImportError(
             "The `huggingface_hub` package is required to load the benchmark data."
         )
     local_dir = Path(
-        snapshot_download("PellelNitram/xournalpp_htr_benchmark", repo_type="dataset")
+        snapshot_download(
+            "PellelNitram/xournalpp_htr_benchmark",
+            repo_type="dataset",
+            revision=dataset_version,
+        )
     )
     data_dir = local_dir / "data"
     xopp_files = sorted(data_dir.glob("*.xopp")) + sorted(data_dir.glob("*.xoj"))
