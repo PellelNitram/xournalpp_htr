@@ -52,7 +52,9 @@ def parse_arguments(cli_string: None | str = None):
             "extra analysis, which is slower; omitting it keeps the plain run."
         ),
     )
-    return vars(parser.parse_args(cli_string.split() if cli_string else None))
+    return vars(
+        parser.parse_args(cli_string.split() if cli_string is not None else None)
+    )
 
 
 if __name__ == "__main__":
