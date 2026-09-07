@@ -30,6 +30,17 @@ def parse_arguments(cli_string: None | str = None):
         help="Output format.",
     )
     parser.add_argument(
+        "-d",
+        "--dataset-version",
+        type=str,
+        required=False,
+        default=None,
+        help=(
+            "Git tag or commit hash selecting the benchmark dataset revision. "
+            "Defaults to the latest version."
+        ),
+    )
+    parser.add_argument(
         "-o",
         "--html-report",
         type=Path,
@@ -41,13 +52,17 @@ def parse_arguments(cli_string: None | str = None):
             "extra analysis, which is slower; omitting it keeps the plain run."
         ),
     )
-    return vars(parser.parse_args(cli_string.split() if cli_string else None))
+    return vars(
+        parser.parse_args(cli_string.split() if cli_string is not None else None)
+    )
 
 
 if __name__ == "__main__":
     args = parse_arguments()
     result = run_benchmark(
-        args["pipeline"], collect_details=args["html_report"] is not None
+        args["pipeline"],
+        collect_details=args["html_report"] is not None,
+        dataset_version=args["dataset_version"],
     )
 
     if args["html_report"] is not None:
@@ -58,6 +73,7 @@ if __name__ == "__main__":
             json.dumps(
                 {
                     "pipeline": args["pipeline"],
+                    "dataset_version": args["dataset_version"],
                     "precision": result.precision,
                     "recall": result.recall,
                     "cer": result.cer,
@@ -76,6 +92,7 @@ if __name__ == "__main__":
         )
     else:
         print(f"Pipeline : {args['pipeline']}")
+        print(f"Dataset  : {args['dataset_version'] or 'latest'}")
         print(
             f"Precision: {result.precision:.1%}  ({result.n_matched}/{result.n_predicted_words} predictions matched)"
         )

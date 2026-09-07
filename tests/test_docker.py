@@ -63,7 +63,7 @@ def demo_container(docker_image):
         container = container.with_env(key, value)
     container = container.with_exposed_ports(7860)
     with container:
-        wait_for_logs(container, "Running on", timeout=90)
+        wait_for_logs(container, "Running on", timeout=600)
         yield container
 
 

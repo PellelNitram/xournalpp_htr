@@ -200,15 +200,21 @@ def _match(
     return pairs
 
 
-def run_benchmark(pipeline_name: str, collect_details: bool = False) -> BenchmarkResult:
+def run_benchmark(
+    pipeline_name: str,
+    collect_details: bool = False,
+    dataset_version: str | None = None,
+) -> BenchmarkResult:
     """Benchmark `pipeline_name` against the xournalpp_htr_benchmark dataset.
 
     :param pipeline_name: Pipeline to run, see `compute_predictions`.
     :param collect_details: Additionally collect the per-page data the HTML
         report is built from, including a render of every page. This is
         considerably slower, hence opt-in. Stored in `BenchmarkResult.details`.
+    :param dataset_version: Git tag or commit hash selecting the dataset
+        revision. ``None`` (the default) uses the latest version.
     """
-    samples = load_benchmark()
+    samples = load_benchmark(dataset_version=dataset_version)
 
     total_gt = 0
     total_pred = 0

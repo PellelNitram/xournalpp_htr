@@ -290,11 +290,11 @@ def report_data(rows):
         created_at="2026-08-08 12:00:00",
     )
     details.samples.append(SampleDetail(name="sample.xopp", pages=[page]))
-    return BenchmarkResult(0.5, 0.5, 0.1, 0.1, 4, 4, 2, details=details)
+    return BenchmarkResult(0.5, 0.5, 0.1, 0.1, 0.45, 0.5, 4, 4, 2, details=details)
 
 
 def test_write_html_report_without_details_raises(tmp_path):
-    result = BenchmarkResult(0.0, 0.0, 0.0, 0.0, 0, 0, 0)
+    result = BenchmarkResult(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0)
     with pytest.raises(ValueError):
         write_html_report(result, tmp_path / "report.html")
 
