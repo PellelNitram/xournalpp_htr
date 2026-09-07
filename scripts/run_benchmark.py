@@ -90,6 +90,7 @@ if __name__ == "__main__":
         )
     else:
         print(f"Pipeline : {args['pipeline']}")
+        print(f"Dataset  : {args['dataset_version'] or 'latest'}")
         print(
             f"Precision: {result.precision:.1%}  ({result.n_matched}/{result.n_predicted_words} predictions matched)"
         )
