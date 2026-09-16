@@ -25,10 +25,8 @@ from huggingface_hub import snapshot_download
 from hydra.core.config_store import ConfigStore
 from omegaconf import DictConfig
 from PIL import Image
-from torch.utils.tensorboard import SummaryWriter
 
 from xournalpp_htr.training.word_detector_rf_detr.config import (
-    RESOLUTION_DIVISOR,
     WordDetectorRFDETRConfig,
 )
 from xournalpp_htr.training.word_detector_rf_detr.model_factory import build_model
@@ -205,35 +203,12 @@ def _prepare_dataset(dataset_dir: Path, val_split: float, seed: int) -> None:
 
 
 def _build_model(cfg: DictConfig):
-    """Instantiate the configured RF-DETR variant, validating the resolution."""
-    if cfg.model.resolution % RESOLUTION_DIVISOR != 0:
-        raise ValueError(
-            f"model.resolution must be divisible by {RESOLUTION_DIVISOR}, "
-            f"got {cfg.model.resolution}."
-        )
-    return build_model(cfg.model.variant, cfg.model.resolution)
+    """Instantiate the configured RF-DETR variant.
 
-
-def _attach_tensorboard(model, log_dir: Path) -> SummaryWriter:
-    """Mirror RF-DETR's per-epoch metrics into TensorBoard.
-
-    RF-DETR hands the callback a mapping of metric name to value; anything
-    numeric in it is logged as a scalar.
+    ``build_model`` validates the resolution against the variant's own
+    ``patch_size * num_windows``.
     """
-    writer = SummaryWriter(log_dir=str(log_dir))
-
-    def on_fit_epoch_end(log_stats) -> None:
-        if not isinstance(log_stats, dict):
-            return
-        epoch = int(log_stats.get("epoch", 0))
-        for key, value in log_stats.items():
-            if key == "epoch" or not isinstance(value, (int, float)):
-                continue
-            writer.add_scalar(key, value, epoch)
-        writer.flush()
-
-    model.callbacks["on_fit_epoch_end"].append(on_fit_epoch_end)
-    return writer
+    return build_model(cfg.model.variant, cfg.model.resolution)
 
 
 @hydra.main(version_base=None, config_name="word_detector_rf_detr")
@@ -249,27 +224,23 @@ def main(cfg: DictConfig) -> None:
     print(f"Writing run artefacts to {output_dir}")
 
     model = _build_model(cfg)
-    writer = _attach_tensorboard(model, output_dir / "tb")
 
-    try:
-        model.train(
-            dataset_dir=str(dataset_dir),
-            output_dir=str(output_dir),
-            epochs=cfg.training.epochs,
-            batch_size=cfg.training.batch_size,
-            grad_accum_steps=cfg.training.grad_accum_steps,
-            lr=cfg.training.lr,
-            lr_encoder=cfg.training.lr_encoder,
-            weight_decay=cfg.training.weight_decay,
-            num_workers=cfg.training.workers,
-            device=cfg.training.device,
-            checkpoint_interval=cfg.training.checkpoint_interval,
-            early_stopping=cfg.training.early_stopping,
-            early_stopping_patience=cfg.training.early_stopping_patience,
-            tensorboard=False,  # handled by _attach_tensorboard
-        )
-    finally:
-        writer.close()
+    model.train(
+        dataset_dir=str(dataset_dir),
+        output_dir=str(output_dir),
+        epochs=cfg.training.epochs,
+        batch_size=cfg.training.batch_size,
+        grad_accum_steps=cfg.training.grad_accum_steps,
+        lr=cfg.training.lr,
+        lr_encoder=cfg.training.lr_encoder,
+        weight_decay=cfg.training.weight_decay,
+        num_workers=cfg.training.workers,
+        device=cfg.training.device,
+        checkpoint_interval=cfg.training.checkpoint_interval,
+        early_stopping=cfg.training.early_stopping,
+        early_stopping_patience=cfg.training.early_stopping_patience,
+        tensorboard=True,  # rfdetr writes TensorBoard logs into output_dir
+    )
 
 
 if __name__ == "__main__":

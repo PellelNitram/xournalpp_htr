@@ -50,10 +50,35 @@ def resolve_model_class(variant: str):
         ) from None
 
 
+def validate_resolution(model, resolution: int) -> None:
+    """Raise if ``resolution`` is not valid for this model variant.
+
+    RF-DETR requires the input resolution to be a positive multiple of
+    ``patch_size * num_windows``. That product is read off the model rather
+    than hardcoded, because it varies by variant.
+    """
+    mc = model.model_config
+    patch_size = getattr(mc, "patch_size", None)
+    num_windows = getattr(mc, "num_windows", None)
+    if patch_size is None or num_windows is None:
+        return  # unknown layout; let rfdetr do its own validation
+    divisor = patch_size * num_windows
+    if resolution <= 0 or resolution % divisor != 0:
+        nearest = max(divisor, round(resolution / divisor) * divisor)
+        raise ValueError(
+            f"resolution={resolution} is invalid for this variant: it must be "
+            f"a positive multiple of patch_size * num_windows = "
+            f"{patch_size} * {num_windows} = {divisor}. Nearest valid value: "
+            f"{nearest}."
+        )
+
+
 def build_model(variant: str, resolution: int, pretrain_weights: str | None = None):
     """Instantiate an RF-DETR model, optionally from a trained checkpoint."""
     model_cls = resolve_model_class(variant)
     kwargs: dict = {"resolution": resolution}
     if pretrain_weights is not None:
         kwargs["pretrain_weights"] = pretrain_weights
-    return model_cls(**kwargs)
+    model = model_cls(**kwargs)
+    validate_resolution(model, resolution)
+    return model

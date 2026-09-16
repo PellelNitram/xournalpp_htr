@@ -7,9 +7,12 @@ other scripts (export, demo) import the defaults directly.
 
 from dataclasses import dataclass, field
 
-#: RF-DETR positional embeddings require the input resolution to be a
-#: multiple of this value.
-RESOLUTION_DIVISOR = 56
+#: Fallback for the input-resolution constraint. RF-DETR requires the
+#: resolution to be a multiple of ``patch_size * num_windows``, which is 32 for
+#: every detection variant in rfdetr 1.10.1. The real check reads those values
+#: off the instantiated model (see ``model_factory.validate_resolution``); this
+#: constant only documents the common case.
+RESOLUTION_DIVISOR = 32
 
 
 @dataclass
@@ -23,18 +26,23 @@ class ModelConfig:
     #: segmentation models and ``keypointpreview`` does keypoints, so neither
     #: is a drop-in word-box detector.
     variant: str = "medium"
-    #: Must be divisible by ``RESOLUTION_DIVISOR``. 1008 = 56 * 18, chosen as
-    #: the closest analogue to the YOLO detector's imgsz=1024.
-    resolution: int = 1008
+    #: Must be divisible by ``patch_size * num_windows`` (32 for all current
+    #: detection variants). Set to 1024 to match the YOLO detector's imgsz, so
+    #: the two detectors are compared at the same input resolution. Well above
+    #: the variant defaults (nano 384 / small 512 / medium 576 / large 704),
+    #: because IAM words are small.
+    resolution: int = 1024
 
 
 @dataclass
 class TrainingConfig:
     epochs: int = 50
     #: Effective batch size is ``batch_size * grad_accum_steps``; RF-DETR is
-    #: tuned for a total of 16.
-    batch_size: int = 4
-    grad_accum_steps: int = 4
+    #: tuned for a total of 16. Skewed towards accumulation because 1024px on a
+    #: 23GB L4 is tight; raise ``batch_size`` and lower ``grad_accum_steps``
+    #: proportionally on a larger GPU.
+    batch_size: int = 2
+    grad_accum_steps: int = 8
     lr: float = 1e-4
     lr_encoder: float = 1.5e-4
     weight_decay: float = 1e-4
@@ -48,7 +56,7 @@ class TrainingConfig:
 @dataclass
 class InferenceConfig:
     threshold: float = 0.5
-    resolution: int = 1008
+    resolution: int = 1024
 
 
 @dataclass

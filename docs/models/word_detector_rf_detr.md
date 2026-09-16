@@ -98,8 +98,9 @@ bash run_training.sh
 Two knobs differ from the YOLO detector and are worth knowing:
 
 - **Effective batch size** is `training.batch_size * training.grad_accum_steps`.
-  RF-DETR is tuned for a total of 16; if you lower `batch_size` to fit in GPU
-  memory, raise `grad_accum_steps` to compensate.
+  RF-DETR is tuned for a total of 16. The defaults (2 × 8) are skewed towards
+  accumulation because 1024px is tight on a 23GB L4; on a larger GPU raise
+  `batch_size` and lower `grad_accum_steps` proportionally.
 - **`model.variant` depends on your installed `rfdetr`.** Newer releases
   dropped `base` in favour of `nano`/`small`/`medium`/`large`; the default
   here is `medium`, the closest successor to the old `base`. List what your
@@ -111,10 +112,13 @@ Two knobs differ from the YOLO detector and are worth knowing:
 
   The `seg*` and `keypointpreview` entries in that list are segmentation and
   keypoint models, not word-box detectors.
-- **`model.resolution` must be divisible by 56** (a constraint of RF-DETR's
-  positional embeddings). The default 1008 = 56 × 18 is the closest analogue
-  to the YOLO detector's `imgsz=1024`. `train.py` validates this and fails
-  early with a clear message.
+- **`model.resolution` must be divisible by `patch_size * num_windows`**,
+  which is 32 for every detection variant in rfdetr 1.10.1. The default is
+  1024 — the same input resolution as the YOLO detector, so the two are
+  compared like for like, and well above the variant defaults (nano 384,
+  small 512, medium 576, large 704) because IAM words are small.
+  `model_factory.validate_resolution` reads the divisor off the model and
+  fails early, naming the nearest valid value.
 
 Results are written to `outputs/train_<timestamp>/`. Each run produces
 `checkpoint_best_total.pth`, `checkpoint_best_ema.pth`, periodic checkpoints
@@ -193,9 +197,15 @@ Scaffolding only. Training, export, predict and demo scripts are in place and
 follow the conventions in [the models overview](index.md), but **nothing has
 been trained or run end-to-end yet**. In particular:
 
-- The RF-DETR API calls in `train.py`, `export.py` and `predict.py` are
-  written against the `rfdetr` package's documented interface and have not
-  been executed against an installed version.
+- Verified against **rfdetr 1.10.1**: variant resolution, model construction
+  at 1024px, and the full `model.train()` keyword set (which is validated by
+  a pydantic `TrainConfig`, so a wrong name fails immediately).
+- `rfdetr` 1.10.1 is built on PyTorch Lightning and writes its own TensorBoard
+  logs via `tensorboard=True`. Its `model.callbacks` dict still exists but is
+  never invoked, so do not hang logging off it — a hook registered there fails
+  silently rather than erroring.
+- Not yet run end to end: the dataset conversion, a full training run, and the
+  ONNX export path have not been executed.
 - `RFDETRWordDetectorModel` does not exist in `xournalpp_htr.inference_models`.
 - The IAM XML parsing in `train.py` is duplicated from the YOLO detector's
   `train.py`; it is a candidate for `xournalpp_htr/training/shared/`.
