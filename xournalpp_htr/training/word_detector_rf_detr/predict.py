@@ -11,12 +11,12 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-import rfdetr
 
 from xournalpp_htr.training.word_detector_rf_detr.config import (
     InferenceConfig,
     ModelConfig,
 )
+from xournalpp_htr.training.word_detector_rf_detr.model_factory import build_model
 
 _INFERENCE_DEFAULTS = InferenceConfig()
 _MODEL_DEFAULTS = ModelConfig()
@@ -42,8 +42,7 @@ def draw_predictions(img: np.ndarray, detections) -> np.ndarray:
 
 
 def load_model(weights: Path, variant: str, resolution: int):
-    model_cls = getattr(rfdetr, f"RFDETR{variant.capitalize()}")
-    return model_cls(pretrain_weights=str(weights), resolution=resolution)
+    return build_model(variant, resolution, pretrain_weights=str(weights))
 
 
 def main() -> None:

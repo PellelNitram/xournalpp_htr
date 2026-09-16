@@ -21,7 +21,6 @@ from datetime import datetime
 from pathlib import Path
 
 import hydra
-import rfdetr
 from huggingface_hub import snapshot_download
 from hydra.core.config_store import ConfigStore
 from omegaconf import DictConfig
@@ -32,6 +31,7 @@ from xournalpp_htr.training.word_detector_rf_detr.config import (
     RESOLUTION_DIVISOR,
     WordDetectorRFDETRConfig,
 )
+from xournalpp_htr.training.word_detector_rf_detr.model_factory import build_model
 
 cs = ConfigStore.instance()
 cs.store(name="word_detector_rf_detr", node=WordDetectorRFDETRConfig)
@@ -205,31 +205,13 @@ def _prepare_dataset(dataset_dir: Path, val_split: float, seed: int) -> None:
 
 
 def _build_model(cfg: DictConfig):
-    """Resolve ``model.variant`` to an ``rfdetr.RFDETR<Variant>`` instance.
-
-    Looked up dynamically so that variants added by newer ``rfdetr`` releases
-    (nano, small, medium, ...) work without a code change here.
-    """
+    """Instantiate the configured RF-DETR variant, validating the resolution."""
     if cfg.model.resolution % RESOLUTION_DIVISOR != 0:
         raise ValueError(
             f"model.resolution must be divisible by {RESOLUTION_DIVISOR}, "
             f"got {cfg.model.resolution}."
         )
-
-    class_name = f"RFDETR{cfg.model.variant.capitalize()}"
-    if not hasattr(rfdetr, class_name):
-        available = sorted(
-            name.removeprefix("RFDETR").lower()
-            for name in dir(rfdetr)
-            if name.startswith("RFDETR") and name != "RFDETR"
-        )
-        raise ValueError(
-            f"Unknown model.variant={cfg.model.variant!r} "
-            f"({class_name} not found in rfdetr {rfdetr.__version__}). "
-            f"Available: {', '.join(available)}."
-        )
-
-    return getattr(rfdetr, class_name)(resolution=cfg.model.resolution)
+    return build_model(cfg.model.variant, cfg.model.resolution)
 
 
 def _attach_tensorboard(model, log_dir: Path) -> SummaryWriter:

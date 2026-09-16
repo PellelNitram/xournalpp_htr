@@ -16,12 +16,11 @@ import shutil
 import tempfile
 from pathlib import Path
 
-import rfdetr
-
 from xournalpp_htr.training.word_detector_rf_detr.config import (
     InferenceConfig,
     ModelConfig,
 )
+from xournalpp_htr.training.word_detector_rf_detr.model_factory import build_model
 
 _INFERENCE_DEFAULTS = InferenceConfig()
 _MODEL_DEFAULTS = ModelConfig()
@@ -48,8 +47,7 @@ def export(
 ) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    model_cls = getattr(rfdetr, f"RFDETR{variant.capitalize()}")
-    model = model_cls(pretrain_weights=str(checkpoint), resolution=resolution)
+    model = build_model(variant, resolution, pretrain_weights=str(checkpoint))
 
     # RF-DETR names the artefact itself, so export into a scratch directory
     # and pick up whatever .onnx it produced.
