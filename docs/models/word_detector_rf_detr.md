@@ -88,20 +88,17 @@ Show all configurable parameters and their defaults:
 uv run python -m xournalpp_htr.training.word_detector_rf_detr.train --cfg job
 ```
 
-Or drive the experiments through `run_training.sh`, which writes each run
-under `experiments/<experiment>/<run>/` together with its `train.log`:
+Or run all experiments via `run_training.sh`, which writes each run under
+`experiments/<experiment>/<run>/` together with its `train.log`:
 
 ```bash
-cd xournalpp_htr/training/word_detector_rf_detr
-bash run_training.sh                 # experiment1 (baseline) -- the default
-bash run_training.sh experiment2     # learning-rate sweep
-bash run_training.sh all             # everything, in order
-EPOCHS=10 bash run_training.sh       # override the epoch count
-bash run_training.sh --help
+bash xournalpp_htr/training/word_detector_rf_detr/run_training.sh
 ```
 
 The script `cd`s to its own directory, so it can be invoked from anywhere. Run
-it under `tmux` — a baseline run is hours, not minutes.
+it under `tmux` — it is the baseline plus a three-point learning-rate sweep,
+so hours, not minutes. To run a single configuration instead, call `train.py`
+directly with Hydra overrides as shown above.
 
 Two knobs differ from the YOLO detector and are worth knowing:
 
