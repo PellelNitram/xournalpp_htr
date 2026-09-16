@@ -45,6 +45,7 @@ nav:
     - WordDetector: 'models/word_detector.md'
     - SimpleHTR: 'models/simple_htr.md'
     - WordDetectorYOLO: 'models/word_detector_yolo.md'
+    - WordDetectorRFDETR: 'models/word_detector_rf_detr.md'
   - Contributing: 'contributing.md'
   - Issue Labels: 'labels.md'
   - Roadmap: 'roadmap.md'

@@ -13,6 +13,9 @@ model.
 - [WordDetectorYOLO](word_detector_yolo.md) — YOLO-based word-level
   bounding-box detector (fine-tuned
   [YOLOv8](https://github.com/ultralytics/ultralytics)).
+- [WordDetectorRFDETR](word_detector_rf_detr.md) — RF-DETR-based word-level
+  bounding-box detector (fine-tuned
+  [RF-DETR](https://github.com/roboflow/rf-detr)).
 
 New models added in the future should follow the same structure: a page under
 `docs/models/<model_name>.md` linked from this index and from the `Models`
