@@ -59,6 +59,15 @@ training-word-detector-yolo = [
     "hydra-core",
     "onnx",
 ]
+training-word-detector-rf-detr = [
+    "torch",
+    "torchvision",
+    "rfdetr",
+    "tensorboard",
+    "gradio",
+    "hydra-core",
+    "onnx",
+]
 dev = [
     "jupyter",
 ]
