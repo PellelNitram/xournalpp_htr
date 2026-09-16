@@ -88,19 +88,27 @@ Show all configurable parameters and their defaults:
 uv run python -m xournalpp_htr.training.word_detector_rf_detr.train --cfg job
 ```
 
-Or run the full hyperparameter sweep:
+Or drive the experiments through `run_training.sh`, which writes each run
+under `experiments/<experiment>/<run>/` together with its `train.log`:
 
 ```bash
 cd xournalpp_htr/training/word_detector_rf_detr
-bash run_training.sh
+bash run_training.sh                 # experiment1 (baseline) -- the default
+bash run_training.sh experiment2     # learning-rate sweep
+bash run_training.sh all             # everything, in order
+EPOCHS=10 bash run_training.sh       # override the epoch count
+bash run_training.sh --help
 ```
+
+The script `cd`s to its own directory, so it can be invoked from anywhere. Run
+it under `tmux` — a baseline run is hours, not minutes.
 
 Two knobs differ from the YOLO detector and are worth knowing:
 
 - **Effective batch size** is `training.batch_size * training.grad_accum_steps`.
-  RF-DETR is tuned for a total of 16. The defaults (2 × 8) are skewed towards
-  accumulation because 1024px is tight on a 23GB L4; on a larger GPU raise
-  `batch_size` and lower `grad_accum_steps` proportionally.
+  RF-DETR is tuned for a total of 16, so keep that product fixed when changing
+  either. The defaults are 8 × 2: measured at 1024px on a 23GB L4,
+  `batch_size=2` used only 5.5GB, so 8 leaves headroom and shortens epochs.
 - **`model.variant` depends on your installed `rfdetr`.** Newer releases
   dropped `base` in favour of `nano`/`small`/`medium`/`large`; the default
   here is `medium`, the closest successor to the old `base`. List what your

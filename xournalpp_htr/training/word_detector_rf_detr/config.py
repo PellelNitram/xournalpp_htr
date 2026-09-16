@@ -38,11 +38,11 @@ class ModelConfig:
 class TrainingConfig:
     epochs: int = 50
     #: Effective batch size is ``batch_size * grad_accum_steps``; RF-DETR is
-    #: tuned for a total of 16. Skewed towards accumulation because 1024px on a
-    #: 23GB L4 is tight; raise ``batch_size`` and lower ``grad_accum_steps``
-    #: proportionally on a larger GPU.
-    batch_size: int = 2
-    grad_accum_steps: int = 8
+    #: tuned for a total of 16. Measured at 1024px on a 23GB L4: batch_size=2
+    #: used only 5.5GB, so 8 leaves ample headroom while cutting epoch time.
+    #: Keep the product at 16 when changing either.
+    batch_size: int = 8
+    grad_accum_steps: int = 2
     lr: float = 1e-4
     lr_encoder: float = 1.5e-4
     weight_decay: float = 1e-4
