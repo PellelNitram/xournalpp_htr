@@ -100,6 +100,17 @@ Two knobs differ from the YOLO detector and are worth knowing:
 - **Effective batch size** is `training.batch_size * training.grad_accum_steps`.
   RF-DETR is tuned for a total of 16; if you lower `batch_size` to fit in GPU
   memory, raise `grad_accum_steps` to compensate.
+- **`model.variant` depends on your installed `rfdetr`.** Newer releases
+  dropped `base` in favour of `nano`/`small`/`medium`/`large`; the default
+  here is `medium`, the closest successor to the old `base`. List what your
+  install actually ships with:
+
+  ```bash
+  uv run python -c "from xournalpp_htr.training.word_detector_rf_detr.model_factory import available_variants; print(available_variants())"
+  ```
+
+  The `seg*` and `keypointpreview` entries in that list are segmentation and
+  keypoint models, not word-box detectors.
 - **`model.resolution` must be divisible by 56** (a constraint of RF-DETR's
   positional embeddings). The default 1008 = 56 × 18 is the closest analogue
   to the YOLO detector's `imgsz=1024`. `train.py` validates this and fails

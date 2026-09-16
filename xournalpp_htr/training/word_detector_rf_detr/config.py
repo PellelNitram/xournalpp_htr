@@ -16,8 +16,13 @@ RESOLUTION_DIVISOR = 56
 class ModelConfig:
     #: Model size. Resolved at runtime to the ``rfdetr.RFDETR<Variant>``
     #: class, so which values are valid depends on the installed rfdetr
-    #: version (``base`` and ``large`` exist in all of them).
-    variant: str = "base"
+    #: version -- newer ones dropped ``base`` in favour of the
+    #: nano/small/medium/large lineup. ``medium`` is the closest successor to
+    #: the old ``base`` default. Check what your install offers with
+    #: ``model_factory.available_variants()``; the ``seg*`` entries are
+    #: segmentation models and ``keypointpreview`` does keypoints, so neither
+    #: is a drop-in word-box detector.
+    variant: str = "medium"
     #: Must be divisible by ``RESOLUTION_DIVISOR``. 1008 = 56 * 18, chosen as
     #: the closest analogue to the YOLO detector's imgsz=1024.
     resolution: int = 1008
