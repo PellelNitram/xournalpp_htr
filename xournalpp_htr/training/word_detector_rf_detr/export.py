@@ -29,13 +29,24 @@ HF_REPO_ID = "PellelNitram/xournalpp-htr-word-detector-rf-detr"
 
 
 def build_config(checkpoint: Path, variant: str, resolution: int) -> dict:
+    """Inference parameters written alongside the ONNX export.
+
+    The exported classifier has two classes because the COCO conversion in
+    ``train.py`` follows the Roboflow convention of a placeholder category 0
+    alongside the real ``word`` category 1. RF-DETR does not carry those COCO
+    ids through to the model: ``word`` lands on classifier index **0**, and
+    index 1 is never trained (verified on the export — index 1 peaks at a 0.008
+    score). ``num_select`` mirrors RF-DETR's own post-processor.
+    """
     return {
         "checkpoint": str(checkpoint),
         "model_name": "word_detector_rf_detr",
         "variant": variant,
         "threshold": _INFERENCE_DEFAULTS.threshold,
         "resolution": resolution,
-        "names": {0: "word"},
+        "word_class_index": 0,
+        "num_select": 300,
+        "names": {0: "word", 1: "untrained (unused)"},
     }
 
 
@@ -49,17 +60,17 @@ def export(
 
     model = build_model(variant, resolution, pretrain_weights=str(checkpoint))
 
-    # RF-DETR names the artefact itself, so export into a scratch directory
-    # and pick up whatever .onnx it produced.
+    # RF-DETR names the artefact itself, so export into a scratch directory and
+    # move what it returns into place. fp16 is disabled because inference runs
+    # through onnxruntime on CPU (ADR 006), where fp16 support is poor.
     with tempfile.TemporaryDirectory() as tmp:
-        model.export(output_dir=tmp)
-        produced = sorted(Path(tmp).glob("*.onnx"))
-        if not produced:
-            raise RuntimeError(f"RF-DETR export produced no .onnx file in {tmp}")
-        if len(produced) > 1:
-            print(f"Note: multiple ONNX files produced, using {produced[0].name}")
+        produced = Path(model.export(output_dir=tmp, fp16=False))
+        if not produced.exists():
+            raise RuntimeError(
+                f"RF-DETR export reported {produced}, which does not exist"
+            )
         onnx_dst = output_dir / "model.onnx"
-        shutil.move(str(produced[0]), str(onnx_dst))
+        shutil.move(str(produced), str(onnx_dst))
 
     config_path = output_dir / "config.json"
     with open(config_path, "w") as f:
