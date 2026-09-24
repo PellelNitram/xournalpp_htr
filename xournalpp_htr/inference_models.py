@@ -316,3 +316,117 @@ class YOLOWordDetectorModel(HFHubInferenceModel):
             if x2 > x1 and y2 > y1:
                 boxes.append(BoundingBox(x1, y1, x2, y2))
         return boxes
+
+
+class RFDETRWordDetectorModel(HFHubInferenceModel):
+    """RF-DETR-based word-detection model, loaded from HF Hub as ONNX.
+
+    The repository contains ``model.onnx`` (exported from a fine-tuned RF-DETR
+    checkpoint) and ``config.json`` (inference parameters). Inference runs the
+    ONNX graph with ``onnxruntime`` and returns word bounding boxes. No
+    ``rfdetr`` dependency (ADR 006).
+
+    Unlike :class:`YOLOWordDetectorModel` this model is NMS-free: RF-DETR is a
+    DETR-style detector whose Hungarian matching makes each of its 300 object
+    queries responsible for at most one object, so duplicate suppression is
+    unnecessary. Decoding mirrors ``rfdetr.models.postprocess.PostProcess``.
+    """
+
+    HF_REPO_ID = "PellelNitram/xournalpp-htr-word-detector-rf-detr"
+
+    #: RF-DETR normalises with the ImageNet statistics its backbone was
+    #: pretrained on.
+    IMAGENET_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+    IMAGENET_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+
+    def __init__(self, session: ort.InferenceSession, config: dict, revision: str):
+        super().__init__(revision)
+        self.session = session
+        self.config = config
+        self._input_name = session.get_inputs()[0].name
+        self._resolution = config.get("resolution", 1024)
+        self._threshold = config.get("threshold", 0.5)
+        self._word_class_index = config.get("word_class_index", 0)
+        self._num_select = config.get("num_select", 300)
+
+    @classmethod
+    def from_pretrained(cls, revision: str = "main") -> "RFDETRWordDetectorModel":
+        onnx_path = hf_hub_download(cls.HF_REPO_ID, "model.onnx", revision=revision)
+        config_path = hf_hub_download(cls.HF_REPO_ID, "config.json", revision=revision)
+        with open(config_path) as f:
+            config = json.load(f)
+        return cls(
+            session=ort.InferenceSession(onnx_path),
+            config=config,
+            revision=revision,
+        )
+
+    def _preprocess(self, image_rgb: np.ndarray) -> np.ndarray:
+        """Resize to the square model input and normalise.
+
+        The resize deliberately does **not** preserve aspect ratio: RF-DETR
+        predicts boxes normalised to the resized frame, and its post-processor
+        maps them back by multiplying with the original width/height. Adding
+        letterbox padding here would break that mapping.
+        """
+        resized = cv2.resize(
+            image_rgb,
+            (self._resolution, self._resolution),
+            interpolation=cv2.INTER_LINEAR,
+        )
+        blob = resized.astype(np.float32) / 255.0
+        blob = (blob - self.IMAGENET_MEAN) / self.IMAGENET_STD
+        return np.transpose(blob, (2, 0, 1))[None, :, :, :]
+
+    def detect(
+        self, image_grayscale: np.ndarray, threshold: float | None = None
+    ) -> List[BoundingBox]:
+        """Detect word bounding boxes in a grayscale image.
+
+        The returned boxes are in the pixel coordinate system of the
+        *passed* image.
+        """
+        if threshold is None:
+            threshold = self._threshold
+
+        if len(image_grayscale.shape) == 2:
+            img_rgb = cv2.cvtColor(image_grayscale, cv2.COLOR_GRAY2RGB)
+        else:
+            img_rgb = image_grayscale
+
+        orig_h, orig_w = img_rgb.shape[:2]
+        outputs = self.session.run(None, {self._input_name: self._preprocess(img_rgb)})
+
+        # dets: (1, num_queries, 4) normalised cxcywh.
+        # labels: (1, num_queries, num_classes) raw logits.
+        dets = outputs[0][0]
+        logits = outputs[1][0]
+
+        # Select the top scoring query/class pairs, exactly as RF-DETR's
+        # PostProcess does: sigmoid, flatten over (query, class), take top-k.
+        probs = 1.0 / (1.0 + np.exp(-logits))
+        flat = probs.reshape(-1)
+        num_classes = probs.shape[1]
+        num_select = min(self._num_select, flat.shape[0])
+        # Descending score, ties broken by ascending index, matching PostProcess.
+        order = np.argsort(-flat, kind="stable")[:num_select]
+
+        boxes: List[BoundingBox] = []
+        for idx in order:
+            score = float(flat[idx])
+            if score <= threshold:
+                break  # `order` is sorted, so everything after is lower too.
+            if idx % num_classes != self._word_class_index:
+                continue
+            cx, cy, w, h = dets[idx // num_classes]
+            x1 = (cx - w / 2) * orig_w
+            y1 = (cy - h / 2) * orig_h
+            x2 = (cx + w / 2) * orig_w
+            y2 = (cy + h / 2) * orig_h
+            x1 = max(0.0, min(float(orig_w), float(x1)))
+            y1 = max(0.0, min(float(orig_h), float(y1)))
+            x2 = max(0.0, min(float(orig_w), float(x2)))
+            y2 = max(0.0, min(float(orig_h), float(y2)))
+            if x2 > x1 and y2 > y1:
+                boxes.append(BoundingBox(x1, y1, x2, y2))
+        return boxes

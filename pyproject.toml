@@ -59,6 +59,17 @@ training-word-detector-yolo = [
     "hydra-core",
     "onnx",
 ]
+training-word-detector-rf-detr = [
+    "torch",
+    "torchvision",
+    # rfdetr keeps its training and ONNX-export dependencies behind extras;
+    # plain `rfdetr` is inference-only and cannot import rfdetr.training.
+    "rfdetr[train,onnx]",
+    "tensorboard",
+    "gradio",
+    "hydra-core",
+    "onnx",
+]
 dev = [
     "jupyter",
 ]
