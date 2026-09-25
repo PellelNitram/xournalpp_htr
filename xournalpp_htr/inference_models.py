@@ -151,6 +151,7 @@ class SimpleHTRModel(HFHubInferenceModel):
         self._input_name = session.get_inputs()[0].name
         self._charset = config["charset"]
         self._beam_decoder = build_beam_decoder(self._charset)
+        self._vocabulary: set[str] | None = None
 
     @classmethod
     def from_pretrained(cls, revision: str = "main") -> "SimpleHTRModel":
@@ -164,13 +165,15 @@ class SimpleHTRModel(HFHubInferenceModel):
             revision=revision,
         )
 
-    def use_lexicon(self, unigrams: list[str] | None) -> None:
-        """Bias beam search decoding towards a word list (see build_vocabulary.py).
+    def use_lexicon(self, vocabulary: list[str] | None) -> None:
+        """Bias "beam" decoding towards a word list (see build_vocabulary.py).
 
-        Rebuilds the beam decoder; pass ``None`` to go back to plain beam
-        search. Has no effect on greedy decoding.
+        Pass ``None`` to go back to plain beam search. Has no effect on
+        greedy decoding.
         """
-        self._beam_decoder = build_beam_decoder(self._charset, unigrams=unigrams)
+        self._vocabulary = (
+            {w.lower() for w in vocabulary} if vocabulary is not None else None
+        )
 
     def _compute_log_probs(self, image_grayscale: np.ndarray) -> np.ndarray:
         """Preprocess a grayscale word image and run the ONNX network.
@@ -219,7 +222,9 @@ class SimpleHTRModel(HFHubInferenceModel):
         log_probs = self._compute_log_probs(image_grayscale)
 
         if decoder == "beam":
-            return beam_decode(log_probs, self._beam_decoder)
+            return beam_decode(
+                log_probs, self._beam_decoder, vocabulary=self._vocabulary
+            )
 
         predictions = log_probs.argmax(axis=1)
 
