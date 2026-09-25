@@ -22,6 +22,7 @@ import onnxruntime as ort
 from huggingface_hub import hf_hub_download
 
 from xournalpp_htr.training.shared.bounding_box import BoundingBox
+from xournalpp_htr.training.shared.ctc_decoding import beam_decode, build_beam_decoder
 from xournalpp_htr.training.shared.postprocessing import (
     cluster_aabbs,
     decode,
@@ -149,6 +150,7 @@ class SimpleHTRModel(HFHubInferenceModel):
         self.config = config
         self._input_name = session.get_inputs()[0].name
         self._charset = config["charset"]
+        self._beam_decoder = build_beam_decoder(self._charset)
 
     @classmethod
     def from_pretrained(cls, revision: str = "main") -> "SimpleHTRModel":
@@ -162,12 +164,21 @@ class SimpleHTRModel(HFHubInferenceModel):
             revision=revision,
         )
 
-    def recognize(self, image_grayscale: np.ndarray) -> str:
+    def recognize(self, image_grayscale: np.ndarray, decoder: str = "greedy") -> str:
         """Recognise text in a grayscale word image.
 
         The image is resized to the network's expected input dimensions
         (uniform scale, centered on white canvas) and normalised before inference.
+
+        Args:
+            image_grayscale: grayscale word image.
+            decoder: "greedy" (default) or "beam" CTC decoding.
         """
+        if decoder not in ("greedy", "beam"):
+            raise ValueError(
+                f"Unknown decoder {decoder!r}, expected 'greedy' or 'beam'."
+            )
+
         input_size = self.config["input_size"]
         in_h, in_w = input_size["height"], input_size["width"]
         norm = self.config["normalization"]
@@ -188,6 +199,10 @@ class SimpleHTRModel(HFHubInferenceModel):
 
         log_probs = self.session.run(None, {self._input_name: net_input})[0]
         # log_probs shape: (seq_len, batch, num_classes)
+
+        if decoder == "beam":
+            return beam_decode(log_probs[:, 0, :], self._beam_decoder)
+
         predictions = log_probs[:, 0, :].argmax(axis=1)
 
         blank = len(self._charset)

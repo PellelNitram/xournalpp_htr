@@ -22,6 +22,7 @@ dependencies = [
     "huggingface-hub",
     "scikit-learn",
     "onnxruntime",
+    "pyctcdecode",
 ]
 
 [project.optional-dependencies]
