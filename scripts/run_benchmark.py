@@ -41,6 +41,13 @@ def parse_arguments(cli_string: None | str = None):
         ),
     )
     parser.add_argument(
+        "--decoder",
+        type=str,
+        choices=["greedy", "beam"],
+        default="greedy",
+        help="CTC decoder used by SimpleHTR-based pipelines.",
+    )
+    parser.add_argument(
         "-o",
         "--html-report",
         type=Path,
@@ -63,6 +70,7 @@ if __name__ == "__main__":
         args["pipeline"],
         collect_details=args["html_report"] is not None,
         dataset_version=args["dataset_version"],
+        decoder=args["decoder"],
     )
 
     if args["html_report"] is not None:
@@ -74,6 +82,7 @@ if __name__ == "__main__":
                 {
                     "pipeline": args["pipeline"],
                     "dataset_version": args["dataset_version"],
+                    "decoder": args["decoder"],
                     "precision": result.precision,
                     "recall": result.recall,
                     "cer": result.cer,
@@ -93,6 +102,7 @@ if __name__ == "__main__":
     else:
         print(f"Pipeline : {args['pipeline']}")
         print(f"Dataset  : {args['dataset_version'] or 'latest'}")
+        print(f"Decoder  : {args['decoder']}")
         print(
             f"Precision: {result.precision:.1%}  ({result.n_matched}/{result.n_predicted_words} predictions matched)"
         )

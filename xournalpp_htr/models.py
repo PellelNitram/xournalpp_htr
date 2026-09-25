@@ -30,12 +30,16 @@ class WordPrediction:
 
 
 def compute_predictions(
-    pipeline_name: str, document
+    pipeline_name: str, document, decoder: str = "greedy"
 ) -> dict[PageIndex, list[WordPrediction]]:
     """Run HTR on a document and return word-level predictions.
 
     Bounding box coordinates are always in document units (72 DPI), regardless
     of the internal rendering resolution used by the pipeline. See ADR 005.
+
+    ``decoder`` selects the CTC decoding strategy ("greedy" or "beam") used by
+    pipelines that recognise text with :class:`SimpleHTRModel`; ignored by
+    pipelines that don't (e.g. ``2024-07-18_htr_pipeline``).
     """
     predictions: dict[PageIndex, list[WordPrediction]] = {}
 
@@ -145,7 +149,7 @@ def compute_predictions(
                     if crop.size == 0:
                         continue
 
-                    text = recognizer.recognize(crop)
+                    text = recognizer.recognize(crop, decoder=decoder)
 
                     predictions_page.append(
                         WordPrediction(
@@ -202,7 +206,7 @@ def compute_predictions(
                     if crop.size == 0:
                         continue
 
-                    text = recognizer.recognize(crop)
+                    text = recognizer.recognize(crop, decoder=decoder)
 
                     predictions_page.append(
                         WordPrediction(
@@ -259,7 +263,7 @@ def compute_predictions(
                     if crop.size == 0:
                         continue
 
-                    text = recognizer.recognize(crop)
+                    text = recognizer.recognize(crop, decoder=decoder)
 
                     predictions_page.append(
                         WordPrediction(
