@@ -35,7 +35,7 @@ def beam_decode(
     log_probs: np.ndarray,
     decoder: BeamSearchDecoderCTC,
     vocabulary: set[str] | None = None,
-    beam_width: int = 100,
+    beam_width: int = 500,
 ) -> str:
     """Beam search CTC decoding for a single sample.
 
@@ -48,6 +48,8 @@ def beam_decode(
             none match. ``None`` (the default) just takes the top beam.
         beam_width: beam width to search when ``vocabulary`` is given
             (ignored otherwise, where pyctcdecode's own default applies).
+            Matches ``analyze_beam_coverage.py``'s default so results are
+            comparable to its reachability numbers.
 
     Returns:
         Decoded string.
