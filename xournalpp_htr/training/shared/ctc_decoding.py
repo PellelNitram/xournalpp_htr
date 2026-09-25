@@ -46,7 +46,7 @@ def beam_decode(
     decoder: BeamSearchDecoderCTC,
     vocabulary: set[str] | None = None,
     beam_width: int = 500,
-    max_correction_distance: int = 2,
+    max_correction_distance: int = 4,
 ) -> str:
     """Beam search CTC decoding for a single sample.
 
