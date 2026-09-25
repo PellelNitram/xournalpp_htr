@@ -164,21 +164,15 @@ class SimpleHTRModel(HFHubInferenceModel):
             revision=revision,
         )
 
-    def recognize(self, image_grayscale: np.ndarray, decoder: str = "greedy") -> str:
-        """Recognise text in a grayscale word image.
+    def _compute_log_probs(self, image_grayscale: np.ndarray) -> np.ndarray:
+        """Preprocess a grayscale word image and run the ONNX network.
 
         The image is resized to the network's expected input dimensions
         (uniform scale, centered on white canvas) and normalised before inference.
 
-        Args:
-            image_grayscale: grayscale word image.
-            decoder: "greedy" (default) or "beam" CTC decoding.
+        Returns:
+            (seq_len, num_classes) log-probabilities.
         """
-        if decoder not in ("greedy", "beam"):
-            raise ValueError(
-                f"Unknown decoder {decoder!r}, expected 'greedy' or 'beam'."
-            )
-
         input_size = self.config["input_size"]
         in_h, in_w = input_size["height"], input_size["width"]
         norm = self.config["normalization"]
@@ -198,12 +192,28 @@ class SimpleHTRModel(HFHubInferenceModel):
         net_input = normalised[None, None, :, :]
 
         log_probs = self.session.run(None, {self._input_name: net_input})[0]
-        # log_probs shape: (seq_len, batch, num_classes)
+        return log_probs[
+            :, 0, :
+        ]  # (seq_len, batch, num_classes) -> (seq_len, num_classes)
+
+    def recognize(self, image_grayscale: np.ndarray, decoder: str = "greedy") -> str:
+        """Recognise text in a grayscale word image.
+
+        Args:
+            image_grayscale: grayscale word image.
+            decoder: "greedy" (default) or "beam" CTC decoding.
+        """
+        if decoder not in ("greedy", "beam"):
+            raise ValueError(
+                f"Unknown decoder {decoder!r}, expected 'greedy' or 'beam'."
+            )
+
+        log_probs = self._compute_log_probs(image_grayscale)
 
         if decoder == "beam":
-            return beam_decode(log_probs[:, 0, :], self._beam_decoder)
+            return beam_decode(log_probs, self._beam_decoder)
 
-        predictions = log_probs[:, 0, :].argmax(axis=1)
+        predictions = log_probs.argmax(axis=1)
 
         blank = len(self._charset)
         chars = []
