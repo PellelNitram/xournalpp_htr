@@ -205,6 +205,7 @@ def run_benchmark(
     collect_details: bool = False,
     dataset_version: str | None = None,
     decoder: str = "greedy",
+    vocabulary: list[str] | None = None,
 ) -> BenchmarkResult:
     """Benchmark `pipeline_name` against the xournalpp_htr_benchmark dataset.
 
@@ -216,6 +217,8 @@ def run_benchmark(
         revision. ``None`` (the default) uses the latest version.
     :param decoder: CTC decoder passed to `compute_predictions` ("greedy" or
         "beam").
+    :param vocabulary: Word list passed to `compute_predictions` to bias
+        "beam" decoding towards known words.
     """
     samples = load_benchmark(dataset_version=dataset_version)
 
@@ -240,7 +243,9 @@ def run_benchmark(
     for sample in samples:
         document = get_document(sample.xopp_path)
         gt_words = _load_gt_words(sample.gt_path, document)
-        predictions = compute_predictions(pipeline_name, document, decoder=decoder)
+        predictions = compute_predictions(
+            pipeline_name, document, decoder=decoder, vocabulary=vocabulary
+        )
 
         n_pred = sum(len(v) for v in predictions.values())
         pairs = _match(gt_words, predictions)

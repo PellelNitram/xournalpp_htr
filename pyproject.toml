@@ -50,6 +50,7 @@ training-simple-htr = [
     "onnx",
     "gradio",
     "hydra-core",
+    "english-words",  # build_vocabulary.py: general wordlist for lexicon-biased decoding
 ]
 training-word-detector-yolo = [
     "torch",

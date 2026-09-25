@@ -30,7 +30,10 @@ class WordPrediction:
 
 
 def compute_predictions(
-    pipeline_name: str, document, decoder: str = "greedy"
+    pipeline_name: str,
+    document,
+    decoder: str = "greedy",
+    vocabulary: list[str] | None = None,
 ) -> dict[PageIndex, list[WordPrediction]]:
     """Run HTR on a document and return word-level predictions.
 
@@ -39,7 +42,9 @@ def compute_predictions(
 
     ``decoder`` selects the CTC decoding strategy ("greedy" or "beam") used by
     pipelines that recognise text with :class:`SimpleHTRModel`; ignored by
-    pipelines that don't (e.g. ``2024-07-18_htr_pipeline``).
+    pipelines that don't (e.g. ``2024-07-18_htr_pipeline``). ``vocabulary``,
+    if given, biases "beam" decoding towards those words (see
+    ``build_vocabulary.py``); ignored otherwise.
     """
     predictions: dict[PageIndex, list[WordPrediction]] = {}
 
@@ -111,6 +116,8 @@ def compute_predictions(
 
         detector = WordDetectorModel.from_pretrained()
         recognizer = SimpleHTRModel.from_pretrained()
+        if vocabulary is not None:
+            recognizer.use_lexicon(vocabulary)
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):
             with tempfile.NamedTemporaryFile(
@@ -168,6 +175,8 @@ def compute_predictions(
 
         detector = YOLOWordDetectorModel.from_pretrained()
         recognizer = SimpleHTRModel.from_pretrained()
+        if vocabulary is not None:
+            recognizer.use_lexicon(vocabulary)
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):
             with tempfile.NamedTemporaryFile(
@@ -225,6 +234,8 @@ def compute_predictions(
 
         detector = RFDETRWordDetectorModel.from_pretrained()
         recognizer = SimpleHTRModel.from_pretrained()
+        if vocabulary is not None:
+            recognizer.use_lexicon(vocabulary)
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):
             with tempfile.NamedTemporaryFile(

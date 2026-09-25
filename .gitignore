@@ -174,4 +174,5 @@ best_model.pth
 xournalpp_htr/training/word_detector/experiments
 
 dataset_cache.pickle
+vocabulary.txt
 xournalpp_htr/training/word_detector/outputs/

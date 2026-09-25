@@ -164,6 +164,14 @@ class SimpleHTRModel(HFHubInferenceModel):
             revision=revision,
         )
 
+    def use_lexicon(self, unigrams: list[str] | None) -> None:
+        """Bias beam search decoding towards a word list (see build_vocabulary.py).
+
+        Rebuilds the beam decoder; pass ``None`` to go back to plain beam
+        search. Has no effect on greedy decoding.
+        """
+        self._beam_decoder = build_beam_decoder(self._charset, unigrams=unigrams)
+
     def _compute_log_probs(self, image_grayscale: np.ndarray) -> np.ndarray:
         """Preprocess a grayscale word image and run the ONNX network.
 

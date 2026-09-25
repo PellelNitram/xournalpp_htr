@@ -10,8 +10,10 @@ from pyctcdecode import build_ctcdecoder
 from pyctcdecode.decoder import BeamSearchDecoderCTC
 
 
-def build_beam_decoder(charset: list[str]) -> BeamSearchDecoderCTC:
-    """Build a plain (no language model) beam search decoder for ``charset``.
+def build_beam_decoder(
+    charset: list[str], unigrams: list[str] | None = None
+) -> BeamSearchDecoderCTC:
+    """Build a beam search decoder for ``charset``.
 
     Our CTC blank is the last class (index ``len(charset)``), matching
     ``network.greedy_decode`` and ``SimpleHTRModel.recognize``.
@@ -19,9 +21,13 @@ def build_beam_decoder(charset: list[str]) -> BeamSearchDecoderCTC:
     (``""``, ``"<pad>"``, ...) in ``labels``; appending an explicit ``""``
     keeps the blank at the same last index without depending on its fallback
     behaviour.
+
+    ``unigrams``, when given, biases the beam towards known words (a real
+    lexicon) without needing a trained KenLM language model -- see
+    ``build_vocabulary.py``. ``None`` (the default) is plain beam search.
     """
     labels = [*charset, ""]
-    return build_ctcdecoder(labels=labels)
+    return build_ctcdecoder(labels=labels, unigrams=unigrams)
 
 
 def beam_decode(log_probs: np.ndarray, decoder: BeamSearchDecoderCTC) -> str:

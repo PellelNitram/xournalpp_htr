@@ -48,6 +48,15 @@ def parse_arguments(cli_string: None | str = None):
         help="CTC decoder used by SimpleHTR-based pipelines.",
     )
     parser.add_argument(
+        "--vocabulary",
+        type=Path,
+        default=None,
+        help=(
+            "Path to a word list (one word per line, see build_vocabulary.py) "
+            "to bias 'beam' decoding towards. Ignored for 'greedy'."
+        ),
+    )
+    parser.add_argument(
         "-o",
         "--html-report",
         type=Path,
@@ -66,11 +75,17 @@ def parse_arguments(cli_string: None | str = None):
 
 if __name__ == "__main__":
     args = parse_arguments()
+    vocabulary = (
+        args["vocabulary"].read_text().split()
+        if args["vocabulary"] is not None
+        else None
+    )
     result = run_benchmark(
         args["pipeline"],
         collect_details=args["html_report"] is not None,
         dataset_version=args["dataset_version"],
         decoder=args["decoder"],
+        vocabulary=vocabulary,
     )
 
     if args["html_report"] is not None:
@@ -83,6 +98,9 @@ if __name__ == "__main__":
                     "pipeline": args["pipeline"],
                     "dataset_version": args["dataset_version"],
                     "decoder": args["decoder"],
+                    "vocabulary": str(args["vocabulary"])
+                    if args["vocabulary"]
+                    else None,
                     "precision": result.precision,
                     "recall": result.recall,
                     "cer": result.cer,
@@ -103,6 +121,8 @@ if __name__ == "__main__":
         print(f"Pipeline : {args['pipeline']}")
         print(f"Dataset  : {args['dataset_version'] or 'latest'}")
         print(f"Decoder  : {args['decoder']}")
+        if args["vocabulary"] is not None:
+            print(f"Vocabulary: {args['vocabulary']} ({len(vocabulary)} words)")
         print(
             f"Precision: {result.precision:.1%}  ({result.n_matched}/{result.n_predicted_words} predictions matched)"
         )
