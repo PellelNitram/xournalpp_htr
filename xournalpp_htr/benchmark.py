@@ -211,8 +211,6 @@ def run_benchmark(
     pipeline_name: str,
     collect_details: bool = False,
     dataset_version: str | None = None,
-    decoder: str = "greedy",
-    vocabulary: list[str] | None = None,
     crop_analysis_dir: Path | None = None,
 ) -> BenchmarkResult:
     """Benchmark `pipeline_name` against the xournalpp_htr_benchmark dataset.
@@ -223,10 +221,6 @@ def run_benchmark(
         considerably slower, hence opt-in. Stored in `BenchmarkResult.details`.
     :param dataset_version: Git tag or commit hash selecting the dataset
         revision. ``None`` (the default) uses the latest version.
-    :param decoder: CTC decoder passed to `compute_predictions` ("greedy" or
-        "beam").
-    :param vocabulary: Word list passed to `compute_predictions` to bias
-        "beam" decoding towards known words.
     :param crop_analysis_dir: If given, write the crop analysis (see
         `crop_analysis`) of this run to that directory. Only supported by
         the pipelines in `CROP_RECORDING_PIPELINES`.
@@ -267,8 +261,6 @@ def run_benchmark(
         predictions = compute_predictions(
             pipeline_name,
             document,
-            decoder=decoder,
-            vocabulary=vocabulary,
             crop_recorder=crop_recorder,
         )
 

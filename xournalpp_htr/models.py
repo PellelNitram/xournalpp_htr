@@ -36,6 +36,7 @@ CROP_RECORDING_PIPELINES = {
     "2026-06-07_htr_pipeline_native",
     "2026-09-02_yolo_detector",
     "2026-09-17_rf_detr_detector",
+    "2026-10-05_yolo_detector_beam_vocab",
 }
 
 
@@ -56,20 +57,12 @@ class CropRecorder:
 def compute_predictions(
     pipeline_name: str,
     document,
-    decoder: str = "greedy",
-    vocabulary: list[str] | None = None,
     crop_recorder: CropRecorder | None = None,
 ) -> dict[PageIndex, list[WordPrediction]]:
     """Run HTR on a document and return word-level predictions.
 
     Bounding box coordinates are always in document units (72 DPI), regardless
     of the internal rendering resolution used by the pipeline. See ADR 005.
-
-    ``decoder`` selects the CTC decoding strategy ("greedy" or "beam") used by
-    pipelines that recognise text with :class:`SimpleHTRModel`; ignored by
-    pipelines that don't (e.g. ``2024-07-18_htr_pipeline``). ``vocabulary``,
-    if given, biases "beam" decoding towards those words (see
-    ``build_vocabulary.py``); ignored otherwise.
 
     ``crop_recorder``, if given, is filled with page renders, word crops and
     network inputs by the pipelines in `CROP_RECORDING_PIPELINES`; ignored by
@@ -145,8 +138,6 @@ def compute_predictions(
 
         detector = WordDetectorModel.from_pretrained()
         recognizer = SimpleHTRModel.from_pretrained()
-        if vocabulary is not None:
-            recognizer.use_lexicon(vocabulary)
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):
             with tempfile.NamedTemporaryFile(
@@ -188,7 +179,7 @@ def compute_predictions(
                     if crop.size == 0:
                         continue
 
-                    text = recognizer.recognize(crop, decoder=decoder)
+                    text = recognizer.recognize(crop)
 
                     prediction = WordPrediction(
                         text=text,
@@ -211,8 +202,6 @@ def compute_predictions(
 
         detector = YOLOWordDetectorModel.from_pretrained()
         recognizer = SimpleHTRModel.from_pretrained()
-        if vocabulary is not None:
-            recognizer.use_lexicon(vocabulary)
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):
             with tempfile.NamedTemporaryFile(
@@ -254,7 +243,7 @@ def compute_predictions(
                     if crop.size == 0:
                         continue
 
-                    text = recognizer.recognize(crop, decoder=decoder)
+                    text = recognizer.recognize(crop)
 
                     prediction = WordPrediction(
                         text=text,
@@ -277,8 +266,6 @@ def compute_predictions(
 
         detector = RFDETRWordDetectorModel.from_pretrained()
         recognizer = SimpleHTRModel.from_pretrained()
-        if vocabulary is not None:
-            recognizer.use_lexicon(vocabulary)
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):
             with tempfile.NamedTemporaryFile(
@@ -320,7 +307,74 @@ def compute_predictions(
                     if crop.size == 0:
                         continue
 
-                    text = recognizer.recognize(crop, decoder=decoder)
+                    text = recognizer.recognize(crop)
+
+                    prediction = WordPrediction(
+                        text=text,
+                        xmin=box.x_min * coord_scale,
+                        xmax=box.x_max * coord_scale,
+                        ymin=box.y_min * coord_scale,
+                        ymax=box.y_max * coord_scale,
+                    )
+                    predictions_page.append(prediction)
+                    if crop_recorder is not None:
+                        crop_recorder.crops[id(prediction)] = crop
+                        crop_recorder.network_inputs[id(prediction)] = (
+                            recognizer.preprocess(crop)
+                        )
+                predictions[page_index] = predictions_page
+
+    elif pipeline_name == "2026-10-05_yolo_detector_beam_vocab":
+        RENDER_DPI = 150
+        nr_pages = len(document.pages)
+
+        detector = YOLOWordDetectorModel.from_pretrained()
+        # Same detector as 2026-09-02_yolo_detector, but beam search decoding
+        # snapped to the nearest known word (issue #120).
+        recognizer = SimpleHTRModel.from_pretrained()
+        recognizer.use_lexicon(SimpleHTRModel.load_vocabulary())
+
+        for page_index in tqdm(range(nr_pages), desc="Recognition"):
+            with tempfile.NamedTemporaryFile(
+                dir="/tmp",
+                delete=False,
+                prefix=f"xournalpp_htr__page{page_index}__",
+                suffix=".jpg",
+            ) as tmpfile:
+                TMP_FILE = Path(tmpfile.name)
+
+                written_file = document.save_page_as_image(
+                    page_index, TMP_FILE, False, dpi=RENDER_DPI
+                )
+
+                if (
+                    len(document.pages[page_index].layers) == 0
+                    or len(document.pages[page_index].layers[0].strokes) == 0
+                ):
+                    print(f"Page {page_index} is empty. Skipping HTR.")
+                    predictions[page_index] = []
+                    continue
+
+                img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
+                if crop_recorder is not None:
+                    crop_recorder.render_dpi = RENDER_DPI
+                    crop_recorder.pages[page_index] = img
+
+                boxes = detector.detect(img)
+
+                coord_scale = document.DPI / RENDER_DPI
+                predictions_page = []
+                for box in boxes:
+                    x_min = max(0, int(box.x_min))
+                    y_min = max(0, int(box.y_min))
+                    x_max = min(img.shape[1], int(box.x_max))
+                    y_max = min(img.shape[0], int(box.y_max))
+
+                    crop = img[y_min:y_max, x_min:x_max]
+                    if crop.size == 0:
+                        continue
+
+                    text = recognizer.recognize(crop, decoder="beam")
 
                     prediction = WordPrediction(
                         text=text,
