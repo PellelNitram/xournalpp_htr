@@ -1,0 +1,21 @@
+DECISIONS.md
+  s_9536dc7f25382a::t_4a68c24cef1eb6 90-95,159-221
+docs/architecture.md
+  s_9536dc7f25382a::t_9c3d07768fbf10 87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "55c3aceed4d13f8200851af9140876a7d634bce8",
+  "prompts": {},
+  "sessions": {
+    "s_9536dc7f25382a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "775c3c06-799a-43c1-b3a7-071be1776e29",
+        "model": "unknown"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
