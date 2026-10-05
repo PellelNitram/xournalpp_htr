@@ -1,0 +1,23 @@
+xournalpp_htr/training/simple_htr/build_vocabulary.py
+  s_9b9e3eb44844d9::t_ee36031e9bd73f 8-12,21,44-55,73-77,84-85
+  s_9b9e3eb44844d9::t_018cbf038f4377 86
+xournalpp_htr/inference_models.py
+  s_9b9e3eb44844d9::t_9825b4d3c2e0d0 169-178
+  s_9b9e3eb44844d9::t_ee36031e9bd73f 17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "765e58efc8a64d8d06e85ee5b1bdb72af3b61d28",
+  "prompts": {},
+  "sessions": {
+    "s_9b9e3eb44844d9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5859afea-79bb-4723-8945-eb041458be6d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
