@@ -282,14 +282,28 @@ class TrOCRModel(HFHubInferenceModel):
     def from_pretrained(cls, revision: str = "main") -> "TrOCRModel":
         try:
             import torch
-            from transformers import TrOCRProcessor, VisionEncoderDecoderModel
+            from transformers import (
+                AutoImageProcessor,
+                RobertaTokenizer,
+                TrOCRProcessor,
+                VisionEncoderDecoderModel,
+            )
         except ImportError as e:
             raise ImportError(
                 "TrOCRModel needs the `trocr` extra: `uv sync --extra trocr`."
             ) from e
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        processor = TrOCRProcessor.from_pretrained(cls.HF_REPO_ID, revision=revision)
+        # Built from its parts: transformers 5 can't auto-load the tokenizer
+        # of this legacy repo (vocab.json + merges.txt, no tokenizer.json).
+        processor = TrOCRProcessor(
+            image_processor=AutoImageProcessor.from_pretrained(
+                cls.HF_REPO_ID, revision=revision
+            ),
+            tokenizer=RobertaTokenizer.from_pretrained(
+                cls.HF_REPO_ID, revision=revision
+            ),
+        )
         model = VisionEncoderDecoderModel.from_pretrained(
             cls.HF_REPO_ID, revision=revision
         )
