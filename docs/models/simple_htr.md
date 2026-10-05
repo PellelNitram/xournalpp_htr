@@ -122,6 +122,24 @@ text = model.recognize(word_image_grayscale)
 print(text)
 ```
 
+Decoding is greedy by default. For lexicon-biased beam search (issue #120),
+load the word list published next to the model and decode with `"beam"`:
+
+```python
+model.use_lexicon(SimpleHTRModel.load_vocabulary())
+text = model.recognize(word_image_grayscale, decoder="beam")
+```
+
+The beam is searched with `pyctcdecode` (width 500); the result is snapped
+to the known word closest (edit distance ≤ 4) to the top beam, falling back
+to the top beam otherwise. The word list unions the IAM training vocabulary
+with the `english-words` `web2` list (472,717 words) and is rebuilt and
+published with:
+
+```bash
+uv run python -m xournalpp_htr.training.simple_htr.build_vocabulary --upload
+```
+
 ## Best model
 
 Experiment 3, dropout=0.5, augmentation on — **CER 0.056, word accuracy 84.2%**.
@@ -209,6 +227,41 @@ epoch_max=200 (early stopping with patience 25).
   combined with augmentation. Recommended defaults: dropout=0.5,
   augmentation enabled.
 
+### 2026-10-05 — Experiment 4: beam search with a vocabulary (issue #120)
+
+- **Hypothesis:** End-to-end word accuracy is pinned at 35–42% by
+  recognition, not detection; better CTC decoding can recover some of it
+  without retraining.
+- **Setup:** Benchmark dataset (latest), YOLO detector + this SimpleHTR
+  checkpoint, decoding changed only. Reachability diagnostic:
+  `scripts/analyze_beam_coverage.py --beam-width 500`. Code revisions
+  `19e1ace..0b45ad4`.
+- **Command:** `uv run python scripts/run_benchmark.py -p
+  2026-10-05_yolo_detector_beam_vocab` (vs. `-p 2026-09-02_yolo_detector`).
+- **Results:**
+
+| Decoding | CER (case-insens.) | R×(1-CER) | Word Acc |
+|---|---|---|---|
+| Greedy (`2026-09-02_yolo_detector`) | 34.4% | 52.5% | 39.1% (66/169) |
+| Beam, no vocabulary | 33.9% | 52.9% | 39.1% (66/169) |
+| Beam + vocabulary, first match, width 100 or 500 | 32.0% | 54.4% | 46.7% (79/169) |
+| Beam + vocabulary, closest match, cap 2 | 32.0% | 54.4% | 46.7% (79/169) |
+| **Beam + vocabulary, closest match, cap 4** (`2026-10-05_yolo_detector_beam_vocab`) | **31.7%** | **54.7%** | **46.7% (79/169)** |
+
+  Detection is unchanged throughout (precision 73.8%, recall 80.1%). Of the
+  103 words greedy gets wrong, 40 (38.8%) appear somewhere in a width-500
+  beam and 63 (61.2%) never do.
+- **Best model:** unchanged checkpoint; best decoding is beam + vocabulary,
+  closest match, cap 4 — word accuracy 46.7%.
+- **Conclusion:** Beam search alone changes nothing; the vocabulary gives
+  +7.6pp word accuracy. Beam width, ranking rule and cap no longer move the
+  result, and fixing every reachable word would cap word accuracy at ~63%.
+  `pyctcdecode`'s own `unigrams` is a silent no-op here (it needs a space
+  token to find word boundaries), hence the custom re-ranking. A KenLM
+  n-gram model is unlikely to help since each crop is decoded on its own.
+  The remaining 61% are model errors; rendering stroke width (0.5–1.5 pt)
+  made no difference either. Next gains need training-side work.
+
 ## Current status
 
 - [x] Network architecture (CNN + BiLSTM + CTC)
@@ -221,7 +274,9 @@ epoch_max=200 (early stopping with patience 25).
 - [x] First training run and experiment log
 - [x] ONNX validation notebook
 - [x] Integrated into end-to-end pipeline with WordDetectorNet (`2026-06-07_htr_pipeline_native`, issue #121)
+- [x] Lexicon-biased beam search decoding (`2026-10-05_yolo_detector_beam_vocab`, issue #120)
 
 ## Outlook
 
-- Add beam search decoding (issue #120)
+- Improve the recognizer itself: most remaining errors are never generated
+  by the network, so decoding alone can't fix them (see experiment 4)
