@@ -83,8 +83,9 @@ graph TD
     - `2026-09-02_yolo_detector` -- Same structure, with the YOLO word detector (`YOLOWordDetectorModel`, see [word_detector_yolo](models/word_detector_yolo.md)) in place of `WordDetectorModel`. Best detector recall on the benchmark.
     - `2026-09-17_rf_detr_detector` -- Same structure, with the RF-DETR word detector (`RFDETRWordDetectorModel`, see [word_detector_rf_detr](models/word_detector_rf_detr.md)). Kept for reproducibility; it loses to YOLO on recall.
     - `2026-10-05_yolo_detector_beam_vocab` -- `2026-09-02_yolo_detector` with beam search decoding snapped to the nearest known word, using the word list published next to the SimpleHTR model (issue #120, see [simple_htr](models/simple_htr.md)). Best word accuracy on the benchmark.
+    - `2026-10-05_yolo_detector_trocr` -- `2026-09-02_yolo_detector` with Microsoft's pretrained TrOCR (`microsoft/trocr-base-handwritten`, `TrOCRModel`) in place of SimpleHTR, recognising each page's crops in batches (issue #156). Runs through `transformers` instead of ONNX and needs the `trocr` extra; see `DECISIONS.md`.
 
-    All pipelines after `2024-07-18_htr_pipeline` render at 150 DPI, crop each detected word and recognise it with `SimpleHTRModel` independently, so there is no cross-word context. Output is a dictionary mapping page indices to lists of predictions (text + bounding box coordinates in document units, see [ADR 005](ADRs/005_prediction_bounding_box_coordinate_system.md)).
+    All pipelines after `2024-07-18_htr_pipeline` render at 150 DPI, crop each detected word and recognise it independently (with `SimpleHTRModel` unless noted otherwise), so there is no cross-word context. Output is a dictionary mapping page indices to lists of predictions (text + bounding box coordinates in document units, see [ADR 005](ADRs/005_prediction_bounding_box_coordinate_system.md)).
 
 ### Step 3: Embed Text in PDF
 
@@ -160,6 +161,7 @@ convert their raw output before returning (see [ADR 005](ADRs/005_prediction_bou
 | `opencv-python` | Image loading and processing |
 | `onnxruntime` | Runs word detection and text recognition models |
 | `pyctcdecode` | Beam search CTC decoding (`2026-10-05_yolo_detector_beam_vocab`) |
+| `transformers` + `torch` | TrOCR recognition (`2026-10-05_yolo_detector_trocr`, optional `trocr` extra) |
 | `scikit-learn` | DBSCAN clustering for line detection |
 | `pymupdf` | Embeds text into PDF (Step 3) |
 | `gradio` | Web demo UI (demo only) |
