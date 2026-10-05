@@ -1,0 +1,30 @@
+.gitignore
+  s_9b9e3eb44844d9::t_aa752407345942 180
+  s_9b9e3eb44844d9::t_0cf1a04a869ac2 179
+xournalpp_htr/benchmark.py
+  s_9b9e3eb44844d9::t_aa752407345942 12,14-20,216,230-232,235-242,266,268-272,292-301,310-311
+  s_9b9e3eb44844d9::t_60b561905efd28 234
+  s_9b9e3eb44844d9::t_1b89822b1968ad 312
+scripts/run_benchmark.py
+  s_9b9e3eb44844d9::t_aa752407345942 71-82,101,129-131,156-157
+xournalpp_htr/models.py
+  s_9b9e3eb44844d9::t_48ea26aa0858b2 5,10,33-55,61,73-76,173-175,193-198,200-205,239-241,259-264,266-271,305-307,325-330,332-337
+xournalpp_htr/crop_analysis.py
+  s_9b9e3eb44844d9::t_b22ea2873886f7 1-233
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "e1e9936a70bacd0f86404776bf026077de380c41",
+  "prompts": {},
+  "sessions": {
+    "s_9b9e3eb44844d9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5859afea-79bb-4723-8945-eb041458be6d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
