@@ -87,10 +87,12 @@ must be revisited before the pipeline counts as the pipeline of record.
 - **Decision:** Run the benchmark on the GPU VM `martin-l4` (L4, in
   `~/xournalpp_htr`), syncing code via git (commit, push, pull). The MacBook
   has no network, so it cannot download the models or update `uv.lock`;
-  re-lock on the VM. The VM can't push to GitHub, so commits made there are
-  fetched over ssh (`git pull martin-l4:xournalpp_htr <branch>`) and pushed
-  from the MacBook. Sync with `uv sync --all-extras` so the other extras
-  installed on the VM aren't removed.
+  re-lock on the VM. Code only flows one way: commit on the MacBook, push to
+  GitHub, `git pull` on the VM, run. Never commit on the VM. A file the VM
+  generates (`uv.lock`) is copied back, committed locally and pushed. (The
+  first two lock commits were made on the VM and fetched over ssh, before this
+  rule.) Sync with `uv sync --all-extras` so the other extras installed on the
+  VM aren't removed.
 - **Command:** `uv run python scripts/run_benchmark.py -p
   2026-10-05_yolo_detector_trocr`.
 
@@ -154,4 +156,66 @@ Possible follow-ups, if TrOCR is revisited:
 2. **Finetune** on our own word crops (rendered online data, #150 and #153),
    so the model stops expecting sentence context.
 3. **`trocr-large-handwritten`**: cheap to try (change `HF_REPO_ID`), but
-   unlikely to fix the line-versus-word mismatch.
+   unlikely to fix the line-versus-word mismatch. *Tried below; it helped a
+   lot more than expected.*
+
+## 7. Large checkpoint: `2026-10-05_yolo_detector_trocr_large`
+
+- **Decision:** Add a second pipeline with
+  `microsoft/trocr-large-handwritten` (558M parameters), the largest
+  handwritten TrOCR checkpoint. Everything else (detector, preprocessing,
+  generation, no post-processing) is identical to the base pipeline, so the
+  two isolate the effect of model size.
+- **Implementation:** `TrOCRLargeModel(TrOCRModel)` only overrides
+  `HF_REPO_ID`; the large repo uses the same RoBERTa tokenizer layout, so the
+  explicit tokenizer workaround applies unchanged. Both pipeline names share
+  one branch in `compute_predictions`.
+
+## Results: large checkpoint (2026-10-05, `martin-l4`, commit `3e8bb63`)
+
+`uv run python scripts/run_benchmark.py -p 2026-10-05_yolo_detector_trocr_large
+--crop-analysis crop_analysis_trocr_large`.
+
+| Pipeline | CER (case-insens.) | CER (case-sens.) | R×(1-CER) | Word Acc |
+|---|---|---|---|---|
+| `2026-09-02_yolo_detector` (SimpleHTR, greedy) | 34.4% | — | 52.5% | 39.1% (66/169) |
+| `2026-10-05_yolo_detector_beam_vocab` (SimpleHTR, beam + vocab) | **31.7%** | — | **54.7%** | **46.7% (79/169)** |
+| `2026-10-05_yolo_detector_trocr` (TrOCR base) | 50.8% | 61.0% | 39.4% | 29.6% (50/169) |
+| `2026-10-05_yolo_detector_trocr_large` (TrOCR large) | 42.1% | 50.7% | 46.4% | 37.3% (63/169) |
+
+Large is far better than base, but on the raw benchmark it still trails both
+SimpleHTR pipelines. Its errors are dominated by the line-model artefact:
+66 of 106 wrong words contain a space, typically an invented trailing
+` .` or ` ,` on an otherwise correct word (`'words' → 'words .'`,
+`'issues' → 'issues .'`, `'itself' → 'itself .'`).
+
+Offline estimate with post-processing (same matched words, case-insensitive):
+
+| Post-processing | TrOCR base CER / Word Acc | TrOCR large CER / Word Acc |
+|---|---|---|
+| None (reproduces the benchmark) | 50.8% / 29.6% | 42.1% / 37.3% |
+| IAM detokenization (drop space before punctuation) | 46.8% / 29.6% | 34.9% / 38.5% |
+| **Strip spaced trailing punctuation** | 43.7% / 34.3% | **29.3% / 48.5%** |
+| Also drop all spaces and trailing punctuation (generous) | 38.9% / 37.9% | 27.3% / 51.5% |
+
+The regex for the stripping variant is `(\s+[.,;:!?'"]+)+$`, removed from the
+end of the prediction. Detokenization barely helps because the punctuation is
+invented, not just badly spaced.
+
+**Conclusion:** with a simple, defensible clean-up (strip punctuation that
+TrOCR appends after a space), TrOCR large is estimated at **29.3% CER and
+48.5% word accuracy**. That beats the current best,
+`2026-10-05_yolo_detector_beam_vocab` (31.7%, 46.7%), with no finetuning.
+This is an offline estimate; it needs confirming in a real pipeline before it
+counts.
+
+Next steps:
+
+1. Add `2026-10-05_yolo_detector_trocr_large_strip_punct` (new pipeline, so
+   this one stays reproducible) with the stripping post-processing, and
+   confirm the estimate on the real benchmark.
+2. If confirmed, the decisions in sections 3 and 4 become relevant: TrOCR
+   large is slow on CPU (plugin users) and runs through `transformers`.
+   Measure CPU latency per page before committing to an ONNX port.
+3. Line-level input and finetuning (follow-ups 1 and 2 above) remain open and
+   would attack the remaining garbled words (`'chiefly' → 'clmolly .'`).
