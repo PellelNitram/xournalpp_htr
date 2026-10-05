@@ -14,6 +14,7 @@ from tqdm import tqdm
 from xournalpp_htr.inference_models import (
     RFDETRWordDetectorModel,
     SimpleHTRModel,
+    TrOCRModel,
     WordDetectorModel,
     YOLOWordDetectorModel,
 )
@@ -30,19 +31,20 @@ class WordPrediction:
     ymax: float
 
 
-# Pipelines that cut word crops and recognise them with SimpleHTR, and can
+# Pipelines that cut word crops and recognise them one by one, and can
 # therefore fill a `CropRecorder`.
 CROP_RECORDING_PIPELINES = {
     "2026-06-07_htr_pipeline_native",
     "2026-09-02_yolo_detector",
     "2026-09-17_rf_detr_detector",
     "2026-10-05_yolo_detector_beam_vocab",
+    "2026-10-05_yolo_detector_trocr",
 }
 
 
 @dataclass
 class CropRecorder:
-    """What a detector + SimpleHTR pipeline fed the recognizer, for crop analysis.
+    """What a detector + recognizer pipeline fed the recognizer, for crop analysis.
 
     Crops and network inputs are keyed by ``id()`` of the `WordPrediction`
     returned for them by `compute_predictions`.
@@ -376,6 +378,79 @@ def compute_predictions(
 
                     text = recognizer.recognize(crop, decoder="beam")
 
+                    prediction = WordPrediction(
+                        text=text,
+                        xmin=box.x_min * coord_scale,
+                        xmax=box.x_max * coord_scale,
+                        ymin=box.y_min * coord_scale,
+                        ymax=box.y_max * coord_scale,
+                    )
+                    predictions_page.append(prediction)
+                    if crop_recorder is not None:
+                        crop_recorder.crops[id(prediction)] = crop
+                        crop_recorder.network_inputs[id(prediction)] = (
+                            recognizer.preprocess(crop)
+                        )
+                predictions[page_index] = predictions_page
+
+    elif pipeline_name == "2026-10-05_yolo_detector_trocr":
+        RENDER_DPI = 150
+        nr_pages = len(document.pages)
+
+        detector = YOLOWordDetectorModel.from_pretrained()
+        # Same detector as 2026-09-02_yolo_detector, but pretrained TrOCR in
+        # place of SimpleHTR (issue #156).
+        recognizer = TrOCRModel.from_pretrained()
+
+        for page_index in tqdm(range(nr_pages), desc="Recognition"):
+            with tempfile.NamedTemporaryFile(
+                dir="/tmp",
+                delete=False,
+                prefix=f"xournalpp_htr__page{page_index}__",
+                suffix=".jpg",
+            ) as tmpfile:
+                TMP_FILE = Path(tmpfile.name)
+
+                written_file = document.save_page_as_image(
+                    page_index, TMP_FILE, False, dpi=RENDER_DPI
+                )
+
+                if (
+                    len(document.pages[page_index].layers) == 0
+                    or len(document.pages[page_index].layers[0].strokes) == 0
+                ):
+                    print(f"Page {page_index} is empty. Skipping HTR.")
+                    predictions[page_index] = []
+                    continue
+
+                img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
+                if crop_recorder is not None:
+                    crop_recorder.render_dpi = RENDER_DPI
+                    crop_recorder.pages[page_index] = img
+
+                boxes = detector.detect(img)
+
+                kept_boxes = []
+                crops = []
+                for box in boxes:
+                    x_min = max(0, int(box.x_min))
+                    y_min = max(0, int(box.y_min))
+                    x_max = min(img.shape[1], int(box.x_max))
+                    y_max = min(img.shape[0], int(box.y_max))
+
+                    crop = img[y_min:y_max, x_min:x_max]
+                    if crop.size == 0:
+                        continue
+                    kept_boxes.append(box)
+                    crops.append(crop)
+
+                # TrOCR is a transformer, so recognise a page's crops in
+                # batches rather than one at a time.
+                texts = recognizer.recognize_batch(crops)
+
+                coord_scale = document.DPI / RENDER_DPI
+                predictions_page = []
+                for box, crop, text in zip(kept_boxes, crops, texts, strict=True):
                     prediction = WordPrediction(
                         text=text,
                         xmin=box.x_min * coord_scale,

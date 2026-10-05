@@ -72,6 +72,13 @@ training-word-detector-rf-detr = [
     "hydra-core",
     "onnx",
 ]
+# Inference-only exception to ADR 006: TrOCR runs through `transformers`
+# instead of an ONNX export while we measure whether it beats SimpleHTR
+# (issue #156, see DECISIONS.md). Only `2026-10-05_yolo_detector_trocr` needs it.
+trocr = [
+    "torch",
+    "transformers",
+]
 dev = [
     "jupyter",
 ]

@@ -256,6 +256,86 @@ class SimpleHTRModel(HFHubInferenceModel):
         return "".join(chars)
 
 
+class TrOCRModel(HFHubInferenceModel):
+    """Pretrained TrOCR word-recognition model, run with ``transformers``.
+
+    Exception to ADR 006: this is Microsoft's IAM-finetuned checkpoint, not
+    our own ONNX export, so we can measure whether TrOCR beats SimpleHTR
+    before investing in an export (issue #156). Needs the ``trocr`` extra;
+    ``transformers`` and ``torch`` are imported lazily so the base install
+    stays lean.
+    """
+
+    HF_REPO_ID = "microsoft/trocr-base-handwritten"
+
+    # Generous for a single word crop, but leaves room for crops where the
+    # detector merged several words.
+    MAX_NEW_TOKENS = 32
+
+    def __init__(self, processor, model, device: str, revision: str):
+        super().__init__(revision)
+        self.processor = processor
+        self.model = model
+        self.device = device
+
+    @classmethod
+    def from_pretrained(cls, revision: str = "main") -> "TrOCRModel":
+        try:
+            import torch
+            from transformers import TrOCRProcessor, VisionEncoderDecoderModel
+        except ImportError as e:
+            raise ImportError(
+                "TrOCRModel needs the `trocr` extra: `uv sync --extra trocr`."
+            ) from e
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        processor = TrOCRProcessor.from_pretrained(cls.HF_REPO_ID, revision=revision)
+        model = VisionEncoderDecoderModel.from_pretrained(
+            cls.HF_REPO_ID, revision=revision
+        )
+        model.to(device).eval()
+        return cls(processor=processor, model=model, device=device, revision=revision)
+
+    def preprocess(self, image_grayscale: np.ndarray) -> np.ndarray:
+        """Resize a grayscale word image to the encoder's input size, as the
+        processor does (no aspect ratio preservation), before normalisation.
+
+        Returns:
+            (height, width) uint8 image, what the network sees (in grayscale).
+        """
+        size = self.processor.image_processor.size
+        return cv2.resize(image_grayscale, (size["width"], size["height"]))
+
+    def recognize_batch(
+        self, images_grayscale: list[np.ndarray], batch_size: int = 16
+    ) -> list[str]:
+        """Recognise text in grayscale word images, ``batch_size`` at a time."""
+        import torch
+
+        texts = []
+        for start in range(0, len(images_grayscale), batch_size):
+            batch = [
+                cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+                for image in images_grayscale[start : start + batch_size]
+            ]
+            pixel_values = self.processor(
+                images=batch, return_tensors="pt"
+            ).pixel_values.to(self.device)
+            with torch.inference_mode():
+                generated_ids = self.model.generate(
+                    pixel_values, max_new_tokens=self.MAX_NEW_TOKENS
+                )
+            decoded = self.processor.batch_decode(
+                generated_ids, skip_special_tokens=True
+            )
+            texts.extend(text.strip() for text in decoded)
+        return texts
+
+    def recognize(self, image_grayscale: np.ndarray) -> str:
+        """Recognise text in a grayscale word image."""
+        return self.recognize_batch([image_grayscale])[0]
+
+
 class YOLOWordDetectorModel(HFHubInferenceModel):
     """YOLO-based word-detection model, loaded from HF Hub as ONNX.
 
