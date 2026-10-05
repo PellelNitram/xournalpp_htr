@@ -14,6 +14,7 @@ from tqdm import tqdm
 from xournalpp_htr.inference_models import (
     RFDETRWordDetectorModel,
     SimpleHTRModel,
+    TrOCRLargeModel,
     TrOCRModel,
     WordDetectorModel,
     YOLOWordDetectorModel,
@@ -39,6 +40,7 @@ CROP_RECORDING_PIPELINES = {
     "2026-09-17_rf_detr_detector",
     "2026-10-05_yolo_detector_beam_vocab",
     "2026-10-05_yolo_detector_trocr",
+    "2026-10-05_yolo_detector_trocr_large",
 }
 
 
@@ -393,14 +395,20 @@ def compute_predictions(
                         )
                 predictions[page_index] = predictions_page
 
-    elif pipeline_name == "2026-10-05_yolo_detector_trocr":
+    elif pipeline_name in (
+        "2026-10-05_yolo_detector_trocr",
+        "2026-10-05_yolo_detector_trocr_large",
+    ):
         RENDER_DPI = 150
         nr_pages = len(document.pages)
 
         detector = YOLOWordDetectorModel.from_pretrained()
         # Same detector as 2026-09-02_yolo_detector, but pretrained TrOCR in
-        # place of SimpleHTR (issue #156).
-        recognizer = TrOCRModel.from_pretrained()
+        # place of SimpleHTR (issue #156), base or large checkpoint.
+        if pipeline_name == "2026-10-05_yolo_detector_trocr_large":
+            recognizer = TrOCRLargeModel.from_pretrained()
+        else:
+            recognizer = TrOCRModel.from_pretrained()
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):
             with tempfile.NamedTemporaryFile(

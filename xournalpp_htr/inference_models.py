@@ -350,6 +350,13 @@ class TrOCRModel(HFHubInferenceModel):
         return self.recognize_batch([image_grayscale])[0]
 
 
+class TrOCRLargeModel(TrOCRModel):
+    """Largest handwritten TrOCR checkpoint (558M parameters vs. 334M for
+    base); same tokenizer and inference as `TrOCRModel`."""
+
+    HF_REPO_ID = "microsoft/trocr-large-handwritten"
+
+
 class YOLOWordDetectorModel(HFHubInferenceModel):
     """YOLO-based word-detection model, loaded from HF Hub as ONNX.
 
