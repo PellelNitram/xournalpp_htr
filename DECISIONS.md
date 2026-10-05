@@ -87,10 +87,71 @@ must be revisited before the pipeline counts as the pipeline of record.
 - **Decision:** Run the benchmark on the GPU VM `martin-l4` (L4, in
   `~/xournalpp_htr`), syncing code via git (commit, push, pull). The MacBook
   has no network, so it cannot download the models or update `uv.lock`;
-  re-lock on the VM.
+  re-lock on the VM. The VM can't push to GitHub, so commits made there are
+  fetched over ssh (`git pull martin-l4:xournalpp_htr <branch>`) and pushed
+  from the MacBook. Sync with `uv sync --all-extras` so the other extras
+  installed on the VM aren't removed.
 - **Command:** `uv run python scripts/run_benchmark.py -p
   2026-10-05_yolo_detector_trocr`.
 
-## Results
+## Implementation notes from the run
 
-_To be filled in after the benchmark run._
+- transformers 5 can't auto-load this checkpoint's tokenizer (the repo has
+  only `vocab.json` and `merges.txt`, no `tokenizer.json`; the error message
+  wrongly points at `sentencepiece`). `TrOCRModel.from_pretrained` therefore
+  builds `TrOCRProcessor` from `AutoImageProcessor` and `RobertaTokenizer`
+  directly.
+- The load report flags `encoder.pooler.dense.*` as newly initialised. This is
+  harmless: TrOCR's decoder never uses the ViT pooler.
+- Re-locking on the VM also caught up `uv.lock` entries that earlier extras
+  (`pyctcdecode`, `rfdetr`, `ultralytics`, `english-words`) had never locked.
+
+## Results (2026-10-05, `martin-l4`, commit `37749d0`)
+
+`uv run python scripts/run_benchmark.py -p 2026-10-05_yolo_detector_trocr
+--crop-analysis crop_analysis_trocr` (benchmark dataset `latest`; crop
+analysis in `martin-l4:~/xournalpp_htr/crop_analysis_trocr/`).
+
+| Pipeline | CER (case-insens.) | CER (case-sens.) | R×(1-CER) | Word Acc |
+|---|---|---|---|---|
+| `2026-09-02_yolo_detector` (SimpleHTR, greedy) | 34.4% | — | 52.5% | 39.1% (66/169) |
+| `2026-10-05_yolo_detector_beam_vocab` (SimpleHTR, beam + vocab) | **31.7%** | — | **54.7%** | **46.7% (79/169)** |
+| `2026-10-05_yolo_detector_trocr` (TrOCR base, as-is) | 50.8% | 61.0% | 39.4% | 29.6% (50/169) |
+
+Precision and recall are unchanged (73.8%, 80.1%), as expected with the same
+detector.
+
+Error analysis (from `manifest.csv`, 119 wrong matched words):
+
+- **Line-model artefacts:** 57 predictions contain a space, mostly a
+  sentence-final ` .` or ` ,` appended to a single word (`'stroke' → 'quote
+  .'`). This is IAM *line* finetuning showing through on word crops.
+- **Hallucinated or garbled words:** most remaining errors are fluent but wrong
+  or invented words (`'chiefly' → 'alvely'`, `'is' → '13.'`, `'it' → 'yfy'`),
+  often longer than the GT (on average 1.8 characters longer).
+- **Only 18 of the 119 errors** go away when punctuation and spaces are
+  ignored.
+
+Offline estimate with post-processing (same matched words, case-insensitive):
+
+| TrOCR output | CER | Word Acc |
+|---|---|---|
+| Raw (reproduces the benchmark) | 50.8% | 29.6% |
+| Spaced trailing punctuation stripped | 43.7% | 34.3% |
+| All spaces and trailing punctuation dropped (generous) | 38.9% | 37.9% |
+
+**Conclusion:** off-the-shelf `trocr-base-handwritten` on word crops loses to
+SimpleHTR, even with generous cleanup: 38.9% CER against 34.4% for greedy
+SimpleHTR and 31.7% for beam + vocab. The experiment did **not** work well,
+so the convention-breaking decisions above (3, 4) stay confined to this
+pipeline. Do not port it to ONNX yet.
+
+Possible follow-ups, if TrOCR is revisited:
+
+1. **Line-level input:** feed TrOCR whole text lines (word boxes clustered into
+   lines) instead of word crops, matching what it was finetuned on. Splitting
+   the line transcription back onto word boxes is the hard part.
+2. **Finetune** on our own word crops (rendered online data, #150 and #153),
+   so the model stops expecting sentence context.
+3. **`trocr-large-handwritten`**: cheap to try (change `HF_REPO_ID`), but
+   unlikely to fix the line-versus-word mismatch.
