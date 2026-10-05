@@ -14,6 +14,7 @@ is model lifecycle (loading and version introspection) only.
 
 import json
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import ClassVar, List
 
 import cv2
@@ -22,6 +23,7 @@ import onnxruntime as ort
 from huggingface_hub import hf_hub_download
 
 from xournalpp_htr.training.shared.bounding_box import BoundingBox
+from xournalpp_htr.training.shared.ctc_decoding import beam_decode, build_beam_decoder
 from xournalpp_htr.training.shared.postprocessing import (
     cluster_aabbs,
     decode,
@@ -149,6 +151,8 @@ class SimpleHTRModel(HFHubInferenceModel):
         self.config = config
         self._input_name = session.get_inputs()[0].name
         self._charset = config["charset"]
+        self._beam_decoder = build_beam_decoder(self._charset)
+        self._vocabulary: set[str] | None = None
 
     @classmethod
     def from_pretrained(cls, revision: str = "main") -> "SimpleHTRModel":
@@ -162,15 +166,35 @@ class SimpleHTRModel(HFHubInferenceModel):
             revision=revision,
         )
 
-    def recognize(self, image_grayscale: np.ndarray) -> str:
-        """Recognise text in a grayscale word image.
+    @classmethod
+    def load_vocabulary(cls, revision: str = "main") -> list[str]:
+        """Download the word list published next to the model on HF Hub.
 
-        The image is resized to the network's expected input dimensions
-        (uniform scale, centered on white canvas) and normalised before inference.
+        Built and uploaded by ``build_vocabulary.py``; pass it to
+        `use_lexicon` for lexicon-biased "beam" decoding.
+        """
+        path = hf_hub_download(cls.HF_REPO_ID, "vocabulary.txt", revision=revision)
+        return Path(path).read_text().split()
+
+    def use_lexicon(self, vocabulary: list[str] | None) -> None:
+        """Bias "beam" decoding towards a word list (see build_vocabulary.py).
+
+        Pass ``None`` to go back to plain beam search. Has no effect on
+        greedy decoding.
+        """
+        self._vocabulary = (
+            {w.lower() for w in vocabulary} if vocabulary is not None else None
+        )
+
+    def preprocess(self, image_grayscale: np.ndarray) -> np.ndarray:
+        """Resize a grayscale word image to the network's input dimensions
+        (uniform scale, centered on white canvas), before normalisation.
+
+        Returns:
+            (height, width) uint8 image, exactly what the network sees.
         """
         input_size = self.config["input_size"]
         in_h, in_w = input_size["height"], input_size["width"]
-        norm = self.config["normalization"]
 
         h, w = image_grayscale.shape[:2]
         scale = min(in_w / w, in_h / h)
@@ -182,13 +206,45 @@ class SimpleHTRModel(HFHubInferenceModel):
         y_off = (in_h - new_h) // 2
         x_off = (in_w - new_w) // 2
         canvas[y_off : y_off + new_h, x_off : x_off + new_w] = resized
+        return canvas
+
+    def _compute_log_probs(self, image_grayscale: np.ndarray) -> np.ndarray:
+        """Preprocess a grayscale word image and run the ONNX network.
+
+        Returns:
+            (seq_len, num_classes) log-probabilities.
+        """
+        norm = self.config["normalization"]
+        canvas = self.preprocess(image_grayscale)
 
         normalised = canvas.astype(np.float32) / norm["scale"] + norm["shift"]
         net_input = normalised[None, None, :, :]
 
         log_probs = self.session.run(None, {self._input_name: net_input})[0]
-        # log_probs shape: (seq_len, batch, num_classes)
-        predictions = log_probs[:, 0, :].argmax(axis=1)
+        return log_probs[
+            :, 0, :
+        ]  # (seq_len, batch, num_classes) -> (seq_len, num_classes)
+
+    def recognize(self, image_grayscale: np.ndarray, decoder: str = "greedy") -> str:
+        """Recognise text in a grayscale word image.
+
+        Args:
+            image_grayscale: grayscale word image.
+            decoder: "greedy" (default) or "beam" CTC decoding.
+        """
+        if decoder not in ("greedy", "beam"):
+            raise ValueError(
+                f"Unknown decoder {decoder!r}, expected 'greedy' or 'beam'."
+            )
+
+        log_probs = self._compute_log_probs(image_grayscale)
+
+        if decoder == "beam":
+            return beam_decode(
+                log_probs, self._beam_decoder, vocabulary=self._vocabulary
+            )
+
+        predictions = log_probs.argmax(axis=1)
 
         blank = len(self._charset)
         chars = []

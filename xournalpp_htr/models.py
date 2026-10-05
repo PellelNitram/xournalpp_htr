@@ -2,11 +2,12 @@
 # another module for training or loading custom models.
 
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import cv2
 import matplotlib.pyplot as plt
+import numpy as np
 from htr_pipeline import DetectorConfig, LineClusteringConfig, read_page
 from tqdm import tqdm
 
@@ -29,13 +30,43 @@ class WordPrediction:
     ymax: float
 
 
+# Pipelines that cut word crops and recognise them with SimpleHTR, and can
+# therefore fill a `CropRecorder`.
+CROP_RECORDING_PIPELINES = {
+    "2026-06-07_htr_pipeline_native",
+    "2026-09-02_yolo_detector",
+    "2026-09-17_rf_detr_detector",
+    "2026-10-05_yolo_detector_beam_vocab",
+}
+
+
+@dataclass
+class CropRecorder:
+    """What a detector + SimpleHTR pipeline fed the recognizer, for crop analysis.
+
+    Crops and network inputs are keyed by ``id()`` of the `WordPrediction`
+    returned for them by `compute_predictions`.
+    """
+
+    render_dpi: float | None = None
+    pages: dict[PageIndex, np.ndarray] = field(default_factory=dict)
+    crops: dict[int, np.ndarray] = field(default_factory=dict)
+    network_inputs: dict[int, np.ndarray] = field(default_factory=dict)
+
+
 def compute_predictions(
-    pipeline_name: str, document
+    pipeline_name: str,
+    document,
+    crop_recorder: CropRecorder | None = None,
 ) -> dict[PageIndex, list[WordPrediction]]:
     """Run HTR on a document and return word-level predictions.
 
     Bounding box coordinates are always in document units (72 DPI), regardless
     of the internal rendering resolution used by the pipeline. See ADR 005.
+
+    ``crop_recorder``, if given, is filled with page renders, word crops and
+    network inputs by the pipelines in `CROP_RECORDING_PIPELINES`; ignored by
+    the others.
     """
     predictions: dict[PageIndex, list[WordPrediction]] = {}
 
@@ -130,6 +161,9 @@ def compute_predictions(
                     continue
 
                 img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
+                if crop_recorder is not None:
+                    crop_recorder.render_dpi = RENDER_DPI
+                    crop_recorder.pages[page_index] = img
 
                 boxes = detector.detect(img)
 
@@ -147,15 +181,19 @@ def compute_predictions(
 
                     text = recognizer.recognize(crop)
 
-                    predictions_page.append(
-                        WordPrediction(
-                            text=text,
-                            xmin=box.x_min * coord_scale,
-                            xmax=box.x_max * coord_scale,
-                            ymin=box.y_min * coord_scale,
-                            ymax=box.y_max * coord_scale,
-                        )
+                    prediction = WordPrediction(
+                        text=text,
+                        xmin=box.x_min * coord_scale,
+                        xmax=box.x_max * coord_scale,
+                        ymin=box.y_min * coord_scale,
+                        ymax=box.y_max * coord_scale,
                     )
+                    predictions_page.append(prediction)
+                    if crop_recorder is not None:
+                        crop_recorder.crops[id(prediction)] = crop
+                        crop_recorder.network_inputs[id(prediction)] = (
+                            recognizer.preprocess(crop)
+                        )
                 predictions[page_index] = predictions_page
 
     elif pipeline_name == "2026-09-02_yolo_detector":
@@ -187,6 +225,9 @@ def compute_predictions(
                     continue
 
                 img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
+                if crop_recorder is not None:
+                    crop_recorder.render_dpi = RENDER_DPI
+                    crop_recorder.pages[page_index] = img
 
                 boxes = detector.detect(img)
 
@@ -204,15 +245,19 @@ def compute_predictions(
 
                     text = recognizer.recognize(crop)
 
-                    predictions_page.append(
-                        WordPrediction(
-                            text=text,
-                            xmin=box.x_min * coord_scale,
-                            xmax=box.x_max * coord_scale,
-                            ymin=box.y_min * coord_scale,
-                            ymax=box.y_max * coord_scale,
-                        )
+                    prediction = WordPrediction(
+                        text=text,
+                        xmin=box.x_min * coord_scale,
+                        xmax=box.x_max * coord_scale,
+                        ymin=box.y_min * coord_scale,
+                        ymax=box.y_max * coord_scale,
                     )
+                    predictions_page.append(prediction)
+                    if crop_recorder is not None:
+                        crop_recorder.crops[id(prediction)] = crop
+                        crop_recorder.network_inputs[id(prediction)] = (
+                            recognizer.preprocess(crop)
+                        )
                 predictions[page_index] = predictions_page
 
     elif pipeline_name == "2026-09-17_rf_detr_detector":
@@ -244,6 +289,9 @@ def compute_predictions(
                     continue
 
                 img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
+                if crop_recorder is not None:
+                    crop_recorder.render_dpi = RENDER_DPI
+                    crop_recorder.pages[page_index] = img
 
                 boxes = detector.detect(img)
 
@@ -261,15 +309,86 @@ def compute_predictions(
 
                     text = recognizer.recognize(crop)
 
-                    predictions_page.append(
-                        WordPrediction(
-                            text=text,
-                            xmin=box.x_min * coord_scale,
-                            xmax=box.x_max * coord_scale,
-                            ymin=box.y_min * coord_scale,
-                            ymax=box.y_max * coord_scale,
-                        )
+                    prediction = WordPrediction(
+                        text=text,
+                        xmin=box.x_min * coord_scale,
+                        xmax=box.x_max * coord_scale,
+                        ymin=box.y_min * coord_scale,
+                        ymax=box.y_max * coord_scale,
                     )
+                    predictions_page.append(prediction)
+                    if crop_recorder is not None:
+                        crop_recorder.crops[id(prediction)] = crop
+                        crop_recorder.network_inputs[id(prediction)] = (
+                            recognizer.preprocess(crop)
+                        )
+                predictions[page_index] = predictions_page
+
+    elif pipeline_name == "2026-10-05_yolo_detector_beam_vocab":
+        RENDER_DPI = 150
+        nr_pages = len(document.pages)
+
+        detector = YOLOWordDetectorModel.from_pretrained()
+        # Same detector as 2026-09-02_yolo_detector, but beam search decoding
+        # snapped to the nearest known word (issue #120).
+        recognizer = SimpleHTRModel.from_pretrained()
+        recognizer.use_lexicon(SimpleHTRModel.load_vocabulary())
+
+        for page_index in tqdm(range(nr_pages), desc="Recognition"):
+            with tempfile.NamedTemporaryFile(
+                dir="/tmp",
+                delete=False,
+                prefix=f"xournalpp_htr__page{page_index}__",
+                suffix=".jpg",
+            ) as tmpfile:
+                TMP_FILE = Path(tmpfile.name)
+
+                written_file = document.save_page_as_image(
+                    page_index, TMP_FILE, False, dpi=RENDER_DPI
+                )
+
+                if (
+                    len(document.pages[page_index].layers) == 0
+                    or len(document.pages[page_index].layers[0].strokes) == 0
+                ):
+                    print(f"Page {page_index} is empty. Skipping HTR.")
+                    predictions[page_index] = []
+                    continue
+
+                img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
+                if crop_recorder is not None:
+                    crop_recorder.render_dpi = RENDER_DPI
+                    crop_recorder.pages[page_index] = img
+
+                boxes = detector.detect(img)
+
+                coord_scale = document.DPI / RENDER_DPI
+                predictions_page = []
+                for box in boxes:
+                    x_min = max(0, int(box.x_min))
+                    y_min = max(0, int(box.y_min))
+                    x_max = min(img.shape[1], int(box.x_max))
+                    y_max = min(img.shape[0], int(box.y_max))
+
+                    crop = img[y_min:y_max, x_min:x_max]
+                    if crop.size == 0:
+                        continue
+
+                    text = recognizer.recognize(crop, decoder="beam")
+
+                    prediction = WordPrediction(
+                        text=text,
+                        xmin=box.x_min * coord_scale,
+                        xmax=box.x_max * coord_scale,
+                        ymin=box.y_min * coord_scale,
+                        ymax=box.y_max * coord_scale,
+                    )
+                    predictions_page.append(prediction)
+                    if crop_recorder is not None:
+                        crop_recorder.crops[id(prediction)] = crop
+                        crop_recorder.network_inputs[id(prediction)] = (
+                            recognizer.preprocess(crop)
+                        )
                 predictions[page_index] = predictions_page
 
     else:

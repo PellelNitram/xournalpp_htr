@@ -9,8 +9,15 @@ from pathlib import Path
 
 import numpy as np
 
+from xournalpp_htr.crop_analysis import CropAnalysis
 from xournalpp_htr.documents import get_document
-from xournalpp_htr.models import PageIndex, WordPrediction, compute_predictions
+from xournalpp_htr.models import (
+    CROP_RECORDING_PIPELINES,
+    CropRecorder,
+    PageIndex,
+    WordPrediction,
+    compute_predictions,
+)
 from xournalpp_htr.xio import load_benchmark
 
 # Annotation classes that carry a text transcription (per ground_truth.schema.json).
@@ -204,6 +211,7 @@ def run_benchmark(
     pipeline_name: str,
     collect_details: bool = False,
     dataset_version: str | None = None,
+    crop_analysis_dir: Path | None = None,
 ) -> BenchmarkResult:
     """Benchmark `pipeline_name` against the xournalpp_htr_benchmark dataset.
 
@@ -213,7 +221,19 @@ def run_benchmark(
         considerably slower, hence opt-in. Stored in `BenchmarkResult.details`.
     :param dataset_version: Git tag or commit hash selecting the dataset
         revision. ``None`` (the default) uses the latest version.
+    :param crop_analysis_dir: If given, write the crop analysis (see
+        `crop_analysis`) of this run to that directory. Only supported by
+        the pipelines in `CROP_RECORDING_PIPELINES`.
     """
+    if crop_analysis_dir is not None and pipeline_name not in CROP_RECORDING_PIPELINES:
+        raise ValueError(
+            f'Crop analysis is not supported for pipeline "{pipeline_name}", '
+            f"only for {sorted(CROP_RECORDING_PIPELINES)}."
+        )
+    crop_analysis = (
+        CropAnalysis(crop_analysis_dir) if crop_analysis_dir is not None else None
+    )
+
     samples = load_benchmark(dataset_version=dataset_version)
 
     total_gt = 0
@@ -237,7 +257,12 @@ def run_benchmark(
     for sample in samples:
         document = get_document(sample.xopp_path)
         gt_words = _load_gt_words(sample.gt_path, document)
-        predictions = compute_predictions(pipeline_name, document)
+        crop_recorder = CropRecorder() if crop_analysis is not None else None
+        predictions = compute_predictions(
+            pipeline_name,
+            document,
+            crop_recorder=crop_recorder,
+        )
 
         n_pred = sum(len(v) for v in predictions.values())
         pairs = _match(gt_words, predictions)
@@ -256,6 +281,16 @@ def run_benchmark(
             if cer_ci == 0.0:
                 total_exact_matches += 1
 
+        if crop_analysis is not None:
+            crop_analysis.add_sample(
+                sample.xopp_path.stem,
+                document.DPI,
+                gt_words,
+                predictions,
+                pairs,
+                crop_recorder,
+            )
+
         if details is not None:
             details.samples.append(
                 SampleDetail(
@@ -263,6 +298,9 @@ def run_benchmark(
                     pages=_collect_pages(document, gt_words, predictions, pairs),
                 )
             )
+
+    if crop_analysis is not None:
+        crop_analysis.write()
 
     precision = total_matched / total_pred if total_pred > 0 else 0.0
     recall = total_matched / total_gt if total_gt > 0 else 0.0
