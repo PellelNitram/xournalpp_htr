@@ -54,7 +54,7 @@ graph TD
         PIPELINE --> DOC["get_document()"]
         DOC -->|"Document object"| CP["compute_predictions()"]
         CP --> RENDER["save_page_as_image()<br/>(matplotlib, 150 DPI)"]
-        RENDER --> HTR["read_page()<br/>(htr_pipeline)"]
+        RENDER --> HTR["detect + recognise<br/>(per pipeline)"]
         HTR --> PRED["Predictions dict"]
     end
 
@@ -76,12 +76,15 @@ graph TD
 
 2. **Render pages** -- Each page is rendered to a 150 DPI grayscale image via matplotlib using the stroke coordinates.
 
-3. **Run HTR** -- `compute_predictions()` dispatches on the `--pipeline` argument to one of two implementations:
+3. **Run HTR** -- `compute_predictions()` dispatches on the `--pipeline` argument to one of these implementations:
 
     - `2024-07-18_htr_pipeline` (default) -- The external `htr_pipeline` library processes each image: an ONNX word detector locates regions (scaled to 40%, 5px margin), DBSCAN groups detections into lines (discarding lines with fewer than 2 words), and a second ONNX model recognises each word via CTC decoding.
     - `2026-06-07_htr_pipeline_native` -- An in-house pipeline that loads our locally-trained ONNX models from HuggingFace Hub (`WordDetectorModel` + `SimpleHTRModel`, see `xournalpp_htr/inference_models.py`) and runs detection + per-word recognition without `htr_pipeline`. Replacing the external dependency entirely is tracked in #125.
+    - `2026-09-02_yolo_detector` -- Same structure, with the YOLO word detector (`YOLOWordDetectorModel`, see [word_detector_yolo](models/word_detector_yolo.md)) in place of `WordDetectorModel`. Best detector recall on the benchmark.
+    - `2026-09-17_rf_detr_detector` -- Same structure, with the RF-DETR word detector (`RFDETRWordDetectorModel`, see [word_detector_rf_detr](models/word_detector_rf_detr.md)). Kept for reproducibility; it loses to YOLO on recall.
+    - `2026-10-05_yolo_detector_beam_vocab` -- `2026-09-02_yolo_detector` with beam search decoding snapped to the nearest known word, using the word list published next to the SimpleHTR model (issue #120, see [simple_htr](models/simple_htr.md)). Best word accuracy on the benchmark.
 
-    Output is a dictionary mapping page indices to lists of predictions (text + bounding box coordinates in image pixels).
+    All pipelines after `2024-07-18_htr_pipeline` render at 150 DPI, crop each detected word and recognise it with `SimpleHTRModel` independently, so there is no cross-word context. Output is a dictionary mapping page indices to lists of predictions (text + bounding box coordinates in document units, see [ADR 005](ADRs/005_prediction_bounding_box_coordinate_system.md)).
 
 ### Step 3: Embed Text in PDF
 
@@ -94,14 +97,18 @@ xournalpp_htr/
     run_htr.py       # CLI entry point
     shortcuts.py     # Orchestrates Steps 1-3
     documents.py     # .xoj/.xopp parsing (Document ABC, Page, Layer, Stroke)
-    models.py        # HTR inference wrapper (compute_predictions, WordPrediction)
+    models.py        # HTR pipelines (compute_predictions, WordPrediction, CropRecorder)
+    inference_models.py  # ONNX models loaded from HuggingFace Hub (detectors, SimpleHTRModel)
     utils.py         # Argument parsing, xournalpp CLI export
     xio.py           # PDF I/O (PyMuPDF), benchmark/example loading (HuggingFace Hub)
-    benchmark.py     # Benchmark logic (run_benchmark, precision/recall/CER)
+    benchmark.py     # Benchmark logic (run_benchmark, precision/recall/CER, HTML report)
+    crop_analysis.py # Per-word crop/network-input dump of a benchmark run
 
 scripts/
-    demo.py              # Gradio web demo
-    run_benchmark.py     # CLI to run benchmark against xournalpp_htr_benchmark dataset
+    demo.py                   # Gradio web demo
+    run_benchmark.py          # CLI to run benchmark against xournalpp_htr_benchmark dataset
+                              #   (--html-report, --crop-analysis)
+    analyze_beam_coverage.py  # Whether misread words are reachable by beam search
 
 plugin/
     main.lua         # Xournal++ plugin
@@ -152,7 +159,8 @@ convert their raw output before returning (see [ADR 005](ADRs/005_prediction_bou
 | `matplotlib` | Renders pages to images for HTR |
 | `opencv-python` | Image loading and processing |
 | `onnxruntime` | Runs word detection and text recognition models |
+| `pyctcdecode` | Beam search CTC decoding (`2026-10-05_yolo_detector_beam_vocab`) |
 | `scikit-learn` | DBSCAN clustering for line detection |
 | `pymupdf` | Embeds text into PDF (Step 3) |
 | `gradio` | Web demo UI (demo only) |
-| `huggingface_hub` | Downloads example files (demo only) |
+| `huggingface_hub` | Downloads models, the decoding vocabulary, benchmark and example files |
