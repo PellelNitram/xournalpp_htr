@@ -14,6 +14,7 @@ is model lifecycle (loading and version introspection) only.
 
 import json
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import ClassVar, List
 
 import cv2
@@ -164,6 +165,16 @@ class SimpleHTRModel(HFHubInferenceModel):
             config=config,
             revision=revision,
         )
+
+    @classmethod
+    def load_vocabulary(cls, revision: str = "main") -> list[str]:
+        """Download the word list published next to the model on HF Hub.
+
+        Built and uploaded by ``build_vocabulary.py``; pass it to
+        `use_lexicon` for lexicon-biased "beam" decoding.
+        """
+        path = hf_hub_download(cls.HF_REPO_ID, "vocabulary.txt", revision=revision)
+        return Path(path).read_text().split()
 
     def use_lexicon(self, vocabulary: list[str] | None) -> None:
         """Bias "beam" decoding towards a word list (see build_vocabulary.py).
