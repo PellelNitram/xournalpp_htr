@@ -68,6 +68,18 @@ def parse_arguments(cli_string: None | str = None):
             "extra analysis, which is slower; omitting it keeps the plain run."
         ),
     )
+    parser.add_argument(
+        "--crop-analysis",
+        type=Path,
+        required=False,
+        default=None,
+        help=(
+            "Write the crop analysis to this directory: every detector crop, "
+            "the SimpleHTR network input made from it and the ground truth box, "
+            "plus page overviews, manifest.csv and index.html. Only for "
+            "detector + SimpleHTR pipelines; omitting it skips the analysis."
+        ),
+    )
     return vars(
         parser.parse_args(cli_string.split() if cli_string is not None else None)
     )
@@ -86,6 +98,7 @@ if __name__ == "__main__":
         dataset_version=args["dataset_version"],
         decoder=args["decoder"],
         vocabulary=vocabulary,
+        crop_analysis_dir=args["crop_analysis"],
     )
 
     if args["html_report"] is not None:
@@ -113,6 +126,9 @@ if __name__ == "__main__":
                     "html_report": str(args["html_report"])
                     if args["html_report"]
                     else None,
+                    "crop_analysis": str(args["crop_analysis"])
+                    if args["crop_analysis"]
+                    else None,
                 },
                 indent=2,
             )
@@ -137,3 +153,5 @@ if __name__ == "__main__":
         )
         if args["html_report"] is not None:
             print(f"Report   : {args['html_report']}")
+        if args["crop_analysis"] is not None:
+            print(f"Crops    : {args['crop_analysis'] / 'index.html'}")

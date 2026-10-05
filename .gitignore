@@ -176,3 +176,5 @@ xournalpp_htr/training/word_detector/experiments
 dataset_cache.pickle
 vocabulary.txt
 xournalpp_htr/training/word_detector/outputs/
+recognizer_inputs*/
+crop_analysis*/
