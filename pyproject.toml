@@ -78,6 +78,7 @@ training-word-detector-rf-detr = [
 trocr = [
     "torch",
     "transformers",
+    "sentencepiece",  # transformers 5 needs it to build TrOCR's fast tokenizer
 ]
 dev = [
     "jupyter",
