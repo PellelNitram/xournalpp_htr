@@ -175,18 +175,15 @@ class SimpleHTRModel(HFHubInferenceModel):
             {w.lower() for w in vocabulary} if vocabulary is not None else None
         )
 
-    def _compute_log_probs(self, image_grayscale: np.ndarray) -> np.ndarray:
-        """Preprocess a grayscale word image and run the ONNX network.
-
-        The image is resized to the network's expected input dimensions
-        (uniform scale, centered on white canvas) and normalised before inference.
+    def preprocess(self, image_grayscale: np.ndarray) -> np.ndarray:
+        """Resize a grayscale word image to the network's input dimensions
+        (uniform scale, centered on white canvas), before normalisation.
 
         Returns:
-            (seq_len, num_classes) log-probabilities.
+            (height, width) uint8 image, exactly what the network sees.
         """
         input_size = self.config["input_size"]
         in_h, in_w = input_size["height"], input_size["width"]
-        norm = self.config["normalization"]
 
         h, w = image_grayscale.shape[:2]
         scale = min(in_w / w, in_h / h)
@@ -198,6 +195,16 @@ class SimpleHTRModel(HFHubInferenceModel):
         y_off = (in_h - new_h) // 2
         x_off = (in_w - new_w) // 2
         canvas[y_off : y_off + new_h, x_off : x_off + new_w] = resized
+        return canvas
+
+    def _compute_log_probs(self, image_grayscale: np.ndarray) -> np.ndarray:
+        """Preprocess a grayscale word image and run the ONNX network.
+
+        Returns:
+            (seq_len, num_classes) log-probabilities.
+        """
+        norm = self.config["normalization"]
+        canvas = self.preprocess(image_grayscale)
 
         normalised = canvas.astype(np.float32) / norm["scale"] + norm["shift"]
         net_input = normalised[None, None, :, :]
