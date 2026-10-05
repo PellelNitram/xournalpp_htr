@@ -1,0 +1,19 @@
+pyproject.toml
+  s_9536dc7f25382a::t_9f26ece1fe0828 81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "cab7f762617d0d1098f5c3ae1314f7ffa97a7aa7",
+  "prompts": {},
+  "sessions": {
+    "s_9536dc7f25382a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "775c3c06-799a-43c1-b3a7-071be1776e29",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
