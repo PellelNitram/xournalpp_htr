@@ -12,6 +12,7 @@ from htr_pipeline import DetectorConfig, LineClusteringConfig, read_page
 from tqdm import tqdm
 
 from xournalpp_htr.inference_models import (
+    PPOCRv5Model,
     RFDETRWordDetectorModel,
     SimpleHTRModel,
     TrOCRLargeModel,
@@ -43,6 +44,7 @@ CROP_RECORDING_PIPELINES = {
     "2026-10-05_yolo_detector_trocr",
     "2026-10-05_yolo_detector_trocr_large",
     "2026-10-09_yolo_detector_trocr_large_strip_punct",
+    "2026-10-09_yolo_detector_ppocrv5",
 }
 
 
@@ -401,6 +403,7 @@ def compute_predictions(
         "2026-10-05_yolo_detector_trocr",
         "2026-10-05_yolo_detector_trocr_large",
         "2026-10-09_yolo_detector_trocr_large_strip_punct",
+        "2026-10-09_yolo_detector_ppocrv5",
     ):
         RENDER_DPI = 150
         nr_pages = len(document.pages)
@@ -408,8 +411,11 @@ def compute_predictions(
         detector = YOLOWordDetectorModel.from_pretrained()
         # Same detector as 2026-09-02_yolo_detector, but pretrained TrOCR in
         # place of SimpleHTR (issue #156), base or large checkpoint.
+        # PP-OCRv5 recognition only (issue #157) takes the same slot.
         if pipeline_name == "2026-10-05_yolo_detector_trocr":
             recognizer = TrOCRModel.from_pretrained()
+        elif pipeline_name == "2026-10-09_yolo_detector_ppocrv5":
+            recognizer = PPOCRv5Model.from_pretrained()
         else:
             recognizer = TrOCRLargeModel.from_pretrained()
         strip_punct = (
@@ -481,6 +487,48 @@ def compute_predictions(
                             recognizer.preprocess(crop)
                         )
                 predictions[page_index] = predictions_page
+
+    elif pipeline_name == "2026-10-09_ppocrv5_det_rec":
+        RENDER_DPI = 150
+        nr_pages = len(document.pages)
+
+        # PP-OCRv5's own detector and recogniser on whole pages (issue #157).
+        model = PPOCRv5Model.from_pretrained()
+
+        for page_index in tqdm(range(nr_pages), desc="Recognition"):
+            with tempfile.NamedTemporaryFile(
+                dir="/tmp",
+                delete=False,
+                prefix=f"xournalpp_htr__page{page_index}__",
+                suffix=".jpg",
+            ) as tmpfile:
+                TMP_FILE = Path(tmpfile.name)
+
+                written_file = document.save_page_as_image(
+                    page_index, TMP_FILE, False, dpi=RENDER_DPI
+                )
+
+                if (
+                    len(document.pages[page_index].layers) == 0
+                    or len(document.pages[page_index].layers[0].strokes) == 0
+                ):
+                    print(f"Page {page_index} is empty. Skipping HTR.")
+                    predictions[page_index] = []
+                    continue
+
+                img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
+
+                coord_scale = document.DPI / RENDER_DPI
+                predictions[page_index] = [
+                    WordPrediction(
+                        text=text,
+                        xmin=box.x_min * coord_scale,
+                        xmax=box.x_max * coord_scale,
+                        ymin=box.y_min * coord_scale,
+                        ymax=box.y_max * coord_scale,
+                    )
+                    for text, box in model.read_page(img)
+                ]
 
     else:
         raise NotImplementedError(f'Pipeline "{pipeline_name}" not implemented.')
