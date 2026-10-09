@@ -95,3 +95,24 @@ def test_main_yolo_detector_trocr(
     }
 
     export_xournalpp_to_pdf_with_htr(args)
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    "pipeline",
+    ["2026-10-09_yolo_detector_ppocrv5", "2026-10-09_ppocrv5_det_rec"],
+)
+def test_main_ppocrv5(
+    pipeline: str, get_path_to_minimal_test_data: Path, tmp_path: Path
+) -> None:
+    pytest.importorskip("rapidocr", reason="needs the `ppocr` extra")
+    args = {
+        "input_file": get_path_to_minimal_test_data,
+        "output_file": tmp_path / Path(f"test_main_{pipeline}.pdf"),
+        "pipeline": pipeline,
+        "prediction_image_dir": None,
+        "show_predictions": False,
+        "small_text": False,
+    }
+
+    export_xournalpp_to_pdf_with_htr(args)
