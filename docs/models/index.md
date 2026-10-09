@@ -16,6 +16,9 @@ model.
 - [WordDetectorRFDETR](word_detector_rf_detr.md) — RF-DETR-based word-level
   bounding-box detector (fine-tuned
   [RF-DETR](https://github.com/roboflow/rf-detr)).
+- [TrOCR](trocr.md) — Microsoft's pretrained word-level text recognition,
+  evaluated against SimpleHTR; optional, runs through `transformers`
+  (exception to ADR 006).
 
 New models added in the future should follow the same structure: a page under
 `docs/models/<model_name>.md` linked from this index and from the `Models`

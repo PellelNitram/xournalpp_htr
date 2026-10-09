@@ -65,6 +65,5 @@ To use it anyway:
     (`~/.cache/huggingface`); later runs reuse it.
 
 The pipeline has been tested on Linux, with and without a GPU. The background
-to this experiment, including benchmark results and design decisions, is in
-[`DECISIONS.md`](https://github.com/PellelNitram/xournalpp_htr/blob/master/DECISIONS.md)
-(issue #156).
+to this experiment, including benchmark results and design decisions, is on
+the [TrOCR model page](models/trocr.md) (issue #156).
