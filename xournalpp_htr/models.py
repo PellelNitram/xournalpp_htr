@@ -18,6 +18,7 @@ from xournalpp_htr.inference_models import (
     TrOCRModel,
     WordDetectorModel,
     YOLOWordDetectorModel,
+    strip_appended_punctuation,
 )
 
 PageIndex = int
@@ -41,6 +42,7 @@ CROP_RECORDING_PIPELINES = {
     "2026-10-05_yolo_detector_beam_vocab",
     "2026-10-05_yolo_detector_trocr",
     "2026-10-05_yolo_detector_trocr_large",
+    "2026-10-09_yolo_detector_trocr_large_strip_punct",
 }
 
 
@@ -398,6 +400,7 @@ def compute_predictions(
     elif pipeline_name in (
         "2026-10-05_yolo_detector_trocr",
         "2026-10-05_yolo_detector_trocr_large",
+        "2026-10-09_yolo_detector_trocr_large_strip_punct",
     ):
         RENDER_DPI = 150
         nr_pages = len(document.pages)
@@ -405,10 +408,13 @@ def compute_predictions(
         detector = YOLOWordDetectorModel.from_pretrained()
         # Same detector as 2026-09-02_yolo_detector, but pretrained TrOCR in
         # place of SimpleHTR (issue #156), base or large checkpoint.
-        if pipeline_name == "2026-10-05_yolo_detector_trocr_large":
-            recognizer = TrOCRLargeModel.from_pretrained()
-        else:
+        if pipeline_name == "2026-10-05_yolo_detector_trocr":
             recognizer = TrOCRModel.from_pretrained()
+        else:
+            recognizer = TrOCRLargeModel.from_pretrained()
+        strip_punct = (
+            pipeline_name == "2026-10-09_yolo_detector_trocr_large_strip_punct"
+        )
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):
             with tempfile.NamedTemporaryFile(
@@ -455,6 +461,8 @@ def compute_predictions(
                 # TrOCR is a transformer, so recognise a page's crops in
                 # batches rather than one at a time.
                 texts = recognizer.recognize_batch(crops)
+                if strip_punct:
+                    texts = [strip_appended_punctuation(text) for text in texts]
 
                 coord_scale = document.DPI / RENDER_DPI
                 predictions_page = []

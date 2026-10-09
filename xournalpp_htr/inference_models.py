@@ -13,6 +13,7 @@ is model lifecycle (loading and version introspection) only.
 """
 
 import json
+import re
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import ClassVar, List
@@ -254,6 +255,21 @@ class SimpleHTRModel(HFHubInferenceModel):
                 chars.append(self._charset[idx])
             prev = idx
         return "".join(chars)
+
+
+# Punctuation TrOCR appends after a space, e.g. "words ." or "Thanks ,".
+_APPENDED_PUNCTUATION = re.compile(r"""(\s+[.,;:!?'"]+)+$""")
+
+
+def strip_appended_punctuation(text: str) -> str:
+    """Remove punctuation that TrOCR appends to a word after a space.
+
+    The IAM checkpoints were finetuned on text lines, where punctuation is
+    space-separated, so on single word crops they often add a sentence-final
+    " ." or " ," (issue #156). Punctuation attached to the word, as in
+    "thoughts:", is kept.
+    """
+    return _APPENDED_PUNCTUATION.sub("", text).strip()
 
 
 class TrOCRModel(HFHubInferenceModel):
