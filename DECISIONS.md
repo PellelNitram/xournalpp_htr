@@ -59,8 +59,8 @@ must be revisited before the pipeline counts as the pipeline of record.
 - **Caveats:**
   - `HF_REPO_ID` points at Microsoft's repo, so it does not follow the
     `PellelNitram/xournalpp-htr-<model>` naming.
-  - `main` can change underneath us. If the result matters, pin a commit
-    hash.
+  - `main` can change underneath us. *Now pinned to commit hashes, see
+    section 10.*
   - The checkpoint was finetuned on IAM text *lines*, while we feed it single
     word crops. A mismatch in input distribution is expected.
 - **If TrOCR wins:** Try `large-handwritten`, and finetuning on our own word
@@ -271,3 +271,79 @@ What would change the decision:
 3. **Line-level input**, matching what the checkpoints were finetuned on.
 4. If any of these makes TrOCR the clear winner: measure CPU latency per page
    and try float16 or int8 weights before an ONNX port.
+
+## 9. ONNX: later, not now (2026-10-09)
+
+- **Question:** should TrOCR follow the ONNX path (ADR 006) as well, even
+  though it is Microsoft's model and not ours?
+- **Answer:** yes, *if* it ever ships to users; no, not now.
+- **Why ownership doesn't matter:** ADR 006 is about what runs on the user's
+  machine, not who trained the model. An ONNX export would not be redundant,
+  because it removes the runtime dependencies:
+  - `torch` + `transformers` add roughly 1–2 GB of packages before any
+    weights; the base install already has `onnxruntime` and `numpy`.
+  - transformers 5 already broke tokenizer loading once (see the
+    implementation notes). An ONNX file and the tokenizer vocabulary in our
+    own HF repo only change when we change them.
+  - ONNX makes int8 quantisation easy (roughly 2.2 GB → ~600 MB for large),
+    and ONNX Runtime is usually faster than PyTorch on CPU, which is what
+    plugin users have.
+- **What a port involves:** `optimum` can export the encoder and decoder. The
+  real work is replacing what `transformers` does for us at inference: a
+  greedy generation loop with past key values, in numpy, and turning token
+  IDs back into text (byte-level BPE from `vocab.json`/`merges.txt`). Before
+  re-publishing Microsoft's weights as `PellelNitram/xournalpp-htr-trocr`,
+  check that the license allows it.
+- **Why not now:** TrOCR is an optional pipeline that is not clearly better
+  (see the assessment). Port it when it becomes something plugin users should
+  get easily: with the installation work in December, or if finetuning or a
+  larger benchmark makes it a clear winner. The port gets its own dated
+  pipeline.
+
+## 10. Pinning instead of porting (2026-10-09)
+
+Pinning keeps the `transformers`-based pipelines reproducible at almost no
+cost. It changes what they depend on, not their output.
+
+- **Model revisions:** `TrOCRModel.REVISION` and `TrOCRLargeModel.REVISION`
+  hold the commit hashes of `main` on 2026-10-05, the default for
+  `from_pretrained()`:
+  - `microsoft/trocr-base-handwritten`: `eaacaf452b06415df8f10bb6fad3a4c11e609406`
+  - `microsoft/trocr-large-handwritten`: `e68501f437cd2587ae5d68ee457964cac824ddee`
+- **Dependency:** the `trocr` extra requires `transformers>=5.17,<6`.
+  `uv.lock` already pins 5.17.0 exactly for anyone who syncs with it; the
+  range protects installs without the lockfile and makes a move to
+  transformers 6 a deliberate step.
+- **Detail found on the way:** `main` doesn't fully describe what was loaded.
+  For the large model, `transformers` fetched `model.safetensors` from
+  Hugging Face's automatic conversion pull request (`refs/pr/9`, commit
+  `527662d6…`), while everything else came from `main` (`e68501f4…`).
+- **Verification:**
+  - A SHA-256 over all weights (excluding the randomly initialised pooler) is
+    identical before and after pinning: base `d6f01051cd643840`, large
+    `bb54cfacc47c068b`.
+  - All three TrOCR pipelines rerun with the pinned code (commit `c5311d5`)
+    reproduce their benchmark numbers exactly (CER 50.8% / 42.1% / 29.3%,
+    word accuracy 29.6% / 37.3% / 48.5%).
+
+## CPU timing, measured by accident (2026-10-09)
+
+Since its reboot on 2026-10-08, `martin-l4` has had no working GPU: unattended
+upgrades installed kernel `7.0.0-1013-gcp`, but the NVIDIA module package
+stayed at `1011`, so PyTorch fell back to CPU. The stripping benchmark above
+and the pinned reruns therefore ran on CPU. Results are identical to the GPU
+runs, so CPU vs. GPU does not change the output.
+
+It gives a CPU latency measurement (4 vCPUs, Intel Xeon @ 2.2 GHz, roughly a
+modest laptop; 7 benchmark pages, ~229 word crops):
+
+| Model | Total recognition time | Per word | Slowest page |
+|---|---|---|---|
+| TrOCR base | 5.4 min | ~1.4 s | 2.7 min |
+| TrOCR large | 11.1 min | ~2.9 s | 5.5 min |
+
+A plugin user would wait several minutes for a single dense page with TrOCR
+large. This strengthens the assessment above: even at equal accuracy, TrOCR
+large in `transformers` on CPU is not practical as a default. SimpleHTR has not
+been timed on the same CPU yet.
+
