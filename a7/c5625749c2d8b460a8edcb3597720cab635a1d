@@ -1,0 +1,30 @@
+docs/user_guide.md
+  s_9536dc7f25382a::t_bce17905386877 69
+  s_9536dc7f25382a::t_510568cef95874 68
+pyproject.toml
+  s_9536dc7f25382a::t_bce17905386877 77
+docs/models/trocr.md
+  s_9536dc7f25382a::t_c27cb755be490d 1-172
+docs/architecture.md
+  s_9536dc7f25382a::t_bce17905386877 86-88
+docs/models/index.md
+  s_9536dc7f25382a::t_bce17905386877 19-21
+mkdocs.yml
+  s_9536dc7f25382a::t_bce17905386877 49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "a7c5625749c2d8b460a8edcb3597720cab635a1d",
+  "prompts": {},
+  "sessions": {
+    "s_9536dc7f25382a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "775c3c06-799a-43c1-b3a7-071be1776e29",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
