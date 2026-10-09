@@ -202,20 +202,72 @@ The regex for the stripping variant is `(\s+[.,;:!?'"]+)+$`, removed from the
 end of the prediction. Detokenization barely helps because the punctuation is
 invented, not just badly spaced.
 
-**Conclusion:** with a simple, defensible clean-up (strip punctuation that
+**Conclusion (offline):** with a simple clean-up (strip punctuation that
 TrOCR appends after a space), TrOCR large is estimated at **29.3% CER and
-48.5% word accuracy**. That beats the current best,
-`2026-10-05_yolo_detector_beam_vocab` (31.7%, 46.7%), with no finetuning.
-This is an offline estimate; it needs confirming in a real pipeline before it
-counts.
+48.5% word accuracy**, on par with the current best,
+`2026-10-05_yolo_detector_beam_vocab` (31.7%, 46.7%). Confirmed below in a
+real pipeline.
 
-Next steps:
+## 8. Stripping pipeline: `2026-10-09_yolo_detector_trocr_large_strip_punct`
 
-1. Add `2026-10-05_yolo_detector_trocr_large_strip_punct` (new pipeline, so
-   this one stays reproducible) with the stripping post-processing, and
-   confirm the estimate on the real benchmark.
-2. If confirmed, the decisions in sections 3 and 4 become relevant: TrOCR
-   large is slow on CPU (plugin users) and runs through `transformers`.
-   Measure CPU latency per page before committing to an ONNX port.
-3. Line-level input and finetuning (follow-ups 1 and 2 above) remain open and
-   would attack the remaining garbled words (`'chiefly' → 'clmolly .'`).
+- **Decision:** Add a pipeline that runs TrOCR large and then removes
+  punctuation appended after a space (`strip_appended_punctuation` in
+  `xournalpp_htr/inference_models.py`, regex `(\s+[.,;:!?'"]+)+$`).
+  Punctuation attached to a word (`thoughts:`) is kept. The function sits
+  outside `TrOCRModel`, so it can be unit-tested without `transformers`.
+- **Only large:** stripping helps base too (estimated 50.8% → 43.7% CER), but
+  base stays behind plain greedy SimpleHTR either way, so there is no base
+  stripping pipeline.
+- **Why ship it at all:** not because it is clearly better (see the
+  assessment below), but so users who want TrOCR can choose it.
+
+## Results: stripping pipeline (2026-10-09, `martin-l4`, commit `8b4791b`)
+
+`uv run python scripts/run_benchmark.py -p
+2026-10-09_yolo_detector_trocr_large_strip_punct --crop-analysis
+crop_analysis_trocr_large_strip_punct`. It reproduces the offline estimate
+exactly.
+
+| Pipeline | CER (case-insens.) | CER (case-sens.) | R×(1-CER) | Word Acc |
+|---|---|---|---|---|
+| `2026-09-02_yolo_detector` (SimpleHTR, greedy) | 34.4% | — | 52.5% | 39.1% (66/169) |
+| `2026-10-05_yolo_detector_beam_vocab` (SimpleHTR, beam + vocab) | 31.7% | — | 54.7% | 46.7% (79/169) |
+| `2026-10-05_yolo_detector_trocr` (TrOCR base) | 50.8% | 61.0% | 39.4% | 29.6% (50/169) |
+| `2026-10-05_yolo_detector_trocr_large` (TrOCR large) | 42.1% | 50.7% | 46.4% | 37.3% (63/169) |
+| `2026-10-09_yolo_detector_trocr_large_strip_punct` (TrOCR large + strip) | **29.3%** | 37.9% | **56.6%** | **48.5% (82/169)** |
+
+## Assessment: not convinced (2026-10-09)
+
+The stripping pipeline has the best numbers on paper, but that is not enough
+to make it the pipeline of record:
+
+- **The gain is within noise.** 82 vs. 79 correct words out of 169. The
+  standard error of word accuracy on 169 words is about ±3.8 points, so the
+  1.8-point gap is not meaningful. The CER gap (29.3% vs. 31.7%) is small too.
+  The benchmark dataset is small, and the gain may not carry over.
+- **The cost is large.** 558M parameters vs. 3.2M for SimpleHTR (~170×);
+  2.2 GB of float32 weights vs. a 13 MB ONNX file. TrOCR also decodes
+  autoregressively (one decoder pass per output token), so it is much slower,
+  especially on plugin users' CPUs.
+
+| Model | Parameters (encoder / decoder) | Weights |
+|---|---|---|
+| SimpleHTR | 3.2M | 13 MB (ONNX) |
+| TrOCR base | 334M (87M / 247M) | 1.3 GB (float32) |
+| TrOCR large | 558M (305M / 254M) | 2.2 GB (float32) |
+
+**Decision:** keep `2026-10-05_yolo_detector_beam_vocab` as the pipeline of
+record and offer `2026-10-09_yolo_detector_trocr_large_strip_punct` as an
+optional pipeline (needs the `trocr` extra). The convention-breaking decisions
+3 and 4 stay as they are; an ONNX port is not justified by this result.
+
+What would change the decision:
+
+1. **A larger benchmark** that shows a clear, significant gap in TrOCR's
+   favour.
+2. **Finetuning on our own word crops** (#150, #153), which should remove the
+   punctuation habit without post-processing and attack the remaining
+   garbled words (`'chiefly' → 'clmolly .'`).
+3. **Line-level input**, matching what the checkpoints were finetuned on.
+4. If any of these makes TrOCR the clear winner: measure CPU latency per page
+   and try float16 or int8 weights before an ONNX port.
