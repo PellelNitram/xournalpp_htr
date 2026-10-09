@@ -1,0 +1,14 @@
+docs/user_guide.md
+  h_de29a972ab2cda 22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "1962ef372d8e2615689cb4a919daee19281e1175",
+  "prompts": {},
+  "humans": {
+    "h_de29a972ab2cda": {
+      "author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
