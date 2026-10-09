@@ -13,6 +13,7 @@ is model lifecycle (loading and version introspection) only.
 """
 
 import json
+import re
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import ClassVar, List
@@ -254,6 +255,129 @@ class SimpleHTRModel(HFHubInferenceModel):
                 chars.append(self._charset[idx])
             prev = idx
         return "".join(chars)
+
+
+# Punctuation TrOCR appends after a space, e.g. "words ." or "Thanks ,".
+_APPENDED_PUNCTUATION = re.compile(r"""(\s+[.,;:!?'"]+)+$""")
+
+
+def strip_appended_punctuation(text: str) -> str:
+    """Remove punctuation that TrOCR appends to a word after a space.
+
+    The IAM checkpoints were finetuned on text lines, where punctuation is
+    space-separated, so on single word crops they often add a sentence-final
+    " ." or " ," (issue #156). Punctuation attached to the word, as in
+    "thoughts:", is kept.
+    """
+    return _APPENDED_PUNCTUATION.sub("", text).strip()
+
+
+class TrOCRModel(HFHubInferenceModel):
+    """Pretrained TrOCR word-recognition model, run with ``transformers``.
+
+    Exception to ADR 006: this is Microsoft's IAM-finetuned checkpoint, not
+    our own ONNX export, so we can measure whether TrOCR beats SimpleHTR
+    before investing in an export (issue #156). Needs the ``trocr`` extra;
+    ``transformers`` and ``torch`` are imported lazily so the base install
+    stays lean.
+    """
+
+    HF_REPO_ID = "microsoft/trocr-base-handwritten"
+    # Pinned so the pipelines keep loading the benchmarked files: we don't
+    # control Microsoft's repo, so `main` could change underneath us.
+    REVISION = "eaacaf452b06415df8f10bb6fad3a4c11e609406"  # main on 2026-10-05
+
+    # Generous for a single word crop, but leaves room for crops where the
+    # detector merged several words.
+    MAX_NEW_TOKENS = 32
+
+    def __init__(self, processor, model, device: str, revision: str):
+        super().__init__(revision)
+        self.processor = processor
+        self.model = model
+        self.device = device
+
+    @classmethod
+    def from_pretrained(cls, revision: str | None = None) -> "TrOCRModel":
+        """Load the checkpoint at ``revision``, by default the pinned
+        `REVISION`."""
+        revision = revision or cls.REVISION
+        try:
+            import torch
+            from transformers import (
+                AutoImageProcessor,
+                RobertaTokenizer,
+                TrOCRProcessor,
+                VisionEncoderDecoderModel,
+            )
+        except ImportError as e:
+            raise ImportError(
+                "TrOCRModel needs the `trocr` extra: `uv sync --extra trocr`."
+            ) from e
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        # Built from its parts: transformers 5 can't auto-load the tokenizer
+        # of this legacy repo (vocab.json + merges.txt, no tokenizer.json).
+        processor = TrOCRProcessor(
+            image_processor=AutoImageProcessor.from_pretrained(
+                cls.HF_REPO_ID, revision=revision
+            ),
+            tokenizer=RobertaTokenizer.from_pretrained(
+                cls.HF_REPO_ID, revision=revision
+            ),
+        )
+        model = VisionEncoderDecoderModel.from_pretrained(
+            cls.HF_REPO_ID, revision=revision
+        )
+        model.to(device).eval()
+        return cls(processor=processor, model=model, device=device, revision=revision)
+
+    def preprocess(self, image_grayscale: np.ndarray) -> np.ndarray:
+        """Resize a grayscale word image to the encoder's input size, as the
+        processor does (no aspect ratio preservation), before normalisation.
+
+        Returns:
+            (height, width) uint8 image, what the network sees (in grayscale).
+        """
+        size = self.processor.image_processor.size
+        return cv2.resize(image_grayscale, (size["width"], size["height"]))
+
+    def recognize_batch(
+        self, images_grayscale: list[np.ndarray], batch_size: int = 16
+    ) -> list[str]:
+        """Recognise text in grayscale word images, ``batch_size`` at a time."""
+        import torch
+
+        texts = []
+        for start in range(0, len(images_grayscale), batch_size):
+            batch = [
+                cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+                for image in images_grayscale[start : start + batch_size]
+            ]
+            pixel_values = self.processor(
+                images=batch, return_tensors="pt"
+            ).pixel_values.to(self.device)
+            with torch.inference_mode():
+                generated_ids = self.model.generate(
+                    pixel_values, max_new_tokens=self.MAX_NEW_TOKENS
+                )
+            decoded = self.processor.batch_decode(
+                generated_ids, skip_special_tokens=True
+            )
+            texts.extend(text.strip() for text in decoded)
+        return texts
+
+    def recognize(self, image_grayscale: np.ndarray) -> str:
+        """Recognise text in a grayscale word image."""
+        return self.recognize_batch([image_grayscale])[0]
+
+
+class TrOCRLargeModel(TrOCRModel):
+    """Largest handwritten TrOCR checkpoint (558M parameters vs. 334M for
+    base); same tokenizer and inference as `TrOCRModel`."""
+
+    HF_REPO_ID = "microsoft/trocr-large-handwritten"
+    REVISION = "e68501f437cd2587ae5d68ee457964cac824ddee"  # main on 2026-10-05
 
 
 class YOLOWordDetectorModel(HFHubInferenceModel):

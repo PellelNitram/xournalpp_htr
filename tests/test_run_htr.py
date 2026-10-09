@@ -78,3 +78,20 @@ def test_main_htr_pipeline_native(
     }
 
     export_xournalpp_to_pdf_with_htr(args)
+
+
+@pytest.mark.slow
+def test_main_yolo_detector_trocr(
+    get_path_to_minimal_test_data: Path, tmp_path: Path
+) -> None:
+    pytest.importorskip("transformers", reason="needs the `trocr` extra")
+    args = {
+        "input_file": get_path_to_minimal_test_data,
+        "output_file": tmp_path / Path("test_main_yolo_detector_trocr.pdf"),
+        "pipeline": "2026-10-05_yolo_detector_trocr",
+        "prediction_image_dir": None,
+        "show_predictions": False,
+        "small_text": False,
+    }
+
+    export_xournalpp_to_pdf_with_htr(args)

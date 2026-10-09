@@ -3,8 +3,8 @@
 For every predicted word box this writes:
 
 - ``*_crop.png``  -- the detector crop from the page render,
-- ``*_input.png`` -- that crop after SimpleHTR preprocessing (resized and
-  centered on the white canvas), i.e. exactly the network input,
+- ``*_input.png`` -- that crop after the recognizer's preprocessing (for
+  SimpleHTR resized and centered on the white canvas), i.e. the network input,
 - ``*_gt.png``    -- the ground truth word box cut from the same render, for
   comparison (matched words only; GT boxes span stroke centers, so a couple
   of pixels of padding are added to include the ink).

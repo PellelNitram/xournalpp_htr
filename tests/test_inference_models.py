@@ -11,6 +11,7 @@ from xournalpp_htr.inference_models import (
     HFHubInferenceModel,
     SimpleHTRModel,
     WordDetectorModel,
+    strip_appended_punctuation,
 )
 from xournalpp_htr.training.shared.bounding_box import BoundingBox
 
@@ -157,3 +158,25 @@ def test_simple_htr_onnx_roundtrip_offline(tmp_path: Path):
 
     text = model.recognize(img)
     assert isinstance(text, str)
+
+
+# --- TrOCR post-processing ---
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("words .", "words"),
+        ("Thanks ,", "Thanks"),
+        ("issues . ,", "issues"),
+        ('say "', "say"),
+        ("thoughts:", "thoughts:"),  # attached punctuation is kept
+        ("Xournal++", "Xournal++"),
+        ("li be", "li be"),  # only punctuation is stripped, not words
+        ("15 .", "15"),
+        (".", "."),
+        ("", ""),
+    ],
+)
+def test_strip_appended_punctuation(text, expected):
+    assert strip_appended_punctuation(text) == expected

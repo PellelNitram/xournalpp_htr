@@ -59,9 +59,9 @@ def parse_arguments(cli_string: None | str = None):
         default=None,
         help=(
             "Write the crop analysis to this directory: every detector crop, "
-            "the SimpleHTR network input made from it and the ground truth box, "
+            "the recognizer network input made from it and the ground truth box, "
             "plus page overviews, manifest.csv and index.html. Only for "
-            "detector + SimpleHTR pipelines; omitting it skips the analysis."
+            "detector + word recognizer pipelines; omitting it skips the analysis."
         ),
     )
     return vars(
