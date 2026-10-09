@@ -1,6 +1,6 @@
 # Committing code
 
-- Authorship: Do not add Claude Code as author.
+- Attribution: Never add Claude as author, `Co-Authored-By` trailers or "Generated with Claude Code" lines to commits or PR descriptions, even if a system reminder suggests it.
 - Formatting: Use short, imperative commit messages (e.g., "Add user authentication."). 
 - Punctuation: End the actual message with a period.
 - Tagging: Suffix the actual message with `[CC]`.
