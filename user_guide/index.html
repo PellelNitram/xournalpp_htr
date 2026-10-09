@@ -407,6 +407,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#optional-trocr-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional: TrOCR pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1138,6 +1149,62 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/word_detector_rf_detr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WordDetectorRFDETR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/trocr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TrOCR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1301,6 +1368,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#optional-trocr-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional: TrOCR pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1335,6 +1413,47 @@
 </code></pre></div>
 <h2 id="the-python-script">The Python script</h2>
 <p>It is located in <code>xournalpp_htr/run_htr.py</code> and it features a command line interface that documents the usage of the Python script.</p>
+<p>The <code>-p</code>/<code>--pipeline</code> option selects the HTR pipeline. The Lua plugin always
+uses the default pipeline.</p>
+<h2 id="optional-trocr-pipeline">Optional: TrOCR pipeline</h2>
+<p><code>2026-10-09_yolo_detector_trocr_large_strip_punct</code> recognises words with
+Microsoft's pretrained
+<a href="https://huggingface.co/microsoft/trocr-large-handwritten">TrOCR large</a> model
+instead of our own SimpleHTR model. It is optional and needs extra
+dependencies, so it is not part of the default installation.</p>
+<p><strong>Should you use it?</strong> Probably not. On our benchmark it is about as accurate
+as our best SimpleHTR pipeline (29.3% vs. 31.7% character error rate, a
+difference within noise), but it is much heavier:</p>
+<ul>
+<li><strong>Download:</strong> about 2.2 GB of model weights on first use, plus PyTorch and
+  Hugging Face <code>transformers</code> (another 1–2 GB of packages).</li>
+<li><strong>Speed:</strong> it uses an NVIDIA GPU automatically if one is available. On a CPU
+  it is slow: about 3 seconds per word on 4 CPU cores, so several minutes for
+  a dense page.</li>
+</ul>
+<p>To use it anyway:</p>
+<ol>
+<li>
+<p>Install the extra dependencies from the repository root:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>sync<span class="w"> </span>--extra<span class="w"> </span>trocr
+</code></pre></div>
+<p><code>uv sync</code> removes extras that you don't name, so list every extra you use
+(e.g. <code>uv sync --extra trocr --extra dev</code>).</p>
+</li>
+<li>
+<p>Select the pipeline with <code>-p</code> when running the Python script:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>xournalpp_htr/run_htr.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-if<span class="w"> </span>input.xopp<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-of<span class="w"> </span>output.pdf<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-p<span class="w"> </span><span class="m">2026</span>-10-09_yolo_detector_trocr_large_strip_punct
+</code></pre></div>
+<p>The first run downloads the model to the Hugging Face cache
+(<code>~/.cache/huggingface</code>); later runs reuse it.</p>
+</li>
+</ol>
+<p>The pipeline has been tested on Linux, with and without a GPU. The background
+to this experiment, including benchmark results and design decisions, is on
+the <a href="../models/trocr/">TrOCR model page</a> (issue #156).</p>
 
 
 
@@ -1357,7 +1476,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 7, 2026 02:07:48 BST">September 7, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 9, 2026 18:19:42 BST">October 9, 2026</span>
   </span>
 
     
@@ -1367,7 +1486,7 @@
     <span class="md-icon" title="Created">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 7, 2026 02:07:48 BST">September 7, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 30, 2024 21:36:11 GMT">November 30, 2024</span>
   </span>
 
     

@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../simple_htr/">
+        <link rel="prev" href="../word_detector_yolo/">
       
       
-        <link rel="next" href="../word_detector_rf_detr/">
+        <link rel="next" href="../trocr/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>WordDetectorYOLO - Xournal++ HTR</title>
+        <title>WordDetectorRFDETR - Xournal++ HTR</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#worddetectoryolo-model" class="md-skip">
+        <a href="#worddetectorrfdetr-model" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              WordDetectorYOLO
+              WordDetectorRFDETR
             
           </span>
         </div>
@@ -1045,6 +1045,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../word_detector_yolo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WordDetectorYOLO
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1064,7 +1092,7 @@
   <span class="md-ellipsis">
     
   
-    WordDetectorYOLO
+    WordDetectorRFDETR
   
 
     
@@ -1082,7 +1110,7 @@
   <span class="md-ellipsis">
     
   
-    WordDetectorYOLO
+    WordDetectorRFDETR
   
 
     
@@ -1208,10 +1236,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#8-upload-to-huggingface-hub" class="md-nav__link">
+  <a href="#8-validate-the-export-then-upload-to-huggingface-hub" class="md-nav__link">
     <span class="md-ellipsis">
       
-        8. Upload to HuggingFace Hub
+        8. Validate the export, then upload to HuggingFace Hub
       
     </span>
   </a>
@@ -1258,10 +1286,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#2026-09-04-hydra-sweep-experiment-2-and-baseline-re-run" class="md-nav__link">
+  <a href="#2026-09-17-onnx-export-inference-class-and-benchmark" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2026-09-04 -- Hydra sweep (experiment 2) and baseline re-run
+        2026-09-17 — ONNX export, inference class and benchmark
       
     </span>
   </a>
@@ -1269,10 +1297,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2026-09-02-initial-training" class="md-nav__link">
+  <a href="#2026-09-16-baseline-and-learning-rate-sweep" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2026-09-02 -- Initial training
+        2026-09-16 — Baseline and learning-rate sweep
       
     </span>
   </a>
@@ -1310,34 +1338,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../word_detector_rf_detr/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    WordDetectorRFDETR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -1613,10 +1613,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#8-upload-to-huggingface-hub" class="md-nav__link">
+  <a href="#8-validate-the-export-then-upload-to-huggingface-hub" class="md-nav__link">
     <span class="md-ellipsis">
       
-        8. Upload to HuggingFace Hub
+        8. Validate the export, then upload to HuggingFace Hub
       
     </span>
   </a>
@@ -1663,10 +1663,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#2026-09-04-hydra-sweep-experiment-2-and-baseline-re-run" class="md-nav__link">
+  <a href="#2026-09-17-onnx-export-inference-class-and-benchmark" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2026-09-04 -- Hydra sweep (experiment 2) and baseline re-run
+        2026-09-17 — ONNX export, inference class and benchmark
       
     </span>
   </a>
@@ -1674,10 +1674,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2026-09-02-initial-training" class="md-nav__link">
+  <a href="#2026-09-16-baseline-and-learning-rate-sweep" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2026-09-02 -- Initial training
+        2026-09-16 — Baseline and learning-rate sweep
       
     </span>
   </a>
@@ -1731,17 +1731,18 @@
   
 
 
-<h1 id="worddetectoryolo-model">WordDetectorYOLO model</h1>
-<p>YOLO-based word-level bounding-box detector, fine-tuned from
-<a href="https://github.com/ultralytics/ultralytics">YOLOv8s</a> on the IAM Handwriting
-Database. Integrated into Xournal++ HTR according to the
+<h1 id="worddetectorrfdetr-model">WordDetectorRFDETR model</h1>
+<p>RF-DETR-based word-level bounding-box detector, fine-tuned from
+<a href="https://github.com/roboflow/rf-detr">RF-DETR</a> on the IAM Handwriting
+Database. RF-DETR is a DETR-style transformer detector, so decoding is
+NMS-free — which is the main reason to try it next to the YOLO detector on
+densely packed text lines. Integrated into Xournal++ HTR according to the
 <a href="../ADRs/">ADRs</a> (in particular
 <a href="../../ADRs/006_model_registry_and_training_environment/">ADR 006</a> and
 <a href="../../ADRs/007_model_demos_local_only/">ADR 007</a>).</p>
 <p>The source lives under
-<a href="https://github.com/PellelNitram/xournalpp_htr/tree/master/xournalpp_htr/training/word_detector_yolo"><code>xournalpp_htr/training/word_detector_yolo/</code></a>.</p>
+<a href="https://github.com/PellelNitram/xournalpp_htr/tree/master/xournalpp_htr/training/word_detector_rf_detr"><code>xournalpp_htr/training/word_detector_rf_detr/</code></a>.</p>
 <h2 id="structure-adr-006">Structure (ADR 006)</h2>
-<p>This is no longer a standalone <code>uv</code> project; it is part of the main package.</p>
 <table>
 <thead>
 <tr>
@@ -1758,33 +1759,36 @@ Database. Integrated into Xournal++ HTR according to the
 </tr>
 <tr>
 <td><code>train.py</code></td>
-<td>Training entrypoint (Hydra CLI), includes dataset download + conversion</td>
-<td><code>training-word-detector-yolo</code></td>
+<td>Training entrypoint (Hydra CLI), includes dataset download + COCO conversion</td>
+<td><code>training-word-detector-rf-detr</code></td>
 </tr>
 <tr>
 <td><code>export.py</code></td>
 <td>ONNX + <code>config.json</code> export, HF Hub upload</td>
-<td><code>training-word-detector-yolo</code></td>
+<td><code>training-word-detector-rf-detr</code></td>
 </tr>
 <tr>
 <td><code>predict.py</code></td>
-<td>Local inference from a <code>.pt</code> checkpoint</td>
-<td><code>training-word-detector-yolo</code></td>
+<td>Local inference from a <code>.pth</code> checkpoint</td>
+<td><code>training-word-detector-rf-detr</code></td>
 </tr>
 <tr>
 <td><code>demo.py</code></td>
 <td>Local Gradio demo (run locally, not a HF Space, ADR 007)</td>
-<td><code>training-word-detector-yolo</code></td>
+<td><code>training-word-detector-rf-detr</code></td>
 </tr>
 <tr>
 <td><code>run_training.sh</code></td>
 <td>Hyperparameter sweep</td>
-<td><code>training-word-detector-yolo</code></td>
+<td><code>training-word-detector-rf-detr</code></td>
 </tr>
 </tbody>
 </table>
-<p>The HF-Hub-backed inference class lives in
-<code>xournalpp_htr/inference_models.py</code> as <code>YOLOWordDetectorModel</code>.</p>
+<p>The HF-Hub-backed inference class will live in
+<code>xournalpp_htr/inference_models.py</code> as <code>RFDETRWordDetectorModel</code>. It is <strong>not
+implemented yet</strong> — it is written once the ONNX export has been validated,
+because the post-processing depends on the exact output signature of the
+export.</p>
 <h2 id="gpu-training-setup-step-by-step">GPU training setup (step-by-step)</h2>
 <p>Prerequisites: a Linux machine with an NVIDIA GPU, CUDA drivers installed
 (<code>nvidia-smi</code> should work), and <code>uv</code> installed (<code>pip install uv</code>).</p>
@@ -1794,7 +1798,7 @@ Database. Integrated into Xournal++ HTR according to the
 bash<span class="w"> </span>INSTALL_LINUX.sh
 </code></pre></div>
 <h3 id="2-install-the-training-extra-with-cuda-pytorch">2. Install the training extra (with CUDA PyTorch)</h3>
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>sync<span class="w"> </span>--extra<span class="w"> </span>training-word-detector-yolo
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>sync<span class="w"> </span>--extra<span class="w"> </span>training-word-detector-rf-detr
 </code></pre></div>
 <p>Verify GPU access:</p>
 <div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"</span>
@@ -1803,105 +1807,156 @@ bash<span class="w"> </span>INSTALL_LINUX.sh
 <div class="highlight"><pre><span></span><code>make<span class="w"> </span>tests-not-slow
 </code></pre></div>
 <h3 id="4-authenticate-with-huggingface">4. Authenticate with HuggingFace</h3>
-<p>Required for downloading the training dataset and (later) uploading the
-exported model:</p>
+<p>Required for downloading the training dataset, for the pretrained RF-DETR
+backbone weights, and (later) for uploading the exported model:</p>
 <div class="highlight"><pre><span></span><code>hf<span class="w"> </span>auth<span class="w"> </span>login
 </code></pre></div>
 <h3 id="5-train">5. Train</h3>
 <p>Single training run (uses <a href="https://hydra.cc/">Hydra</a> for configuration):</p>
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>xournalpp_htr.training.word_detector_yolo.train<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>training.epochs<span class="o">=</span><span class="m">50</span><span class="w"> </span>training.batch<span class="o">=</span><span class="m">16</span><span class="w"> </span>training.lr0<span class="o">=</span><span class="m">0</span>.001
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>xournalpp_htr.training.word_detector_rf_detr.train<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>training.epochs<span class="o">=</span><span class="m">50</span><span class="w"> </span>training.batch_size<span class="o">=</span><span class="m">4</span><span class="w"> </span>training.lr<span class="o">=</span>1e-4
 </code></pre></div>
-<p>The dataset is downloaded and converted automatically on the first run.</p>
+<p>The dataset is downloaded and converted to COCO format automatically on the
+first run, into <code>dataset/train/</code> and <code>dataset/valid/</code> with an
+<code>_annotations.coco.json</code> per split.</p>
 <p>Show all configurable parameters and their defaults:</p>
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>xournalpp_htr.training.word_detector_yolo.train<span class="w"> </span>--cfg<span class="w"> </span>job
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>xournalpp_htr.training.word_detector_rf_detr.train<span class="w"> </span>--cfg<span class="w"> </span>job
 </code></pre></div>
-<p>Or run the full hyperparameter sweep:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>xournalpp_htr/training/word_detector_yolo
-bash<span class="w"> </span>run_training.sh
+<p>Or run all experiments via <code>run_training.sh</code>, which writes each run under
+<code>experiments/&lt;experiment&gt;/&lt;run&gt;/</code> together with its <code>train.log</code>:</p>
+<div class="highlight"><pre><span></span><code>bash<span class="w"> </span>xournalpp_htr/training/word_detector_rf_detr/run_training.sh
 </code></pre></div>
-<p>Results are written to <code>runs/detect/train_&lt;timestamp&gt;/</code>. Each run
-produces <code>weights/best.pt</code>, <code>results.csv</code>, and TensorBoard logs.</p>
+<p>The script <code>cd</code>s to its own directory, so it can be invoked from anywhere. Run
+it under <code>tmux</code> — it is the baseline plus a three-point learning-rate sweep,
+so hours, not minutes. To run a single configuration instead, call <code>train.py</code>
+directly with Hydra overrides as shown above.</p>
+<p>Two knobs differ from the YOLO detector and are worth knowing:</p>
+<ul>
+<li><strong>Effective batch size</strong> is <code>training.batch_size * training.grad_accum_steps</code>.
+  RF-DETR is tuned for a total of 16, so keep that product fixed when changing
+  either. The defaults are 8 × 2: measured at 1024px on a 23GB L4,
+  <code>batch_size=2</code> used only 5.5GB, so 8 leaves headroom and shortens epochs.</li>
+<li><strong><code>model.variant</code> depends on your installed <code>rfdetr</code>.</strong> Newer releases
+  dropped <code>base</code> in favour of <code>nano</code>/<code>small</code>/<code>medium</code>/<code>large</code>; the default
+  here is <code>medium</code>, the closest successor to the old <code>base</code>. List what your
+  install actually ships with:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from xournalpp_htr.training.word_detector_rf_detr.model_factory import available_variants; print(available_variants())"</span>
+</code></pre></div>
+<p>The <code>seg*</code> and <code>keypointpreview</code> entries in that list are segmentation and
+  keypoint models, not word-box detectors.
+- <strong><code>model.resolution</code> must be divisible by <code>patch_size * num_windows</code></strong>,
+  which is 32 for every detection variant in rfdetr 1.10.1. The default is
+  1024 — the same input resolution as the YOLO detector, so the two are
+  compared like for like, and well above the variant defaults (nano 384,
+  small 512, medium 576, large 704) because IAM words are small.
+  <code>model_factory.validate_resolution</code> reads the divisor off the model and
+  fails early, naming the nearest valid value.</p>
+<p>Results are written to <code>outputs/train_&lt;timestamp&gt;/</code>. Each run produces
+<code>checkpoint_best_total.pth</code>, <code>checkpoint_best_ema.pth</code>, periodic checkpoints
+and TensorBoard logs under <code>tb/</code>.</p>
 <p>Monitor training with TensorBoard (forward port 6006 if remote):</p>
-<div class="highlight"><pre><span></span><code>tensorboard<span class="w"> </span>--logdir<span class="w"> </span>runs/detect/<span class="w"> </span>--port<span class="w"> </span><span class="m">6006</span>
+<div class="highlight"><pre><span></span><code>tensorboard<span class="w"> </span>--logdir<span class="w"> </span>outputs/<span class="w"> </span>--port<span class="w"> </span><span class="m">6006</span>
 </code></pre></div>
 <h3 id="6-inspect-the-best-model">6. Inspect the best model</h3>
 <p>Use the Gradio demo to visually check detections:</p>
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>xournalpp_htr.training.word_detector_yolo.demo<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--model-path<span class="w"> </span>runs/detect/train_&lt;timestamp&gt;/weights/best.pt<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--device<span class="w"> </span>auto<span class="w"> </span>--share
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>xournalpp_htr.training.word_detector_rf_detr.demo<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--model-path<span class="w"> </span>outputs/train_&lt;timestamp&gt;/checkpoint_best_total.pth<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--share
 </code></pre></div>
 <h3 id="7-export-to-onnx">7. Export to ONNX</h3>
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>xournalpp_htr.training.word_detector_yolo.export<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--checkpoint<span class="w"> </span>runs/detect/train_&lt;timestamp&gt;/weights/best.pt<span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>xournalpp_htr.training.word_detector_rf_detr.export<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--checkpoint<span class="w"> </span>outputs/train_&lt;timestamp&gt;/checkpoint_best_total.pth<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--output-dir<span class="w"> </span>exports/
 </code></pre></div>
-<p>Produces <code>exports/model.onnx</code> and <code>exports/config.json</code>.</p>
-<h3 id="8-upload-to-huggingface-hub">8. Upload to HuggingFace Hub</h3>
-<p>Once satisfied with the model quality:</p>
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>xournalpp_htr.training.word_detector_yolo.export<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--checkpoint<span class="w"> </span>runs/detect/train_&lt;timestamp&gt;/weights/best.pt<span class="w"> </span><span class="se">\</span>
+<p>Produces <code>exports/model.onnx</code> and <code>exports/config.json</code>. Pass <code>--variant</code> and
+<code>--resolution</code> if the checkpoint was trained with non-default values.</p>
+<h3 id="8-validate-the-export-then-upload-to-huggingface-hub">8. Validate the export, then upload to HuggingFace Hub</h3>
+<p>Validate the ONNX export against the PyTorch checkpoint in a notebook first
+(see the conventions in <a href="../">the models overview</a>), then:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>xournalpp_htr.training.word_detector_rf_detr.export<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--checkpoint<span class="w"> </span>outputs/train_&lt;timestamp&gt;/checkpoint_best_total.pth<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--output-dir<span class="w"> </span>exports/<span class="w"> </span>--upload
 </code></pre></div>
-<p>Requires write access to <code>PellelNitram/xournalpp-htr-word-detector-yolo</code>.</p>
+<p>Requires write access to <code>PellelNitram/xournalpp-htr-word-detector-rf-detr</code>.</p>
 <h2 id="inference">Inference</h2>
-<p>Once <code>model.onnx</code> + <code>config.json</code> are on the Hub, inference uses
-<code>onnxruntime</code> only (no <code>ultralytics</code> dependency):</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">xournalpp_htr.inference_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">YOLOWordDetectorModel</span>
+<p>Inference uses <code>onnxruntime</code> only (no <code>rfdetr</code> dependency):</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">xournalpp_htr.inference_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">RFDETRWordDetectorModel</span>
 
-<span class="n">model</span> <span class="o">=</span> <span class="n">YOLOWordDetectorModel</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">()</span>
-<span class="n">boxes</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">detect</span><span class="p">(</span><span class="n">grayscale_image</span><span class="p">)</span>  <span class="c1"># list[BoundingBox]</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">RFDETRWordDetectorModel</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">()</span>
+<span class="n">boxes</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">detect</span><span class="p">(</span><span class="n">grayscale_image</span><span class="p">)</span>                  <span class="c1"># list[BoundingBox]</span>
+<span class="n">boxes</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">detect</span><span class="p">(</span><span class="n">grayscale_image</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>  <span class="c1"># lower = more boxes</span>
 </code></pre></div>
-<p>WordDetectorYOLO is detection-only: it produces word bounding boxes but no
-transcription. The <code>2026-09-02_yolo_detector</code> benchmark pipeline pairs it
-with <code>SimpleHTRModel</code> for end-to-end HTR.</p>
+<p>Decoding mirrors <code>rfdetr.models.postprocess.PostProcess</code>: sigmoid over the
+class logits, flatten across (query, class), stable top-300 selection, then
+<code>cxcywh</code> → <code>xyxy</code> scaled by the original image size. There is <strong>no NMS</strong> —
+RF-DETR's Hungarian matching makes each of its 300 object queries responsible
+for at most one object, unlike the YOLO detector which needs explicit
+suppression. The square resize is deliberate and must not be replaced with
+letterboxing: boxes are normalised to the resized frame and mapped back by
+multiplying with the original width and height, so padding would break the
+mapping.</p>
+<p>Like WordDetectorYOLO, this model is detection-only: it produces word
+bounding boxes but no transcription. The <code>2026-09-17_rf_detr_detector</code>
+benchmark pipeline pairs it with <code>SimpleHTRModel</code> for end-to-end HTR.</p>
 <h2 id="best-model">Best model</h2>
-<p>Experiment 1 baseline (<code>experiments/experiment1/baseline/</code>), exported to
-ONNX and uploaded to
-<a href="https://huggingface.co/PellelNitram/xournalpp-htr-word-detector-yolo">PellelNitram/xournalpp-htr-word-detector-yolo</a>.</p>
-<p>Benchmark results (<code>2026-09-02_yolo_detector</code> pipeline, ONNX inference):</p>
+<p><code>experiments/experiment1/baseline/train_20260916_115415/checkpoint_best_total.pth</code>
+— exported to ONNX and uploaded to
+<a href="https://huggingface.co/PellelNitram/xournalpp-htr-word-detector-rf-detr">PellelNitram/xournalpp-htr-word-detector-rf-detr</a>.</p>
+<p><strong>This is not the detector the project uses.</strong> It loses to WordDetectorYOLO on
+recall by a wide margin on the benchmark dataset (66.8% vs 80.1%), so
+<code>2026-09-02_yolo_detector</code> remains the pipeline of record. The RF-DETR
+checkpoint is published so the <code>2026-09-17_rf_detr_detector</code> pipeline is
+reproducible, not because it is recommended.</p>
+<p>Benchmark results (<code>2026-09-17_rf_detr_detector</code> pipeline, ONNX inference,
+211 ground-truth words), with the YOLO detector alongside for comparison:</p>
 <table>
 <thead>
 <tr>
 <th>Metric</th>
-<th>Value</th>
+<th>RF-DETR</th>
+<th>WordDetectorYOLO</th>
 </tr>
 </thead>
 <tbody>
 <tr>
+<td>Recall</td>
+<td>66.8%</td>
+<td><strong>80.1%</strong></td>
+</tr>
+<tr>
 <td>Precision</td>
+<td>77.9%</td>
 <td>73.8%</td>
 </tr>
 <tr>
-<td>Recall</td>
-<td>80.1%</td>
-</tr>
-<tr>
 <td>CER (case-sensitive)</td>
+<td><strong>37.1%</strong></td>
 <td>34.9%</td>
 </tr>
 <tr>
 <td>CER (case-insensitive)</td>
-<td>34.4%</td>
+<td>36.4%</td>
+<td><strong>34.4%</strong></td>
 </tr>
 <tr>
 <td>Recall × (1 − CER_ci)</td>
-<td>52.5%</td>
+<td>42.5%</td>
+<td><strong>52.5%</strong></td>
 </tr>
 <tr>
 <td>Word accuracy</td>
+<td><strong>41.8%</strong></td>
 <td>39.1%</td>
 </tr>
 <tr>
 <td>Predicted words</td>
+<td>181</td>
 <td>229</td>
 </tr>
 <tr>
-<td>GT words</td>
-<td>211</td>
-</tr>
-<tr>
 <td>Matched</td>
+<td>141</td>
 <td>169</td>
 </tr>
 </tbody>
@@ -1909,40 +1964,147 @@ ONNX and uploaded to
 <h2 id="experiments">Experiments</h2>
 <!-- Add new experiments below, newest first. -->
 
-<h3 id="2026-09-04-hydra-sweep-experiment-2-and-baseline-re-run">2026-09-04 -- Hydra sweep (experiment 2) and baseline re-run</h3>
+<h3 id="2026-09-17-onnx-export-inference-class-and-benchmark">2026-09-17 — ONNX export, inference class and benchmark</h3>
 <ul>
-<li><strong>Goal:</strong> compare batch size (8, 16) and learning rate (0.0005, 0.001).</li>
-<li><strong>Setup:</strong> same as initial training, Hydra config, output to
-  <code>experiments/experiment2/</code>.</li>
-<li><strong>Results:</strong> all four runs performed very similarly to the baseline.
-  Experiment 1 baseline selected for deployment.</li>
-<li><strong>Selected checkpoint:</strong>
-  <code>experiments/experiment1/baseline/train_20260904_223247/weights/best.pt</code></li>
+<li><strong>Hypothesis:</strong> the IAM validation scores (96.2% recall) carry over to the
+  Xournal++ benchmark dataset, beating WordDetectorYOLO on recall.</li>
+<li><strong>Setup:</strong> <code>checkpoint_best_total.pth</code> from the 2026-09-16 baseline run,
+  exported at 1024px with <code>fp16=False</code>; new <code>RFDETRWordDetectorModel</code>
+  (onnxruntime only) and <code>2026-09-17_rf_detr_detector</code> pipeline.</li>
+<li><strong>Command:</strong> <code>uv run python scripts/run_benchmark.py -p 2026-09-17_rf_detr_detector</code></li>
+<li><strong>Results:</strong> <strong>the hypothesis is wrong.</strong> Recall collapses from 96.2% on the
+  IAM validation split to 66.8% on the benchmark — the worst of all four
+  pipelines, below even the 2024 baseline. The model predicts 181 boxes
+  against 211 ground-truth words, so it under-detects rather than
+  mis-localising. On the words it does find it is the best of the four
+  (word accuracy 41.8%, lowest detector CER), so its boxes crop well for
+  SimpleHTR; there are simply too few of them.</li>
+<li><strong>Validation:</strong> the ONNX decode was checked against the PyTorch checkpoint on
+  five validation images — identical box counts, mean IoU 0.998, worst 0.967.
+  The YOLO row of the same benchmark sweep reproduced its documented figures
+  exactly, so the harness is sound and the gap is real.</li>
+<li><strong>Conclusion:</strong> a domain gap between IAM forms and rendered Xournal++
+  documents, not a training or export defect. Both detectors saw the same IAM
+  data, so the transformer appears to generalise off-distribution less well
+  here than the convolutional detector. The cheapest untried remedy is a
+  confidence-threshold sweep (0.5 is conservative and needs no retraining);
+  after that, training on rendered data (issue #150).</li>
 </ul>
-<h3 id="2026-09-02-initial-training">2026-09-02 -- Initial training</h3>
+<h3 id="2026-09-16-baseline-and-learning-rate-sweep">2026-09-16 — Baseline and learning-rate sweep</h3>
 <ul>
-<li><strong>Goal:</strong> establish a baseline with YOLOv8s fine-tuned on IAM.</li>
-<li><strong>Setup:</strong> IAM-DB from HF Hub, 85/15 train/val split (seed 42),
-  YOLOv8s pretrained, lr0=0.001, batch=16, imgsz=1024, 50 epochs,
-  patience=10, AdamW optimizer, mosaic=0.5.</li>
-<li><strong>Command:</strong> <code>uv run python train.py --device 0</code> (pre-Hydra version).</li>
-<li><strong>Results:</strong> YOLO detector achieves the highest recall (80.1%) among
-  all pipelines, at the cost of lower precision due to more predicted
-  boxes (229 vs ~190).</li>
-<li><strong>Conclusion:</strong> YOLO is a viable word detector for this task.</li>
+<li><strong>Hypothesis:</strong> RF-DETR fine-tuned on IAM is a viable word detector, and the
+  learning rate is worth tuning.</li>
+<li><strong>Setup:</strong> RFDETRMedium @ 1024px, IAM-DB from HF Hub converted to COCO,
+  85/15 split (seed 42, 1309 train / 230 val forms, ~75 words per image),
+  batch 8 × grad-accum 2, 50 epochs, on an L4. Four runs: baseline plus
+  lr ∈ {5e-5, 1e-4, 2e-4}. ~2.5 h each.</li>
+<li><strong>Command:</strong> <code>bash run_training.sh</code></li>
+<li><strong>Results</strong> (best-recall epoch, IAM validation split):</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>LR</th>
+<th>Best ep.</th>
+<th>Recall</th>
+<th>Precision</th>
+<th>mAP@50</th>
+<th>mAP@50:95</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>experiment1/baseline</td>
+<td>1e-4</td>
+<td>33</td>
+<td>96.19%</td>
+<td>96.84%</td>
+<td>97.04%</td>
+<td>89.47%</td>
+</tr>
+<tr>
+<td>experiment2/lr5e-5</td>
+<td>5e-5</td>
+<td>35</td>
+<td>96.20%</td>
+<td>96.63%</td>
+<td>96.92%</td>
+<td>89.19%</td>
+</tr>
+<tr>
+<td>experiment2/lr1e-4</td>
+<td>1e-4</td>
+<td>43</td>
+<td>96.45%</td>
+<td>96.79%</td>
+<td>97.15%</td>
+<td>89.92%</td>
+</tr>
+<tr>
+<td>experiment2/lr2e-4</td>
+<td>2e-4</td>
+<td>44</td>
+<td>96.39%</td>
+<td>96.80%</td>
+<td>97.09%</td>
+<td>89.95%</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>The sweep is inconclusive.</strong> <code>config.py</code> already defaults to lr=1e-4, so
+  <code>experiment2/lr1e-4</code> re-ran the baseline configuration; with <code>seed=None</code> the
+  two are independent replicates. They are also the two extremes of the table,
+  so run-to-run variance is at least as large as any learning-rate effect.
+  Treat lr=1e-4 topping the table as noise, not a finding.</li>
+<li><strong>Best model:</strong> <code>experiments/experiment1/baseline/train_20260916_115415/checkpoint_best_total.pth</code>
+  — recall 96.19% on the IAM validation split. Selected over the marginally
+  higher <code>lr1e-4</code> run because they are the same configuration and <code>baseline</code>
+  is the honest provenance.</li>
+<li><strong>Conclusion:</strong> recall peaks mid-training (epochs 33–44) and drifts down
+  while precision rises, so late epochs trade away the metric we care about.
+  <code>best_model_metric='map'</code> therefore does not select the best-recall epoch.
+  Learning rate is not a useful knob in [5e-5, 2e-4].</li>
 </ul>
 <h2 id="current-status">Current status</h2>
-<p>Training, ONNX export, HF Hub upload, demo and lean ONNX inference (no
-ultralytics dependency) are fully implemented. The model has been
-benchmarked against the existing pipelines and shows the best recall and
-CER. Hydra config and experiment management are in place.</p>
+<p>Fully implemented and benchmarked: training, ONNX export, HF Hub upload, demo,
+and lean ONNX inference via <code>RFDETRWordDetectorModel</code> (no <code>rfdetr</code> dependency).
+The <code>2026-09-17_rf_detr_detector</code> benchmark pipeline pairs it with
+<code>SimpleHTRModel</code>.</p>
+<p><strong>The model is not in production use</strong> — WordDetectorYOLO beats it on recall on
+the benchmark dataset, and the project stays on <code>2026-09-02_yolo_detector</code>.</p>
+<p>Notes for anyone picking this up:</p>
+<ul>
+<li>Verified against <strong>rfdetr 1.10.1</strong>. That release dropped the <code>base</code> variant
+  for nano/small/medium/large, requires the resolution to be a multiple of
+  <code>patch_size * num_windows</code> (32, not the 56 older docs mention), and keeps its
+  training and ONNX dependencies behind the <code>train</code> and <code>onnx</code> extras.</li>
+<li>rfdetr 1.10.1 is built on PyTorch Lightning and writes its own TensorBoard
+  logs via <code>tensorboard=True</code>. Its <code>model.callbacks</code> dict still exists but is
+  <strong>never invoked</strong>, so a hook registered there fails silently rather than
+  erroring.</li>
+<li>The exported classifier has two classes, but <code>word</code> is index <strong>0</strong>: RF-DETR
+  does not carry the Roboflow COCO category ids through to the model, and index
+  1 is never trained (it peaks at a 0.008 score). Getting this wrong makes
+  <code>detect()</code> return nothing at all.</li>
+<li><code>export.py</code> forces <code>fp16=False</code>; rfdetr defaults to fp16, which onnxruntime
+  handles poorly on CPU.</li>
+<li>The IAM XML parsing in <code>train.py</code> is duplicated from the YOLO detector's
+  <code>train.py</code>; it is a candidate for <code>xournalpp_htr/training/shared/</code>.</li>
+<li><code>uv.lock</code> has not been updated for the <code>training-word-detector-rf-detr</code>
+  extra, so a fresh clone will re-resolve it.</li>
+</ul>
 <h2 id="outlook">Outlook</h2>
 <ul>
-<li>Confidence threshold sweep for precision/recall trade-off.</li>
-<li>Try YOLOv8m or larger variants.</li>
-<li>Increase imgsz to 1280 for better small-word detection.</li>
-<li>Augmentation tuning (mosaic strength, scale range).</li>
-<li>Validate ONNX export against PyTorch checkpoint with a Jupyter notebook.</li>
+<li>Confidence-threshold sweep — 0.5 is conservative and costs nothing to change,
+  so this is the cheapest shot at recovering the missing recall.</li>
+<li>Train on rendered Xournal++ data rather than IAM forms alone (issue #150),
+  which targets the domain gap directly.</li>
+<li>Set <code>best_model_metric</code> to a recall-based metric, since mAP selects a
+  checkpoint from the epochs where recall is already declining.</li>
+<li>Try <code>model.variant=large</code> and higher <code>model.resolution</code>.</li>
+<li>Lift the shared IAM XML parsing into <code>xournalpp_htr/training/shared/</code>.</li>
 </ul>
 
 
@@ -1966,7 +2128,7 @@ CER. Hydra config and experiment management are in place.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 6, 2026 00:43:19 BST">September 6, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 18, 2026 19:23:18 BST">September 18, 2026</span>
   </span>
 
     
@@ -1976,7 +2138,7 @@ CER. Hydra config and experiment management are in place.</p>
     <span class="md-icon" title="Created">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 4, 2026 01:35:14 BST">September 4, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 16, 2026 09:56:08 BST">September 16, 2026</span>
   </span>
 
     
