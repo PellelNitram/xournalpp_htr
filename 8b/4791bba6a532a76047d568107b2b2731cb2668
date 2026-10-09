@@ -1,0 +1,24 @@
+xournalpp_htr/models.py
+  s_9536dc7f25382a::t_d86f30cb08858a 21,45,403,411,413-417,464-465
+tests/test_inference_models.py
+  s_9536dc7f25382a::t_d86f30cb08858a 14,161-182
+xournalpp_htr/inference_models.py
+  s_9536dc7f25382a::t_d86f30cb08858a 16,260-272
+  s_9536dc7f25382a::t_6417dd09ad0e4d 273-274
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "8b4791bba6a532a76047d568107b2b2731cb2668",
+  "prompts": {},
+  "sessions": {
+    "s_9536dc7f25382a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "775c3c06-799a-43c1-b3a7-071be1776e29",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
