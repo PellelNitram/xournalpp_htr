@@ -283,6 +283,9 @@ class TrOCRModel(HFHubInferenceModel):
     """
 
     HF_REPO_ID = "microsoft/trocr-base-handwritten"
+    # Pinned so the pipelines keep loading the benchmarked files: we don't
+    # control Microsoft's repo, so `main` could change underneath us.
+    REVISION = "eaacaf452b06415df8f10bb6fad3a4c11e609406"  # main on 2026-10-05
 
     # Generous for a single word crop, but leaves room for crops where the
     # detector merged several words.
@@ -295,7 +298,10 @@ class TrOCRModel(HFHubInferenceModel):
         self.device = device
 
     @classmethod
-    def from_pretrained(cls, revision: str = "main") -> "TrOCRModel":
+    def from_pretrained(cls, revision: str | None = None) -> "TrOCRModel":
+        """Load the checkpoint at ``revision``, by default the pinned
+        `REVISION`."""
+        revision = revision or cls.REVISION
         try:
             import torch
             from transformers import (
@@ -371,6 +377,7 @@ class TrOCRLargeModel(TrOCRModel):
     base); same tokenizer and inference as `TrOCRModel`."""
 
     HF_REPO_ID = "microsoft/trocr-large-handwritten"
+    REVISION = "e68501f437cd2587ae5d68ee457964cac824ddee"  # main on 2026-10-05
 
 
 class YOLOWordDetectorModel(HFHubInferenceModel):
