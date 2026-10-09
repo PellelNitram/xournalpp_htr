@@ -1,0 +1,16 @@
+DECISIONS.md
+  h_de29a972ab2cda 205,207-273
+docs/architecture.md
+  h_de29a972ab2cda 88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "82327a2ae3418966669b5034e6242a34b5dd7aa9",
+  "prompts": {},
+  "humans": {
+    "h_de29a972ab2cda": {
+      "author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
