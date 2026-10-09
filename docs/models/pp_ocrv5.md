@@ -45,7 +45,11 @@ uv run --extra ppocr python scripts/run_benchmark.py -p 2026-10-09_ppocrv5_det_r
 
 ## Best model
 
-Not yet benchmarked.
+Neither pipeline replaces the default. The recognizer-only pipeline
+`2026-10-09_yolo_detector_ppocrv5` has the lowest CER of all pipelines
+(**28.4%** case-insensitive) but a lower word accuracy (**42.0%**) than
+SimpleHTR (46.7%) and TrOCR large (48.5%); see
+[Experiments](#experiments).
 
 ## Experiments
 
@@ -54,17 +58,37 @@ Not yet benchmarked.
 - **Hypothesis:** PP-OCRv5 beats SimpleHTR (CER 31.7%, word accuracy 46.7%,
   `2026-10-05_yolo_detector_beam_vocab`) on handwritten word crops, and
   possibly works without our YOLO detector.
-- **Setup:** benchmark dataset `latest`; code revision: fill in.
-- **Command:** see [Inference](#inference).
-- **Results:** TODO.
-- **Best model:** TODO.
-- **Conclusion:** TODO.
+- **Setup:** benchmark dataset `latest`; code revision `712027d`; CPU only.
+  Mobile English recognition model and mobile detection model of
+  PP-OCRv5.
+- **Command:** `uv run --extra ppocr python scripts/run_benchmark.py -p <pipeline>`.
+- **Results:**
+
+| Pipeline | Precision | Recall | CER (case-insens.) | CER (case-sens.) | R×(1-CER) | Word Acc |
+|---|---|---|---|---|---|---|
+| `2026-10-05_yolo_detector_beam_vocab` (SimpleHTR, for reference) | 73.8% | 80.1% | 31.7% | n/a | n/a | 46.7% |
+| `2026-10-09_yolo_detector_trocr_large_strip_punct` (for reference) | 73.8% | 80.1% | 29.3% | 37.9% | 56.6% | 48.5% (82/169) |
+| `2026-10-09_yolo_detector_ppocrv5` (recognizer only) | 73.8% | 80.1% | **28.4%** | 29.4% | **57.3%** | 42.0% (71/169) |
+| `2026-10-09_ppocrv5_det_rec` (detector + recognizer) | 71.1% | 50.2% | 29.8% | 30.2% | 35.2% | 42.5% (45/106) |
+
+  The last row's CER and word accuracy cover only the 106 matched words, so
+  they flatter it.
+- **Best model:** `2026-10-09_yolo_detector_ppocrv5` — CER 28.4%
+  (case-insensitive), R×(1-CER) 57.3%, but not the overall best: its word
+  accuracy is below SimpleHTR and TrOCR large. Not the pipeline of record.
+- **Conclusion:**
+    - As a recogniser, PP-OCRv5 (8 MB, ONNX) has the lowest CER, but the
+      gain over SimpleHTR (about 3 points) is likely within noise on 169
+      words, and word accuracy is lower. No reason to replace SimpleHTR.
+    - As a full pipeline it finds far fewer words than our YOLO detector
+      (recall 50.2% vs. 80.1%), so detection is the weak part.
+    - Next: the server variants and PP-OCRv6, if worth the effort.
 
 ## Current status
 
 - `PPOCRv5Model` implemented with `recognize`, `recognize_batch` and
   `read_page`; both pipelines are wired into `compute_predictions`.
-- Not yet benchmarked.
+- Benchmarked; see [Experiments](#experiments).
 - PP-OCRv5 is trained mostly on printed text, so handwriting accuracy is
   uncertain. The online demo check (stage 1 of issue #157) was done separately.
 - `2026-10-09_ppocrv5_det_rec` is not in `CROP_RECORDING_PIPELINES`: it has no
@@ -72,5 +96,4 @@ Not yet benchmarked.
 
 ## Outlook
 
-- Fill in the benchmark results above.
 - Try the server variants and `PP-OCRv6` (both supported by `rapidocr`).
