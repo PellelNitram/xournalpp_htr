@@ -6714,7 +6714,7 @@ requires-dist = [
     { name = "torchvision", marker = "extra == 'training-word-detector-rf-detr'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torchvision", marker = "extra == 'training-word-detector-yolo'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "tqdm" },
-    { name = "transformers", marker = "extra == 'trocr'" },
+    { name = "transformers", marker = "extra == 'trocr'", specifier = ">=5.17,<6" },
     { name = "ultralytics", marker = "extra == 'training-word-detector-yolo'" },
 ]
 provides-extras = ["hf", "training-word-detector", "training-simple-htr", "training-word-detector-yolo", "training-word-detector-rf-detr", "trocr", "dev"]
