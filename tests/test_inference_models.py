@@ -180,3 +180,44 @@ def test_simple_htr_onnx_roundtrip_offline(tmp_path: Path):
 )
 def test_strip_appended_punctuation(text, expected):
     assert strip_appended_punctuation(text) == expected
+
+
+# --- PP-OCRv5 ---
+
+
+@pytest.fixture(scope="module")
+def ppocrv5_model():
+    pytest.importorskip("rapidocr", reason="needs the `ppocr` extra")
+    from xournalpp_htr.inference_models import PPOCRv5Model
+
+    return PPOCRv5Model.from_pretrained()
+
+
+@pytest.mark.slow
+def test_ppocrv5_preprocess_keeps_aspect_ratio(ppocrv5_model):
+    img = np.full((96, 200), 255, dtype=np.uint8)
+    out = ppocrv5_model.preprocess(img)
+    assert out.shape == (48, 100)
+
+
+@pytest.mark.slow
+def test_ppocrv5_recognize_returns_string(ppocrv5_model):
+    img = np.full((48, 150), 255, dtype=np.uint8)
+    assert isinstance(ppocrv5_model.recognize(img), str)
+
+
+@pytest.mark.slow
+def test_ppocrv5_read_page_blank_page_is_empty(ppocrv5_model):
+    img = np.full((200, 400), 255, dtype=np.uint8)
+    assert ppocrv5_model.read_page(img) == []
+
+
+@pytest.mark.slow
+def test_ppocrv5_read_page_finds_printed_words(ppocrv5_model):
+    import cv2
+
+    img = np.full((120, 600), 255, dtype=np.uint8)
+    cv2.putText(img, "Hello big world", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 2, 0, 3)
+    words = ppocrv5_model.read_page(img)
+    assert "big" in [text for text, _ in words]
+    assert all(isinstance(box, BoundingBox) for _, box in words)

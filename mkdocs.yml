@@ -47,6 +47,7 @@ nav:
     - WordDetectorYOLO: 'models/word_detector_yolo.md'
     - WordDetectorRFDETR: 'models/word_detector_rf_detr.md'
     - TrOCR: 'models/trocr.md'
+    - PP-OCRv5: 'models/pp_ocrv5.md'
   - Contributing: 'contributing.md'
   - Issue Labels: 'labels.md'
   - Roadmap: 'roadmap.md'

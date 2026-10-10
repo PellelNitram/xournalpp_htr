@@ -81,6 +81,12 @@ trocr = [
     # to a new major version deliberately.
     "transformers>=5.17,<6",
 ]
+# Inference-only exception to ADR 006: PP-OCRv5 runs as ONNX through `rapidocr`,
+# which downloads the weights itself (issue #157, see docs/models/pp_ocrv5.md).
+# Only the `*_ppocrv5*` pipelines need it.
+ppocr = [
+    "rapidocr>=3.10,<4",
+]
 dev = [
     "jupyter",
 ]

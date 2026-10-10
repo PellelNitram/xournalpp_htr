@@ -380,6 +380,101 @@ class TrOCRLargeModel(TrOCRModel):
     REVISION = "e68501f437cd2587ae5d68ee457964cac824ddee"  # main on 2026-10-05
 
 
+class PPOCRv5Model:
+    """PaddlePaddle's PP-OCRv5 text recognition, run as ONNX through ``rapidocr``.
+
+    Pretrained and used as is (issue #157); like TrOCR (issue #156) it is not
+    our own export, so it does not follow ADR 006's HF Hub layout. Weights are
+    downloaded by ``rapidocr`` on first use. Needs the ``ppocr`` extra;
+    ``rapidocr`` is imported lazily so the base install stays lean.
+
+    Two modes, as the recogniser can run alone or behind PP-OCRv5's own text
+    detector:
+
+    - `recognize` / `recognize_batch`: recognition only, on word crops cut by
+      another detector (e.g. YOLO).
+    - `read_page`: detection and recognition on a whole page.
+    """
+
+    # Height the recognition network resizes its input to.
+    REC_INPUT_HEIGHT = 48
+
+    def __init__(self, rec_engine, page_engine):
+        # Separate engines: a `RapidOCR` call with `use_det=False` leaves the
+        # engine in recognition-only mode for later calls.
+        self.rec_engine = rec_engine
+        self.page_engine = page_engine
+
+    @classmethod
+    def from_pretrained(cls) -> "PPOCRv5Model":
+        try:
+            from rapidocr import LangRec, ModelType, OCRVersion, RapidOCR
+        except ImportError as e:
+            raise ImportError(
+                "PPOCRv5Model needs the `ppocr` extra: `uv sync --extra ppocr`."
+            ) from e
+
+        params = {
+            "Det.ocr_version": OCRVersion.PPOCRV5,
+            "Det.model_type": ModelType.MOBILE,
+            "Rec.ocr_version": OCRVersion.PPOCRV5,
+            "Rec.lang_type": LangRec.EN,
+            "Rec.model_type": ModelType.MOBILE,
+        }
+        return cls(RapidOCR(params=params), RapidOCR(params=params))
+
+    def preprocess(self, image_grayscale: np.ndarray) -> np.ndarray:
+        """Resize a grayscale word image to the recognition input height,
+        keeping the aspect ratio.
+
+        Returns:
+            (REC_INPUT_HEIGHT, width) uint8 image, what the network sees (in
+            grayscale).
+        """
+        h, w = image_grayscale.shape[:2]
+        new_w = max(1, round(w * self.REC_INPUT_HEIGHT / h))
+        return cv2.resize(image_grayscale, (new_w, self.REC_INPUT_HEIGHT))
+
+    def recognize(self, image_grayscale: np.ndarray) -> str:
+        """Recognise text in a grayscale word image, without detection."""
+        result = self.rec_engine(
+            image_grayscale, use_det=False, use_cls=False, use_rec=True
+        )
+        return " ".join(result.txts) if result.txts else ""
+
+    def recognize_batch(self, images_grayscale: list[np.ndarray]) -> list[str]:
+        return [self.recognize(image) for image in images_grayscale]
+
+    def read_page(self, image_grayscale: np.ndarray) -> list[tuple[str, BoundingBox]]:
+        """Detect and recognise words on a whole page.
+
+        PP-OCRv5 detects text lines; ``rapidocr`` splits them into words, which
+        are returned with axis-aligned boxes.
+        """
+        result = self.page_engine(image_grayscale, return_word_box=True)
+        words = []
+        if not result.txts:  # nothing detected; word_results is then degenerate
+            return words
+        for line in result.word_results or ():
+            for text, _score, quad in line:
+                if not text.strip() or quad is None:
+                    continue
+                xs = [point[0] for point in quad]
+                ys = [point[1] for point in quad]
+                words.append(
+                    (
+                        text,
+                        BoundingBox(
+                            x_min=float(min(xs)),
+                            y_min=float(min(ys)),
+                            x_max=float(max(xs)),
+                            y_max=float(max(ys)),
+                        ),
+                    )
+                )
+        return words
+
+
 class YOLOWordDetectorModel(HFHubInferenceModel):
     """YOLO-based word-detection model, loaded from HF Hub as ONNX.
 

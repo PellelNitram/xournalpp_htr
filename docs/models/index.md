@@ -19,6 +19,8 @@ model.
 - [TrOCR](trocr.md) — Microsoft's pretrained word-level text recognition,
   evaluated against SimpleHTR; optional, runs through `transformers`
   (exception to ADR 006).
+- [PP-OCRv5](pp_ocrv5.md) — PaddlePaddle's pretrained text recognition and
+  detection, run as ONNX through `rapidocr`; optional (exception to ADR 006).
 
 New models added in the future should follow the same structure: a page under
 `docs/models/<model_name>.md` linked from this index and from the `Models`
