@@ -1316,6 +1316,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/pp_ocrv5/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PP-OCRv5
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1689,6 +1717,8 @@
 <li><code>2026-10-05_yolo_detector_trocr</code> -- <code>2026-09-02_yolo_detector</code> with Microsoft's pretrained TrOCR (<code>microsoft/trocr-base-handwritten</code>, <code>TrOCRModel</code>) in place of SimpleHTR, recognising each page's crops in batches (issue #156). Runs through <code>transformers</code> instead of ONNX and needs the <code>trocr</code> extra. Kept for reproducibility; it loses to SimpleHTR on CER and word accuracy (see <a href="../models/trocr/">trocr</a>).</li>
 <li><code>2026-10-05_yolo_detector_trocr_large</code> -- <code>2026-10-05_yolo_detector_trocr</code> with the larger <code>microsoft/trocr-large-handwritten</code> checkpoint (<code>TrOCRLargeModel</code>). Better than base, but without post-processing still behind SimpleHTR.</li>
 <li><code>2026-10-09_yolo_detector_trocr_large_strip_punct</code> -- <code>2026-10-05_yolo_detector_trocr_large</code> with punctuation that TrOCR appends after a space stripped from each prediction. On par with <code>2026-10-05_yolo_detector_beam_vocab</code> on the benchmark (the gap is within noise), but about 170× larger and much slower; offered as an optional pipeline (see <a href="../models/trocr/">trocr</a>; usage in the <a href="../user_guide/#optional-trocr-pipeline">User Guide</a>).</li>
+<li><code>2026-10-09_yolo_detector_ppocrv5</code> -- <code>2026-09-02_yolo_detector</code> with PP-OCRv5 recognition only (<code>PPOCRv5Model.recognize_batch</code>, run as ONNX through <code>rapidocr</code>) in place of SimpleHTR (issue #157). Needs the <code>ppocr</code> extra (see <a href="../models/pp_ocrv5/">pp_ocrv5</a>).</li>
+<li><code>2026-10-09_ppocrv5_det_rec</code> -- PP-OCRv5's own text detector and recogniser on whole pages (<code>PPOCRv5Model.read_page</code>), no YOLO detector (issue #157). Needs the <code>ppocr</code> extra. Detection is line-based and split into words by <code>rapidocr</code>, so word boxes differ from the benchmark's word-level ground truth (see <a href="../models/pp_ocrv5/">pp_ocrv5</a>).</li>
 </ul>
 <p>All pipelines after <code>2024-07-18_htr_pipeline</code> render at 150 DPI, crop each detected word and recognise it independently (with <code>SimpleHTRModel</code> unless noted otherwise), so there is no cross-word context. Output is a dictionary mapping page indices to lists of predictions (text + bounding box coordinates in document units, see <a href="../ADRs/005_prediction_bounding_box_coordinate_system/">ADR 005</a>).</p>
 </li>
@@ -1787,6 +1817,10 @@ convert their raw output before returning (see <a href="../ADRs/005_prediction_b
 <td>TrOCR recognition (<code>2026-10-05_yolo_detector_trocr</code>, optional <code>trocr</code> extra)</td>
 </tr>
 <tr>
+<td><code>rapidocr</code></td>
+<td>PP-OCRv5 recognition and detection (<code>2026-10-09_yolo_detector_ppocrv5</code>, <code>2026-10-09_ppocrv5_det_rec</code>, optional <code>ppocr</code> extra)</td>
+</tr>
+<tr>
 <td><code>scikit-learn</code></td>
 <td>DBSCAN clustering for line detection</td>
 </tr>
@@ -1826,7 +1860,7 @@ convert their raw output before returning (see <a href="../ADRs/005_prediction_b
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 9, 2026 18:19:42 BST">October 9, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 9, 2026 20:49:58 BST">October 9, 2026</span>
   </span>
 
     
