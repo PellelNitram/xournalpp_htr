@@ -2,8 +2,7 @@
 
 Step 1 of 2 (step 2 is training). Run with::
 
-    uv run python -m xournalpp_htr.training.simple_htr_ondb.prepare_data \\
-        --output-dir data/simple_htr_ondb
+    uv run --extra training-simple-htr-ondb python -m xournalpp_htr.training.simple_htr_ondb.prepare_data
 
 Pipeline per IAM-OnDB line:
 
@@ -17,7 +16,8 @@ Pipeline per IAM-OnDB line:
    like ``compute_predictions`` does.
 4. Crop every word at its tight stroke box plus a small margin.
 
-Train/val are split by writer. Outputs, all under ``--output-dir``:
+Train/val are split by writer. Outputs, all under ``--output-dir`` (default:
+the gitignored ``data/`` folder next to this file):
 ``images/<split>/*.png``, ``manifest.jsonl``, ``stats.json``,
 ``preview_crops.png`` and ``preview_lines.png`` to eyeball the result.
 """
@@ -50,6 +50,7 @@ from xournalpp_htr.training.simple_htr_ondb.word_splitting import (  # noqa: E40
 from xournalpp_htr.xio import load_IAM_OnDB_dataset  # noqa: E402
 
 DOC_DPI = 72  # unit of StrokesDocument coordinates (points)
+DEFAULT_OUTPUT_DIR = Path(__file__).parent / "data"
 
 
 @dataclass
@@ -249,7 +250,7 @@ def write_previews(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--limit", type=int, default=None, help="Only process N lines.")
     parser.add_argument("--workers", type=int, default=os.cpu_count())
     args = parser.parse_args()
