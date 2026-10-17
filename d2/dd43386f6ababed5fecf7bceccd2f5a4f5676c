@@ -1,0 +1,14 @@
+.gitignore
+  h_de29a972ab2cda 183
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "d2dd43386f6ababed5fecf7bceccd2f5a4f5676c",
+  "prompts": {},
+  "humans": {
+    "h_de29a972ab2cda": {
+      "author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
