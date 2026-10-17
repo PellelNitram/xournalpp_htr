@@ -1,0 +1,22 @@
+xournalpp_htr/documents.py
+  s_bc5b28549ff64d::t_51064cfb897368 229-233
+  s_bc5b28549ff64d::t_d3fb158e09629d 197-228,234-240
+tests/test_StrokesDocument.py
+  s_bc5b28549ff64d::t_19e6cd10f66708 1-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "efb29da67dbbc7320db5d1b4f83e9374b8f3b686",
+  "prompts": {},
+  "sessions": {
+    "s_bc5b28549ff64d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "416d925f-2614-47ef-b44e-136eee4eeee4",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
