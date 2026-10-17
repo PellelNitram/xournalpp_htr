@@ -1,0 +1,22 @@
+pyproject.toml
+  s_bc5b28549ff64d::t_19e6cd10f66708 55-63
+xournalpp_htr/training/simple_htr_ondb/prepare_data.py
+  s_bc5b28549ff64d::t_51064cfb897368 137,146-148,187-189,220,233,236,241-243,306-311,317-319,322-326
+  s_bc5b28549ff64d::t_e56b82e2a7affc 1-136,138-145,149-186,190-219,221-232,234-235,237-240,244-305,312-316,320-321,327-332
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "23d11dadef73d827049522725ae768cf72243390",
+  "prompts": {},
+  "sessions": {
+    "s_bc5b28549ff64d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "416d925f-2614-47ef-b44e-136eee4eeee4",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
