@@ -1,0 +1,19 @@
+xournalpp_htr/training/simple_htr_ondb/prepare_data.py
+  s_bc5b28549ff64d::t_ebdd6c0e1af817 268-271,286,308
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "013b7e8164ba86fa6fc1aeec2ebce45d49d43007",
+  "prompts": {},
+  "sessions": {
+    "s_bc5b28549ff64d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "416d925f-2614-47ef-b44e-136eee4eeee4",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
