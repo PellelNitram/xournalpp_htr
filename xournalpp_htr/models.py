@@ -1,6 +1,7 @@
 # Add code related to models here. Mostly for inference as there will exist
 # another module for training or loading custom models.
 
+import os
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -45,7 +46,25 @@ CROP_RECORDING_PIPELINES = {
     "2026-10-05_yolo_detector_trocr_large",
     "2026-10-09_yolo_detector_trocr_large_strip_punct",
     "2026-10-09_yolo_detector_ppocrv5",
+    "2026-10-17_yolo_detector_simple_htr_ondb",
+    "2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab",
 }
+
+# Directory with `model.onnx` + `config.json` of the SimpleHTR retrained on
+# rendered IAM-OnDB crops (issue #150). Not published on HF Hub yet, so the
+# `simple_htr_ondb` pipelines load it from disk.
+SIMPLE_HTR_ONDB_DIR_ENV = "XOURNALPP_HTR_SIMPLE_HTR_ONDB_DIR"
+
+
+def _load_simple_htr_ondb() -> SimpleHTRModel:
+    model_dir = os.environ.get(SIMPLE_HTR_ONDB_DIR_ENV)
+    if not model_dir:
+        raise RuntimeError(
+            f"The simple_htr_ondb pipelines load the exported model from disk. "
+            f"Set {SIMPLE_HTR_ONDB_DIR_ENV} to a directory containing "
+            f"model.onnx and config.json."
+        )
+    return SimpleHTRModel.from_local(Path(model_dir))
 
 
 @dataclass
@@ -204,12 +223,20 @@ def compute_predictions(
                         )
                 predictions[page_index] = predictions_page
 
-    elif pipeline_name == "2026-09-02_yolo_detector":
+    elif pipeline_name in (
+        "2026-09-02_yolo_detector",
+        "2026-10-17_yolo_detector_simple_htr_ondb",
+    ):
         RENDER_DPI = 150
         nr_pages = len(document.pages)
 
         detector = YOLOWordDetectorModel.from_pretrained()
-        recognizer = SimpleHTRModel.from_pretrained()
+        # The ondb variant swaps in the SimpleHTR retrained on rendered
+        # IAM-OnDB crops (issue #150); greedy decoding like the original.
+        if pipeline_name == "2026-10-17_yolo_detector_simple_htr_ondb":
+            recognizer = _load_simple_htr_ondb()
+        else:
+            recognizer = SimpleHTRModel.from_pretrained()
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):
             with tempfile.NamedTemporaryFile(
@@ -332,14 +359,22 @@ def compute_predictions(
                         )
                 predictions[page_index] = predictions_page
 
-    elif pipeline_name == "2026-10-05_yolo_detector_beam_vocab":
+    elif pipeline_name in (
+        "2026-10-05_yolo_detector_beam_vocab",
+        "2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab",
+    ):
         RENDER_DPI = 150
         nr_pages = len(document.pages)
 
         detector = YOLOWordDetectorModel.from_pretrained()
         # Same detector as 2026-09-02_yolo_detector, but beam search decoding
-        # snapped to the nearest known word (issue #120).
-        recognizer = SimpleHTRModel.from_pretrained()
+        # snapped to the nearest known word (issue #120). The ondb variant
+        # swaps in the SimpleHTR retrained on rendered IAM-OnDB crops
+        # (issue #150), with the same word list.
+        if pipeline_name == "2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab":
+            recognizer = _load_simple_htr_ondb()
+        else:
+            recognizer = SimpleHTRModel.from_pretrained()
         recognizer.use_lexicon(SimpleHTRModel.load_vocabulary())
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):
