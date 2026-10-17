@@ -1,0 +1,21 @@
+xournalpp_htr/training/simple_htr_ondb/word_splitting.py
+  s_bc5b28549ff64d::t_4019950f5fe4ca 1-102
+tests/test_word_splitting.py
+  s_bc5b28549ff64d::t_19e6cd10f66708 1-65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "97f6cb9b9ffceefa51d4bc6bbff0a3f762f6a9c5",
+  "prompts": {},
+  "sessions": {
+    "s_bc5b28549ff64d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "416d925f-2614-47ef-b44e-136eee4eeee4",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
