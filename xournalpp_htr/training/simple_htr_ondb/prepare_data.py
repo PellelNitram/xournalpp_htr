@@ -265,6 +265,10 @@ def main() -> None:
     if args.limit:
         line_ids = line_ids[: args.limit]
 
+    # A few lines belong to forms that forms.txt doesn't list; no writer, no split.
+    no_writer = [i for i in line_ids if form_of(i) not in form_writers]
+    line_ids = [i for i in line_ids if form_of(i) in form_writers]
+
     writer_split = assign_splits(
         [form_writers[form_of(i)] for i in line_ids], cfg.val_writer_fraction, cfg.seed
     )
@@ -279,7 +283,7 @@ def main() -> None:
             )
 
         rows: list[dict] = []
-        rejected: dict[str, list[str]] = {}
+        rejected: dict[str, list[str]] = {"no_writer": no_writer} if no_writer else {}
         with Pool(args.workers) as pool:
             for line_id, line_rows, reason in tqdm(
                 pool.imap_unordered(_process, jobs, chunksize=16),
@@ -301,7 +305,7 @@ def main() -> None:
         }
         stats = {
             "config": asdict(cfg),
-            "lines_total": len(line_ids),
+            "lines_total": len(line_ids) + len(no_writer),
             "lines_accepted": len({r["line_id"] for r in rows}),
             "lines_rejected_by_reason": {
                 k: len(v) for k, v in sorted(rejected.items())
