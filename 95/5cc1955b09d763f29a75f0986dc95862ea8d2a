@@ -1,0 +1,14 @@
+uv.lock
+  h_de29a972ab2cda 6771-6780,6826,6830,6837,6846,6865,6871,6877,6885
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "955cc1955b09d763f29a75f0986dc95862ea8d2a",
+  "prompts": {},
+  "humans": {
+    "h_de29a972ab2cda": {
+      "author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
