@@ -1,0 +1,21 @@
+xournalpp_htr/models.py
+  s_bc5b28549ff64d::t_d03e2139203a99 4,49-50,53-68,226-229,234-239,362-365,371-377
+tests/test_simple_htr_ondb_export.py
+  s_bc5b28549ff64d::t_7cf9d67856b24c 1-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "ddc9e88f76ace6a0a328262d0e5271e38b0bd0f7",
+  "prompts": {},
+  "sessions": {
+    "s_bc5b28549ff64d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "416d925f-2614-47ef-b44e-136eee4eeee4",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
