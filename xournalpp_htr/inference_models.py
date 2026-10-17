@@ -168,6 +168,23 @@ class SimpleHTRModel(HFHubInferenceModel):
         )
 
     @classmethod
+    def from_local(cls, model_dir: Path) -> "SimpleHTRModel":
+        """Load an exported model from a local directory.
+
+        For benchmarking a retrained model before publishing it. ``model_dir``
+        holds ``model.onnx`` and ``config.json``, as written by the model's
+        ``export.py``. The loaded model reports ``revision="local"``.
+        """
+        model_dir = Path(model_dir)
+        with open(model_dir / "config.json") as f:
+            config = json.load(f)
+        return cls(
+            session=ort.InferenceSession(str(model_dir / "model.onnx")),
+            config=config,
+            revision="local",
+        )
+
+    @classmethod
     def load_vocabulary(cls, revision: str = "main") -> list[str]:
         """Download the word list published next to the model on HF Hub.
 
