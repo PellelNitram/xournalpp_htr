@@ -1,0 +1,20 @@
+xournalpp_htr/inference_models.py
+  s_bc5b28549ff64d::t_d03e2139203a99 171-186
+  s_bc5b28549ff64d::t_4086b3684dd9ec 170
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "e15dc12a4e9f4cbb303416aa5ac45c0589aa8314",
+  "prompts": {},
+  "sessions": {
+    "s_bc5b28549ff64d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "416d925f-2614-47ef-b44e-136eee4eeee4",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
