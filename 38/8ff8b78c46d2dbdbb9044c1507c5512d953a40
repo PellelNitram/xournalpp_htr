@@ -1,0 +1,23 @@
+tests/test_simple_htr_ondb_dataset.py
+  s_bc5b28549ff64d::t_26e3f2d0d4f16c 1-48
+xournalpp_htr/training/simple_htr_ondb/dataset.py
+  s_bc5b28549ff64d::t_30d2a34b785541 7-8,10,12-108,110-115,118,124-127,130-131,133-137,147-149,152,163-166,168-192,195-208
+  s_bc5b28549ff64d::t_65c8aa83454184 1-6,9,11,109,116-117,119-123,128-129,132,138-146,150-151,153-157,161-162,167,193-194
+  s_bc5b28549ff64d::t_03e26bf76036fc 158-160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "388ff8b78c46d2dbdbb9044c1507c5512d953a40",
+  "prompts": {},
+  "sessions": {
+    "s_bc5b28549ff64d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "416d925f-2614-47ef-b44e-136eee4eeee4",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
