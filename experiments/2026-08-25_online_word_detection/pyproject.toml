@@ -1,0 +1,21 @@
+[project]
+name = "experiment-online-detection"
+version = "0.1.0"
+description = "Online word stroke detection using spatial proximity clustering"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24.0",
+    "scikit-learn>=1.3.0",
+    "matplotlib>=3.7.0",
+    "tabulate>=0.9.0",
+    "huggingface_hub>=0.20.0",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=4.9.0",
+    "jupyter>=1.0.0",
+    "ipykernel>=6.0.0",
+    "opencv-python>=4.8.0",
+    "Pillow>=10.0.0",
+    "scipy>=1.10.0",
+    "skl2onnx>=1.16.0",
+    "onnxruntime>=1.17.0",
+]
