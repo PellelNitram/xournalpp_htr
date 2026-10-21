@@ -1,14 +1,19 @@
-"""Rendered IAM-OnDB word dataset for SimpleHTR-OnDB training.
+"""Word datasets for SimpleHTR-OnDB training: rendered IAM-OnDB and IAM-DB.
 
-Reads the word crops and ``manifest.jsonl`` written by ``prepare_data``. The
-train/val split is fixed by writer in the manifest. Copy of
-``simple_htr/dataset.py`` with the IAM word-file loading replaced.
+Two sources can be combined:
+
+* ``ondb``: the word crops and ``manifest.jsonl`` written by ``prepare_data``.
+  The train/val split is fixed by writer in the manifest.
+* ``iam``: the offline IAM-DB word images from ``data/words`` with the
+  transcriptions in ``data/ascii/words.txt``, as in ``simple_htr/dataset.py``.
+  Split by form, since IAM has no writer list here.
+
 Requires the ``training-simple-htr-ondb`` extra (torch).
 """
 
 import json
 from pathlib import Path
-from typing import List, TypedDict
+from typing import List, NamedTuple, TypedDict
 
 import cv2
 import numpy as np
@@ -106,54 +111,118 @@ def _apply_augmentation(img: np.ndarray) -> np.ndarray:
     return img
 
 
-class OnDB_Words_Element(TypedDict):
+class WordSamples(NamedTuple):
+    """Preprocessed word images (uint8, target size) of one source."""
+
+    images: List[np.ndarray]
+    texts: List[str]
+    names: List[str]
+    source: str
+
+
+def load_ondb_samples(
+    data_dir: Path, split: str, target_height: int, target_width: int
+) -> WordSamples:
+    """Load one split of the rendered IAM-OnDB crops written by ``prepare_data``."""
+    rows = []
+    with open(data_dir / "manifest.jsonl") as f:
+        for line in f:
+            row = json.loads(line)
+            if row["split"] == split:
+                rows.append(row)
+    if not rows:
+        raise ValueError(f"No samples for split {split!r} in {data_dir}.")
+
+    images, texts, names = [], [], []
+    for row in tqdm(rows, desc=f"Preprocessing ondb {split}"):
+        img = cv2.imread(str(data_dir / row["image"]), cv2.IMREAD_GRAYSCALE)
+        if img is None:
+            raise FileNotFoundError(data_dir / row["image"])
+        images.append(preprocess_image(img, target_height, target_width))
+        texts.append(row["text"])
+        names.append(row["image"])
+    return WordSamples(images, texts, names, "ondb")
+
+
+def parse_iam_words_file(words_file: Path) -> List[tuple[str, str]]:
+    """``(word_id, text)`` of all IAM words with segmentation status ``ok``."""
+    entries = []
+    with open(words_file) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split()
+            if len(parts) < 9 or parts[1] != "ok":
+                continue
+            entries.append((parts[0], parts[-1].replace("|", " ")))
+    return entries
+
+
+def load_iam_samples(
+    root_dir: Path,
+    target_height: int,
+    target_width: int,
+    val_fraction: float,
+    seed: int,
+) -> dict[str, WordSamples]:
+    """Load the IAM-DB word images, split by form into ``train`` and ``val``."""
+    entries = parse_iam_words_file(root_dir / "ascii" / "words.txt")
+
+    forms = sorted({word_id.rsplit("-", 2)[0] for word_id, _ in entries})
+    np.random.default_rng(seed).shuffle(forms)
+    n_val = max(1, round(len(forms) * val_fraction))
+    val_forms = set(forms[:n_val])
+
+    out = {s: ([], [], []) for s in ("train", "val")}
+    for word_id, text in tqdm(entries, desc="Preprocessing iam"):
+        form = word_id.rsplit("-", 2)[0]
+        parts = word_id.split("-")
+        img_path = (
+            root_dir / "words" / parts[0] / f"{parts[0]}-{parts[1]}" / f"{word_id}.png"
+        )
+        img = cv2.imread(str(img_path), cv2.IMREAD_GRAYSCALE)
+        if img is None:
+            continue
+        images, texts, names = out["val" if form in val_forms else "train"]
+        images.append(preprocess_image(img, target_height, target_width))
+        texts.append(text)
+        names.append(word_id)
+    return {s: WordSamples(*v, "iam") for s, v in out.items()}
+
+
+class Words_Element(TypedDict):
     image: np.ndarray
     text: str
     encoded: List[int]
     filename: str
+    source: str
 
 
-class OnDB_Words_Dataset(Dataset):
-    """Preprocesses one split of the rendered IAM-OnDB crops and keeps it in memory.
+class Words_Dataset(Dataset):
+    """In-memory dataset over one or more `WordSamples`.
 
-    :param data_dir: Output directory of ``prepare_data``.
-    :param split: ``"train"`` or ``"val"``.
-    :param charset: Characters to encode. Built from this split if ``None``;
+    :param parts: Samples of each source; they are concatenated.
+    :param charset: Characters to encode. Built from these samples if ``None``;
         pass the train charset for ``val``. Characters outside it still count
         as errors in validation, they are just not encodable as targets.
     """
 
     def __init__(
         self,
-        data_dir: Path,
-        split: str,
-        target_height: int,
-        target_width: int,
+        parts: List[WordSamples],
         charset: List[str] | None = None,
         augment: bool = False,
     ):
         super().__init__()
         self.augment = augment
 
-        rows = []
-        with open(data_dir / "manifest.jsonl") as f:
-            for line in f:
-                row = json.loads(line)
-                if row["split"] == split:
-                    rows.append(row)
-        if not rows:
-            raise ValueError(f"No samples for split {split!r} in {data_dir}.")
-
-        self.img_cache: List[np.ndarray] = []
-        self.text_cache: List[str] = []
-        self.filename_cache: List[str] = []
-        for row in tqdm(rows, desc=f"Preprocessing {split}"):
-            img = cv2.imread(str(data_dir / row["image"]), cv2.IMREAD_GRAYSCALE)
-            if img is None:
-                raise FileNotFoundError(data_dir / row["image"])
-            self.img_cache.append(preprocess_image(img, target_height, target_width))
-            self.text_cache.append(row["text"])
-            self.filename_cache.append(row["image"])
+        self.img_cache: List[np.ndarray] = [i for p in parts for i in p.images]
+        self.text_cache: List[str] = [t for p in parts for t in p.texts]
+        self.filename_cache: List[str] = [n for p in parts for n in p.names]
+        self.source_cache: List[str] = [p.source for p in parts for _ in p.images]
+        if not self.img_cache:
+            raise ValueError("No samples.")
 
         self.charset = (
             charset if charset is not None else build_charset(self.text_cache)
@@ -164,7 +233,7 @@ class OnDB_Words_Dataset(Dataset):
     def __len__(self) -> int:
         return len(self.img_cache)
 
-    def __getitem__(self, idx: int) -> OnDB_Words_Element:
+    def __getitem__(self, idx: int) -> Words_Element:
         image = self.img_cache[idx].copy()
         text = self.text_cache[idx]
 
@@ -179,29 +248,33 @@ class OnDB_Words_Dataset(Dataset):
             "text": text,
             "encoded": encoded,
             "filename": self.filename_cache[idx],
+            "source": self.source_cache[idx],
         }
 
 
 class Dataloader_Element(TypedDict):
     images: torch.Tensor
     texts: List[str]
+    sources: List[str]
     encoded: List[List[int]]
     target_lengths: torch.Tensor
     targets: torch.Tensor
 
 
-def custom_collate_fn(batch: List[OnDB_Words_Element]) -> Dataloader_Element:
-    """Collate ``OnDB_Words_Element`` batches for the ``DataLoader``."""
+def custom_collate_fn(batch: List[Words_Element]) -> Dataloader_Element:
+    """Collate ``Words_Element`` batches for the ``DataLoader``."""
     images = torch.from_numpy(
         np.stack([s["image"][None, ...] for s in batch], axis=0).astype(np.float32)
     )
     texts = [s["text"] for s in batch]
+    sources = [s["source"] for s in batch]
     encoded = [s["encoded"] for s in batch]
     target_lengths = torch.tensor([len(e) for e in encoded], dtype=torch.long)
     targets = torch.tensor([idx for e in encoded for idx in e], dtype=torch.long)
     return {
         "images": images,
         "texts": texts,
+        "sources": sources,
         "encoded": encoded,
         "target_lengths": target_lengths,
         "targets": targets,
