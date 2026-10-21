@@ -25,8 +25,27 @@ experiment1() {
         output_path="${OUT}" 2>&1 | tee "${OUT}/train.log"
 }
 
+# ============
+# Experiment 2
+# ============
+
+# Question: Does training on IAM-DB words plus the rendered IAM-OnDB crops beat
+# the IAM-only SimpleHTR in the benchmark pipeline? Experiment 1 (OnDB only)
+# did not: benchmark CER 39.7% vs 31.7% with beam search and vocabulary.
+# Same settings as experiment 1, only the data changes.
+
+experiment2() {
+    OUT="${BASE_PATH}/experiment2/combined"
+    mkdir -p "${OUT}"
+
+    time uv run --extra training-simple-htr-ondb python -m xournalpp_htr.training.simple_htr_ondb.train \
+        data.use_ondb=true data.use_iam=true \
+        output_path="${OUT}" 2>&1 | tee "${OUT}/train.log"
+}
+
 # ==================
 # Run experiments
 # ==================
 
-time experiment1
+# time experiment1
+time experiment2

@@ -21,10 +21,15 @@ from omegaconf import OmegaConf
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from xournalpp_htr.training.simple_htr_ondb.config import SimpleHTROnDBConfig
+from xournalpp_htr.training.simple_htr_ondb.config import (
+    DataConfig,
+    SimpleHTROnDBConfig,
+)
 from xournalpp_htr.training.simple_htr_ondb.dataset import (
-    OnDB_Words_Dataset,
+    Words_Dataset,
     custom_collate_fn,
+    load_iam_samples,
+    load_ondb_samples,
 )
 from xournalpp_htr.training.simple_htr_ondb.network import (
     SimpleHTRNet,
@@ -75,29 +80,44 @@ def compute_cer(predicted: str, target: str) -> float:
 
 
 def get_dataloaders(
-    data_path: Path,
+    data_cfg: DataConfig,
+    ondb_path: Path,
     batch_size: int,
-    shuffle_data_loader: bool,
     num_workers: int,
     target_height: int,
     target_width: int,
     augment: bool = False,
 ) -> dict:
-    train_dataset = OnDB_Words_Dataset(
-        data_dir=data_path,
-        split="train",
-        target_height=target_height,
-        target_width=target_width,
-        augment=augment,
-    )
-    val_dataset = OnDB_Words_Dataset(
-        data_dir=data_path,
-        split="val",
-        target_height=target_height,
-        target_width=target_width,
-        charset=train_dataset.charset,
-        augment=False,
-    )
+    if not (data_cfg.use_ondb or data_cfg.use_iam):
+        raise ValueError("Enable at least one of data.use_ondb and data.use_iam.")
+
+    train_parts, val_parts = [], []
+    if data_cfg.use_ondb:
+        for parts, split in ((train_parts, "train"), (val_parts, "val")):
+            parts.append(
+                load_ondb_samples(ondb_path, split, target_height, target_width)
+            )
+    if data_cfg.use_iam:
+        iam_root = data_cfg.iam_data_path
+        if iam_root is None:
+            from xournalpp_htr.xio import load_IAM_DB_dataset
+
+            iam_root = load_IAM_DB_dataset()
+            print(f"Resolved IAM-DB dataset from HuggingFace Hub: {iam_root}")
+        iam = load_iam_samples(
+            Path(iam_root),
+            target_height,
+            target_width,
+            data_cfg.iam_val_fraction,
+            data_cfg.iam_split_seed,
+        )
+        train_parts.append(iam["train"])
+        val_parts.append(iam["val"])
+
+    train_dataset = Words_Dataset(train_parts, augment=augment)
+    val_dataset = Words_Dataset(val_parts, charset=train_dataset.charset, augment=False)
+    for name, parts in (("train", train_parts), ("val", val_parts)):
+        print(f"{name}: " + ", ".join(f"{p.source}={len(p.images)}" for p in parts))
 
     val_only = sorted(
         {c for t in val_dataset.text_cache for c in t} - set(train_dataset.charset)
@@ -108,7 +128,7 @@ def get_dataloaders(
     dataloader_train = DataLoader(
         train_dataset,
         batch_size=batch_size,
-        shuffle=shuffle_data_loader,
+        shuffle=data_cfg.shuffle_data_loader,
         num_workers=num_workers,
         collate_fn=custom_collate_fn,
         pin_memory=True,
@@ -136,6 +156,7 @@ def validate(net, dataloader_val, writer, device, global_step, charset):
     total_correct = 0
     total_samples = 0
     blank = len(charset)
+    per_source: dict[str, list] = {}  # source -> [cer sum, correct, samples]
 
     for batch in dataloader_val:
         images = batch["images"].to(device)
@@ -149,11 +170,16 @@ def validate(net, dataloader_val, writer, device, global_step, charset):
             total_loss += loss.item()
 
             decoded = greedy_decode(log_probs, charset)
-            for pred, gt in zip(decoded, texts, strict=False):
-                total_cer += compute_cer(pred, gt)
+            for pred, gt, source in zip(decoded, texts, batch["sources"], strict=False):
+                cer = compute_cer(pred, gt)
+                total_cer += cer
+                total_samples += 1
+                stats = per_source.setdefault(source, [0.0, 0, 0])
+                stats[0] += cer
+                stats[2] += 1
                 if pred == gt:
                     total_correct += 1
-                total_samples += 1
+                    stats[1] += 1
 
     avg_loss = total_loss / len(dataloader_val)
     avg_cer = total_cer / max(total_samples, 1)
@@ -163,7 +189,18 @@ def validate(net, dataloader_val, writer, device, global_step, charset):
     writer.add_scalar("cer/val", avg_cer, global_step)
     writer.add_scalar("word_accuracy/val", word_acc, global_step)
 
-    return avg_cer, word_acc
+    by_source = {
+        source: {"cer": cer_sum / n, "word_accuracy": correct / n, "samples": n}
+        for source, (cer_sum, correct, n) in per_source.items()
+    }
+    if len(by_source) > 1:
+        for source, m in by_source.items():
+            writer.add_scalar(f"cer/val_{source}", m["cer"], global_step)
+            writer.add_scalar(
+                f"word_accuracy/val_{source}", m["word_accuracy"], global_step
+            )
+
+    return avg_cer, word_acc, by_source
 
 
 def train_epoch(net, optimizer, loader, writer, device, global_step, charset):
@@ -217,10 +254,18 @@ def train_network(
             net, optimizer, dataloader_train, writer, device, global_step, charset
         )
         if epoch % cfg.training.val_epoch == 0:
-            cer, word_acc = validate(
+            cer, word_acc, by_source = validate(
                 net, dataloader_val, writer, device, global_step, charset
             )
             print(f"  Val CER: {cer:.4f}, Word Accuracy: {word_acc:.4f}")
+            if len(by_source) > 1:
+                print(
+                    "  "
+                    + ", ".join(
+                        f"{s}: CER {m['cer']:.4f} / acc {m['word_accuracy']:.4f}"
+                        for s, m in by_source.items()
+                    )
+                )
 
             if cer < best_val_cer:
                 print(f"New best CER: {best_val_cer:.4f} -> {cer:.4f}, saving model.")
@@ -234,6 +279,7 @@ def train_network(
                             "global_step": global_step,
                             "cer": best_val_cer,
                             "word_accuracy": word_acc,
+                            "per_source": by_source,
                         },
                         f,
                         indent=4,
@@ -258,6 +304,8 @@ def train_network(
             "epoch_max": cfg.training.epoch_max,
             "patience_max": cfg.training.patience_max,
             "augmentation_enabled": cfg.augmentation.enabled,
+            "use_ondb": cfg.data.use_ondb,
+            "use_iam": cfg.data.use_iam,
         },
         {"best_val_cer": best_val_cer},
     )
@@ -268,7 +316,7 @@ def train_network(
 def main(cfg: SimpleHTROnDBConfig):
     output_path = Path(cfg.output_path)
 
-    data_path = Path(cfg.data.data_path) if cfg.data.data_path else DEFAULT_DATA_DIR
+    ondb_path = Path(cfg.data.data_path) if cfg.data.data_path else DEFAULT_DATA_DIR
 
     output_path.mkdir(exist_ok=True, parents=True)
 
@@ -285,9 +333,9 @@ def main(cfg: SimpleHTROnDBConfig):
 
     t0 = time.time()
     dataloaders = get_dataloaders(
-        data_path=data_path,
+        data_cfg=cfg.data,
+        ondb_path=ondb_path,
         batch_size=cfg.training.batch_size,
-        shuffle_data_loader=cfg.data.shuffle_data_loader,
         num_workers=cfg.training.num_workers,
         target_height=cfg.model.input_height,
         target_width=cfg.model.input_width,

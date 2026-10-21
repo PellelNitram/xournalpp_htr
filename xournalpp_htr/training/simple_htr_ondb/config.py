@@ -40,6 +40,14 @@ class DataConfig:
     # by writer in the manifest.
     data_path: str | None = None
     shuffle_data_loader: bool = True
+    # Training sources. Both on trains on the union; their val splits are
+    # concatenated too, and checkpoints are selected on the combined val CER.
+    use_ondb: bool = True
+    use_iam: bool = True
+    # IAM-DB root (words/, ascii/). `None` resolves it from HF Hub.
+    iam_data_path: str | None = None
+    iam_val_fraction: float = 0.05
+    iam_split_seed: int = 42
 
 
 @dataclass
