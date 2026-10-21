@@ -1,0 +1,23 @@
+xournalpp_htr/training/simple_htr_ondb/run_training.sh
+  s_bc5b28549ff64d::t_be6eb20eedbaa9 28-45,50-51
+xournalpp_htr/training/simple_htr_ondb/config.py
+  s_bc5b28549ff64d::t_4510bf1cdb9005 43-50
+xournalpp_htr/training/simple_htr_ondb/train.py
+  s_bc5b28549ff64d::t_4510bf1cdb9005 24-27,29,31-32,83-84,91-120,131,159,173-179,182,192-203,257,261-268,282,307-308,319,336-337
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "45449cabb708bf59ed9ce1e4b610598d486836e3",
+  "prompts": {},
+  "sessions": {
+    "s_bc5b28549ff64d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "416d925f-2614-47ef-b44e-136eee4eeee4",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
