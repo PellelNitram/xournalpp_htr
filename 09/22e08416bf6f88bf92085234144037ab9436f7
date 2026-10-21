@@ -1,0 +1,30 @@
+experiments/2026-08-25_online_word_detection/experiment_pairwise_classifier.ipynb
+  s_61439a7fb6ca85::t_ffabc81eceed5c 1-875
+experiments/2026-08-25_online_word_detection/experiment_render_detect.ipynb
+  s_61439a7fb6ca85::t_ffabc81eceed5c 1-616
+experiments/2026-08-25_online_word_detection/experiment.ipynb
+  s_61439a7fb6ca85::t_f2dac45354ab20 1-47,50-142,150-226,228-259,266-365,371-502,504-507,511-534,545-546,559-564,577-645,649-692,700-709,713-1833
+  s_61439a7fb6ca85::t_ffabc81eceed5c 48-49,143-149,227,260-265,366-370,503,508-510,535-544,547-558,565-576,646-648,693-699,710-712
+experiments/2026-08-25_online_word_detection/.gitignore
+  s_61439a7fb6ca85::t_f2dac45354ab20 1-2
+experiments/2026-08-25_online_word_detection/experiment_affinity_clustering.ipynb
+  s_61439a7fb6ca85::t_ffabc81eceed5c 1-769
+experiments/2026-08-25_online_word_detection/experiment_hybrid_filtering.ipynb
+  s_61439a7fb6ca85::t_ffabc81eceed5c 1-831
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "0922e08416bf6f88bf92085234144037ab9436f7",
+  "prompts": {},
+  "sessions": {
+    "s_61439a7fb6ca85": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7835fd33-768e-4804-b10b-7d8b17671546",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
