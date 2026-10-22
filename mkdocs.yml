@@ -44,6 +44,7 @@ nav:
     - Overview: 'models/index.md'
     - WordDetector: 'models/word_detector.md'
     - SimpleHTR: 'models/simple_htr.md'
+    - SimpleHTR-OnDB: 'models/simple_htr_ondb.md'
     - WordDetectorYOLO: 'models/word_detector_yolo.md'
     - WordDetectorRFDETR: 'models/word_detector_rf_detr.md'
     - TrOCR: 'models/trocr.md'
