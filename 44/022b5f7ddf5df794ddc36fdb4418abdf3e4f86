@@ -1,0 +1,30 @@
+docs/models/index.md
+  s_bc5b28549ff64d::t_173b352a99d250 19-20
+mkdocs.yml
+  s_bc5b28549ff64d::t_173b352a99d250 47
+xournalpp_htr/training/simple_htr_ondb/README.md
+  s_bc5b28549ff64d::t_173b352a99d250 1-5
+docs/models/simple_htr_ondb.md
+  s_bc5b28549ff64d::t_74f83a60e50c24 311-312
+  s_bc5b28549ff64d::t_0aada0f3bd8ef6 1-12,17-310,313-347
+  s_bc5b28549ff64d::t_173b352a99d250 13-16
+docs/architecture.md
+  s_bc5b28549ff64d::t_173b352a99d250 86-87,108
+  s_bc5b28549ff64d::t_9d31d7cfa29cf1 85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "44022b5f7ddf5df794ddc36fdb4418abdf3e4f86",
+  "prompts": {},
+  "sessions": {
+    "s_bc5b28549ff64d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "416d925f-2614-47ef-b44e-136eee4eeee4",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
