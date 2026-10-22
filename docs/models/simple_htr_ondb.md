@@ -31,6 +31,7 @@ Source: `xournalpp_htr/training/simple_htr_ondb/`
 | `demo.py` | Local Gradio demo (ADR 007) | training |
 | `export.py` | ONNX export + HF Hub upload | training |
 | `utils.py` | Device, git hash, JSON encoder | training |
+| `model_card.md` | Model card, published as the HF repo's `README.md` | none |
 | `run_pipeline.sh` | Data preparation command | shell |
 | `run_training.sh` | Experiments | shell |
 
@@ -161,6 +162,19 @@ uv run --extra training-simple-htr-ondb python -m \
 The upload sends `model.onnx` and `config.json` to
 `PellelNitram/xournalpp-htr-simple-htr-ondb`. The word list for beam decoding is
 not duplicated there; it is the one published next to SimpleHTR.
+
+The model card, `model_card.md`, is the Hub repository's `README.md`. Update it by
+hand whenever the model or its numbers change:
+
+```python
+from huggingface_hub import HfApi
+
+HfApi().upload_file(
+    path_or_fileobj="xournalpp_htr/training/simple_htr_ondb/model_card.md",
+    path_in_repo="README.md",
+    repo_id="PellelNitram/xournalpp-htr-simple-htr-ondb",
+)
+```
 
 ## Inference
 
