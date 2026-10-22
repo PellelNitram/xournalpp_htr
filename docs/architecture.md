@@ -82,7 +82,9 @@ graph TD
     - `2026-06-07_htr_pipeline_native` -- An in-house pipeline that loads our locally-trained ONNX models from HuggingFace Hub (`WordDetectorModel` + `SimpleHTRModel`, see `xournalpp_htr/inference_models.py`) and runs detection + per-word recognition without `htr_pipeline`. Replacing the external dependency entirely is tracked in #125.
     - `2026-09-02_yolo_detector` -- Same structure, with the YOLO word detector (`YOLOWordDetectorModel`, see [word_detector_yolo](models/word_detector_yolo.md)) in place of `WordDetectorModel`. Best detector recall on the benchmark.
     - `2026-09-17_rf_detr_detector` -- Same structure, with the RF-DETR word detector (`RFDETRWordDetectorModel`, see [word_detector_rf_detr](models/word_detector_rf_detr.md)). Kept for reproducibility; it loses to YOLO on recall.
-    - `2026-10-05_yolo_detector_beam_vocab` -- `2026-09-02_yolo_detector` with beam search decoding snapped to the nearest known word, using the word list published next to the SimpleHTR model (issue #120, see [simple_htr](models/simple_htr.md)). Best word accuracy on the benchmark.
+    - `2026-10-05_yolo_detector_beam_vocab` -- `2026-09-02_yolo_detector` with beam search decoding snapped to the nearest known word, using the word list published next to the SimpleHTR model (issue #120, see [simple_htr](models/simple_htr.md)). The pipeline of record; `2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab` scores higher, but within noise.
+    - `2026-10-17_yolo_detector_simple_htr_ondb` -- `2026-09-02_yolo_detector` with `SimpleHTROnDBModel` in place of SimpleHTR: the same network trained on IAM-DB plus IAM-OnDB strokes rendered like Xournal++ pages (issue #150, see [simple_htr_ondb](models/simple_htr_ondb.md)). Greedy decoding.
+    - `2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab` -- The same with beam search snapped to the nearest known word, like `2026-10-05_yolo_detector_beam_vocab`. Better than it on every benchmark metric, but the difference is within noise on 169 words, so `2026-10-05_yolo_detector_beam_vocab` stays the default.
     - `2026-10-05_yolo_detector_trocr` -- `2026-09-02_yolo_detector` with Microsoft's pretrained TrOCR (`microsoft/trocr-base-handwritten`, `TrOCRModel`) in place of SimpleHTR, recognising each page's crops in batches (issue #156). Runs through `transformers` instead of ONNX and needs the `trocr` extra. Kept for reproducibility; it loses to SimpleHTR on CER and word accuracy (see [trocr](models/trocr.md)).
     - `2026-10-05_yolo_detector_trocr_large` -- `2026-10-05_yolo_detector_trocr` with the larger `microsoft/trocr-large-handwritten` checkpoint (`TrOCRLargeModel`). Better than base, but without post-processing still behind SimpleHTR.
     - `2026-10-09_yolo_detector_trocr_large_strip_punct` -- `2026-10-05_yolo_detector_trocr_large` with punctuation that TrOCR appends after a space stripped from each prediction. On par with `2026-10-05_yolo_detector_beam_vocab` on the benchmark (the gap is within noise), but about 170× larger and much slower; offered as an optional pipeline (see [trocr](models/trocr.md); usage in the [User Guide](user_guide.md#optional-trocr-pipeline)).
@@ -103,7 +105,7 @@ xournalpp_htr/
     shortcuts.py     # Orchestrates Steps 1-3
     documents.py     # .xoj/.xopp parsing (Document ABC, Page, Layer, Stroke)
     models.py        # HTR pipelines (compute_predictions, WordPrediction, CropRecorder)
-    inference_models.py  # ONNX models loaded from HuggingFace Hub (detectors, SimpleHTRModel)
+    inference_models.py  # ONNX models loaded from HuggingFace Hub (detectors, SimpleHTRModel, SimpleHTROnDBModel)
     utils.py         # Argument parsing, xournalpp CLI export
     xio.py           # PDF I/O (PyMuPDF), benchmark/example loading (HuggingFace Hub)
     benchmark.py     # Benchmark logic (run_benchmark, precision/recall/CER, HTML report)

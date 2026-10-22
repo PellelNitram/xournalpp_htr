@@ -6768,6 +6768,16 @@ training-simple-htr = [
     { name = "torch" },
     { name = "torchvision" },
 ]
+training-simple-htr-ondb = [
+    { name = "english-words" },
+    { name = "gradio" },
+    { name = "hydra-core" },
+    { name = "onnx", version = "1.19.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
+    { name = "onnx", version = "1.21.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
+    { name = "tensorboard" },
+    { name = "torch" },
+    { name = "torchvision" },
+]
 training-word-detector = [
     { name = "gradio" },
     { name = "hydra-core" },
@@ -6813,15 +6823,18 @@ docs = [
 requires-dist = [
     { name = "beautifulsoup4" },
     { name = "english-words", marker = "extra == 'training-simple-htr'" },
+    { name = "english-words", marker = "extra == 'training-simple-htr-ondb'" },
     { name = "gitpython" },
     { name = "gradio", marker = "extra == 'hf'" },
     { name = "gradio", marker = "extra == 'training-simple-htr'" },
+    { name = "gradio", marker = "extra == 'training-simple-htr-ondb'" },
     { name = "gradio", marker = "extra == 'training-word-detector'" },
     { name = "gradio", marker = "extra == 'training-word-detector-rf-detr'" },
     { name = "gradio", marker = "extra == 'training-word-detector-yolo'" },
     { name = "htr-pipeline", directory = "external/htr_pipeline/HTRPipeline" },
     { name = "huggingface-hub" },
     { name = "hydra-core", marker = "extra == 'training-simple-htr'" },
+    { name = "hydra-core", marker = "extra == 'training-simple-htr-ondb'" },
     { name = "hydra-core", marker = "extra == 'training-word-detector'" },
     { name = "hydra-core", marker = "extra == 'training-word-detector-rf-detr'" },
     { name = "hydra-core", marker = "extra == 'training-word-detector-yolo'" },
@@ -6830,6 +6843,7 @@ requires-dist = [
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "onnx", marker = "extra == 'training-simple-htr'" },
+    { name = "onnx", marker = "extra == 'training-simple-htr-ondb'" },
     { name = "onnx", marker = "extra == 'training-word-detector'" },
     { name = "onnx", marker = "extra == 'training-word-detector-rf-detr'" },
     { name = "onnx", marker = "extra == 'training-word-detector-yolo'" },
@@ -6848,16 +6862,19 @@ requires-dist = [
     { name = "setuptools", specifier = "<80" },
     { name = "supabase", marker = "extra == 'hf'" },
     { name = "tensorboard", marker = "extra == 'training-simple-htr'" },
+    { name = "tensorboard", marker = "extra == 'training-simple-htr-ondb'" },
     { name = "tensorboard", marker = "extra == 'training-word-detector'" },
     { name = "tensorboard", marker = "extra == 'training-word-detector-rf-detr'" },
     { name = "tensorboard", marker = "extra == 'training-word-detector-yolo'" },
     { name = "testcontainers", specifier = ">=4.14.1" },
     { name = "torch", marker = "extra == 'training-simple-htr'", index = "https://download.pytorch.org/whl/cu128" },
+    { name = "torch", marker = "extra == 'training-simple-htr-ondb'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torch", marker = "extra == 'training-word-detector'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torch", marker = "extra == 'training-word-detector-rf-detr'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torch", marker = "extra == 'training-word-detector-yolo'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torch", marker = "extra == 'trocr'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torchvision", marker = "extra == 'training-simple-htr'", index = "https://download.pytorch.org/whl/cu128" },
+    { name = "torchvision", marker = "extra == 'training-simple-htr-ondb'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torchvision", marker = "extra == 'training-word-detector'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torchvision", marker = "extra == 'training-word-detector-rf-detr'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torchvision", marker = "extra == 'training-word-detector-yolo'", index = "https://download.pytorch.org/whl/cu128" },
@@ -6865,7 +6882,7 @@ requires-dist = [
     { name = "transformers", marker = "extra == 'trocr'", specifier = ">=5.17,<6" },
     { name = "ultralytics", marker = "extra == 'training-word-detector-yolo'" },
 ]
-provides-extras = ["hf", "training-word-detector", "training-simple-htr", "training-word-detector-yolo", "training-word-detector-rf-detr", "trocr", "dev", "ppocr"]
+provides-extras = ["hf", "training-word-detector", "training-simple-htr", "training-simple-htr-ondb", "training-word-detector-yolo", "training-word-detector-rf-detr", "trocr", "ppocr", "dev"]
 
 [package.metadata.requires-dev]
 docs = [

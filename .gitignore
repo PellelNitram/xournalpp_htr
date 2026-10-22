@@ -178,3 +178,7 @@ vocabulary.txt
 xournalpp_htr/training/word_detector/outputs/
 recognizer_inputs*/
 crop_analysis*/
+xournalpp_htr/training/simple_htr_ondb/data/
+xournalpp_htr/training/simple_htr_ondb/experiments/
+xournalpp_htr/training/simple_htr_ondb/outputs/
+/outputs/

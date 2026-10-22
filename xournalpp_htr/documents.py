@@ -194,6 +194,50 @@ class XournalppDocument(Document):
         self.DPI = 72
 
 
+class StrokesDocument(Document):
+    """One-page document built from in-memory strokes instead of a file.
+
+    Lets synthetic strokes (e.g. IAM-OnDB lines) go through the exact same
+    rendering path as real documents, i.e. `save_page_as_image`.
+
+    Coordinates are in points (``DPI == 72``) with the y axis pointing down,
+    like in Xournal++ documents.
+    """
+
+    def __init__(
+        self,
+        strokes: list[tuple[np.ndarray, np.ndarray]],
+        width: float,
+        height: float,
+        color: str = "black",
+    ):
+        """
+        :param strokes: List of ``(x, y)`` coordinate arrays, one per stroke.
+        :param width: Page width in points.
+        :param height: Page height in points.
+        :param color: Colour of all strokes.
+        """
+        self._strokes = strokes
+        self._width = width
+        self._height = height
+        self._color = color
+        super().__init__(Path("<in-memory>"))
+
+    def load_data(self):
+        """Assemble the single page from the strokes given at construction."""
+        strokes = [
+            Stroke(
+                np.asarray(x, dtype=float),
+                np.asarray(y, dtype=float),
+                {"color": self._color},
+            )
+            for x, y in self._strokes
+        ]
+        meta_data = {"width": str(self._width), "height": str(self._height)}
+        self.pages = [Page(meta_data, {}, [Layer(strokes)])]
+        self.DPI = 72
+
+
 def get_document(path: Path) -> Document:
     """
     Loads a document from a given file path based on the file extension.
