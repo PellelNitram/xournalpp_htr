@@ -41,11 +41,3 @@ def test_export_loads_with_from_local_and_matches_torch(tmp_path):
     with torch.no_grad():
         expected = net(torch.from_numpy(net_input[None, None]))[:, 0, :].numpy()
     np.testing.assert_allclose(model._compute_log_probs(img), expected, atol=1e-4)
-
-
-def test_simple_htr_ondb_pipelines_need_the_model_dir(monkeypatch):
-    from xournalpp_htr.models import SIMPLE_HTR_ONDB_DIR_ENV, _load_simple_htr_ondb
-
-    monkeypatch.delenv(SIMPLE_HTR_ONDB_DIR_ENV, raising=False)
-    with pytest.raises(RuntimeError, match=SIMPLE_HTR_ONDB_DIR_ENV):
-        _load_simple_htr_ondb()

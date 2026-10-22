@@ -1,7 +1,6 @@
 # Add code related to models here. Mostly for inference as there will exist
 # another module for training or loading custom models.
 
-import os
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -16,6 +15,7 @@ from xournalpp_htr.inference_models import (
     PPOCRv5Model,
     RFDETRWordDetectorModel,
     SimpleHTRModel,
+    SimpleHTROnDBModel,
     TrOCRLargeModel,
     TrOCRModel,
     WordDetectorModel,
@@ -49,22 +49,6 @@ CROP_RECORDING_PIPELINES = {
     "2026-10-17_yolo_detector_simple_htr_ondb",
     "2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab",
 }
-
-# Directory with `model.onnx` + `config.json` of the SimpleHTR retrained on
-# rendered IAM-OnDB crops (issue #150). Not published on HF Hub yet, so the
-# `simple_htr_ondb` pipelines load it from disk.
-SIMPLE_HTR_ONDB_DIR_ENV = "XOURNALPP_HTR_SIMPLE_HTR_ONDB_DIR"
-
-
-def _load_simple_htr_ondb() -> SimpleHTRModel:
-    model_dir = os.environ.get(SIMPLE_HTR_ONDB_DIR_ENV)
-    if not model_dir:
-        raise RuntimeError(
-            f"The simple_htr_ondb pipelines load the exported model from disk. "
-            f"Set {SIMPLE_HTR_ONDB_DIR_ENV} to a directory containing "
-            f"model.onnx and config.json."
-        )
-    return SimpleHTRModel.from_local(Path(model_dir))
 
 
 @dataclass
@@ -234,7 +218,7 @@ def compute_predictions(
         # The ondb variant swaps in the SimpleHTR retrained on rendered
         # IAM-OnDB crops (issue #150); greedy decoding like the original.
         if pipeline_name == "2026-10-17_yolo_detector_simple_htr_ondb":
-            recognizer = _load_simple_htr_ondb()
+            recognizer = SimpleHTROnDBModel.from_pretrained()
         else:
             recognizer = SimpleHTRModel.from_pretrained()
 
@@ -372,7 +356,7 @@ def compute_predictions(
         # swaps in the SimpleHTR retrained on rendered IAM-OnDB crops
         # (issue #150), with the same word list.
         if pipeline_name == "2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab":
-            recognizer = _load_simple_htr_ondb()
+            recognizer = SimpleHTROnDBModel.from_pretrained()
         else:
             recognizer = SimpleHTRModel.from_pretrained()
         recognizer.use_lexicon(SimpleHTRModel.load_vocabulary())

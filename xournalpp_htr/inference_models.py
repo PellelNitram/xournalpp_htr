@@ -274,6 +274,23 @@ class SimpleHTRModel(HFHubInferenceModel):
         return "".join(chars)
 
 
+class SimpleHTROnDBModel(SimpleHTRModel):
+    """SimpleHTR retrained on IAM-DB words plus rendered IAM-OnDB crops.
+
+    Same network, preprocessing and decoding as `SimpleHTRModel`; only the
+    weights differ (issue #150, see ``docs/models/simple_htr_ondb.md``). The
+    word list for lexicon-biased decoding is not duplicated here, it is the one
+    published next to the original model.
+    """
+
+    HF_REPO_ID = "PellelNitram/xournalpp-htr-simple-htr-ondb"
+
+    @classmethod
+    def load_vocabulary(cls, revision: str = "main") -> list[str]:
+        """Word list of `SimpleHTRModel`; ``revision`` is ignored."""
+        return SimpleHTRModel.load_vocabulary()
+
+
 # Punctuation TrOCR appends after a space, e.g. "words ." or "Thanks ,".
 _APPENDED_PUNCTUATION = re.compile(r"""(\s+[.,;:!?'"]+)+$""")
 
