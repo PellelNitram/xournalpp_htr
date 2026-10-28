@@ -16,6 +16,8 @@ model.
 - [WordDetectorRFDETR](word_detector_rf_detr.md) — RF-DETR-based word-level
   bounding-box detector (fine-tuned
   [RF-DETR](https://github.com/roboflow/rf-detr)).
+- [SimpleHTR-OnDB](simple_htr_ondb.md) — SimpleHTR retrained on IAM-OnDB
+  strokes rendered like Xournal++ pages, alone and combined with IAM-DB.
 - [TrOCR](trocr.md) — Microsoft's pretrained word-level text recognition,
   evaluated against SimpleHTR; optional, runs through `transformers`
   (exception to ADR 006).

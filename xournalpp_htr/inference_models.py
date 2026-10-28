@@ -168,6 +168,23 @@ class SimpleHTRModel(HFHubInferenceModel):
         )
 
     @classmethod
+    def from_local(cls, model_dir: Path) -> "SimpleHTRModel":
+        """Load an exported model from a local directory.
+
+        For benchmarking a retrained model before publishing it. ``model_dir``
+        holds ``model.onnx`` and ``config.json``, as written by the model's
+        ``export.py``. The loaded model reports ``revision="local"``.
+        """
+        model_dir = Path(model_dir)
+        with open(model_dir / "config.json") as f:
+            config = json.load(f)
+        return cls(
+            session=ort.InferenceSession(str(model_dir / "model.onnx")),
+            config=config,
+            revision="local",
+        )
+
+    @classmethod
     def load_vocabulary(cls, revision: str = "main") -> list[str]:
         """Download the word list published next to the model on HF Hub.
 
@@ -255,6 +272,23 @@ class SimpleHTRModel(HFHubInferenceModel):
                 chars.append(self._charset[idx])
             prev = idx
         return "".join(chars)
+
+
+class SimpleHTROnDBModel(SimpleHTRModel):
+    """SimpleHTR retrained on IAM-DB words plus rendered IAM-OnDB crops.
+
+    Same network, preprocessing and decoding as `SimpleHTRModel`; only the
+    weights differ (issue #150, see ``docs/models/simple_htr_ondb.md``). The
+    word list for lexicon-biased decoding is not duplicated here, it is the one
+    published next to the original model.
+    """
+
+    HF_REPO_ID = "PellelNitram/xournalpp-htr-simple-htr-ondb"
+
+    @classmethod
+    def load_vocabulary(cls, revision: str = "main") -> list[str]:
+        """Word list of `SimpleHTRModel`; ``revision`` is ignored."""
+        return SimpleHTRModel.load_vocabulary()
 
 
 # Punctuation TrOCR appends after a space, e.g. "words ." or "Thanks ,".

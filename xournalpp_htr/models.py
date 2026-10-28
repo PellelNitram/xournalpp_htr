@@ -15,6 +15,7 @@ from xournalpp_htr.inference_models import (
     PPOCRv5Model,
     RFDETRWordDetectorModel,
     SimpleHTRModel,
+    SimpleHTROnDBModel,
     TrOCRLargeModel,
     TrOCRModel,
     WordDetectorModel,
@@ -45,6 +46,8 @@ CROP_RECORDING_PIPELINES = {
     "2026-10-05_yolo_detector_trocr_large",
     "2026-10-09_yolo_detector_trocr_large_strip_punct",
     "2026-10-09_yolo_detector_ppocrv5",
+    "2026-10-17_yolo_detector_simple_htr_ondb",
+    "2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab",
 }
 
 
@@ -204,12 +207,20 @@ def compute_predictions(
                         )
                 predictions[page_index] = predictions_page
 
-    elif pipeline_name == "2026-09-02_yolo_detector":
+    elif pipeline_name in (
+        "2026-09-02_yolo_detector",
+        "2026-10-17_yolo_detector_simple_htr_ondb",
+    ):
         RENDER_DPI = 150
         nr_pages = len(document.pages)
 
         detector = YOLOWordDetectorModel.from_pretrained()
-        recognizer = SimpleHTRModel.from_pretrained()
+        # The ondb variant swaps in the SimpleHTR retrained on rendered
+        # IAM-OnDB crops (issue #150); greedy decoding like the original.
+        if pipeline_name == "2026-10-17_yolo_detector_simple_htr_ondb":
+            recognizer = SimpleHTROnDBModel.from_pretrained()
+        else:
+            recognizer = SimpleHTRModel.from_pretrained()
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):
             with tempfile.NamedTemporaryFile(
@@ -332,14 +343,22 @@ def compute_predictions(
                         )
                 predictions[page_index] = predictions_page
 
-    elif pipeline_name == "2026-10-05_yolo_detector_beam_vocab":
+    elif pipeline_name in (
+        "2026-10-05_yolo_detector_beam_vocab",
+        "2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab",
+    ):
         RENDER_DPI = 150
         nr_pages = len(document.pages)
 
         detector = YOLOWordDetectorModel.from_pretrained()
         # Same detector as 2026-09-02_yolo_detector, but beam search decoding
-        # snapped to the nearest known word (issue #120).
-        recognizer = SimpleHTRModel.from_pretrained()
+        # snapped to the nearest known word (issue #120). The ondb variant
+        # swaps in the SimpleHTR retrained on rendered IAM-OnDB crops
+        # (issue #150), with the same word list.
+        if pipeline_name == "2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab":
+            recognizer = SimpleHTROnDBModel.from_pretrained()
+        else:
+            recognizer = SimpleHTRModel.from_pretrained()
         recognizer.use_lexicon(SimpleHTRModel.load_vocabulary())
 
         for page_index in tqdm(range(nr_pages), desc="Recognition"):

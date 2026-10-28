@@ -10,6 +10,7 @@ import pytest
 from xournalpp_htr.inference_models import (
     HFHubInferenceModel,
     SimpleHTRModel,
+    SimpleHTROnDBModel,
     WordDetectorModel,
     strip_appended_punctuation,
 )
@@ -76,6 +77,23 @@ def test_simple_htr_repo_id_follows_adr006_naming():
     assert re.fullmatch(
         r"PellelNitram/xournalpp-htr-[a-z0-9-]+", SimpleHTRModel.HF_REPO_ID
     )
+
+
+def test_simple_htr_ondb_repo_id_follows_adr006_naming():
+    assert SimpleHTROnDBModel.HF_REPO_ID == "PellelNitram/xournalpp-htr-simple-htr-ondb"
+    assert re.fullmatch(
+        r"PellelNitram/xournalpp-htr-[a-z0-9-]+", SimpleHTROnDBModel.HF_REPO_ID
+    )
+
+
+def test_simple_htr_ondb_reuses_the_simple_htr_vocabulary(monkeypatch):
+    # The word list is published next to SimpleHTR, not next to the OnDB model.
+    monkeypatch.setattr(
+        SimpleHTRModel,
+        "load_vocabulary",
+        classmethod(lambda cls, revision="main": ["word"]),
+    )
+    assert SimpleHTROnDBModel.load_vocabulary(revision="v1") == ["word"]
 
 
 # --- ONNX round-trip (offline, uses the local checkpoint) ---
