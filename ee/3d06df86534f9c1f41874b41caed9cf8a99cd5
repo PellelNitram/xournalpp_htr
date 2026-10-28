@@ -1,0 +1,19 @@
+docs/annotation_guide.md
+  s_aee55ca75008d1::t_497498037beb55 18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "ee3d06df86534f9c1f41874b41caed9cf8a99cd5",
+  "prompts": {},
+  "sessions": {
+    "s_aee55ca75008d1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "08fef793-87e2-4556-89d1-8b0b9e5e5d7b",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
