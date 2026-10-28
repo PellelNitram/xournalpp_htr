@@ -1,0 +1,25 @@
+tools/data_annotation_tool/index.html
+  s_aee55ca75008d1::t_8a920461315701 31-32
+  s_aee55ca75008d1::t_f1ab96883422e1 30
+tools/data_annotation_tool/renderer.js
+  s_aee55ca75008d1::t_8a920461315701 71,116,127-133,135,154-168
+  s_aee55ca75008d1::t_c53bacbe25c223 169-170
+tools/data_annotation_tool/app.js
+  s_aee55ca75008d1::t_8a920461315701 47,166-168,395-402,421-422,554
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "7b2231a007b7decada4a4fcaec2b3b042570e5bf",
+  "prompts": {},
+  "sessions": {
+    "s_aee55ca75008d1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "08fef793-87e2-4556-89d1-8b0b9e5e5d7b",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
