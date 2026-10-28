@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -29,7 +29,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
       
 
@@ -1239,6 +1239,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../models/simple_htr_ondb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SimpleHTR-OnDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../models/word_detector_yolo/" class="md-nav__link">
         
   
@@ -1713,7 +1741,9 @@
 <li><code>2026-06-07_htr_pipeline_native</code> -- An in-house pipeline that loads our locally-trained ONNX models from HuggingFace Hub (<code>WordDetectorModel</code> + <code>SimpleHTRModel</code>, see <code>xournalpp_htr/inference_models.py</code>) and runs detection + per-word recognition without <code>htr_pipeline</code>. Replacing the external dependency entirely is tracked in #125.</li>
 <li><code>2026-09-02_yolo_detector</code> -- Same structure, with the YOLO word detector (<code>YOLOWordDetectorModel</code>, see <a href="../models/word_detector_yolo/">word_detector_yolo</a>) in place of <code>WordDetectorModel</code>. Best detector recall on the benchmark.</li>
 <li><code>2026-09-17_rf_detr_detector</code> -- Same structure, with the RF-DETR word detector (<code>RFDETRWordDetectorModel</code>, see <a href="../models/word_detector_rf_detr/">word_detector_rf_detr</a>). Kept for reproducibility; it loses to YOLO on recall.</li>
-<li><code>2026-10-05_yolo_detector_beam_vocab</code> -- <code>2026-09-02_yolo_detector</code> with beam search decoding snapped to the nearest known word, using the word list published next to the SimpleHTR model (issue #120, see <a href="../models/simple_htr/">simple_htr</a>). Best word accuracy on the benchmark.</li>
+<li><code>2026-10-05_yolo_detector_beam_vocab</code> -- <code>2026-09-02_yolo_detector</code> with beam search decoding snapped to the nearest known word, using the word list published next to the SimpleHTR model (issue #120, see <a href="../models/simple_htr/">simple_htr</a>). The pipeline of record; <code>2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab</code> scores higher, but within noise.</li>
+<li><code>2026-10-17_yolo_detector_simple_htr_ondb</code> -- <code>2026-09-02_yolo_detector</code> with <code>SimpleHTROnDBModel</code> in place of SimpleHTR: the same network trained on IAM-DB plus IAM-OnDB strokes rendered like Xournal++ pages (issue #150, see <a href="../models/simple_htr_ondb/">simple_htr_ondb</a>). Greedy decoding.</li>
+<li><code>2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab</code> -- The same with beam search snapped to the nearest known word, like <code>2026-10-05_yolo_detector_beam_vocab</code>. Better than it on every benchmark metric, but the difference is within noise on 169 words, so <code>2026-10-05_yolo_detector_beam_vocab</code> stays the default.</li>
 <li><code>2026-10-05_yolo_detector_trocr</code> -- <code>2026-09-02_yolo_detector</code> with Microsoft's pretrained TrOCR (<code>microsoft/trocr-base-handwritten</code>, <code>TrOCRModel</code>) in place of SimpleHTR, recognising each page's crops in batches (issue #156). Runs through <code>transformers</code> instead of ONNX and needs the <code>trocr</code> extra. Kept for reproducibility; it loses to SimpleHTR on CER and word accuracy (see <a href="../models/trocr/">trocr</a>).</li>
 <li><code>2026-10-05_yolo_detector_trocr_large</code> -- <code>2026-10-05_yolo_detector_trocr</code> with the larger <code>microsoft/trocr-large-handwritten</code> checkpoint (<code>TrOCRLargeModel</code>). Better than base, but without post-processing still behind SimpleHTR.</li>
 <li><code>2026-10-09_yolo_detector_trocr_large_strip_punct</code> -- <code>2026-10-05_yolo_detector_trocr_large</code> with punctuation that TrOCR appends after a space stripped from each prediction. On par with <code>2026-10-05_yolo_detector_beam_vocab</code> on the benchmark (the gap is within noise), but about 170× larger and much slower; offered as an optional pipeline (see <a href="../models/trocr/">trocr</a>; usage in the <a href="../user_guide/#optional-trocr-pipeline">User Guide</a>).</li>
@@ -1731,7 +1761,7 @@
     shortcuts.py     # Orchestrates Steps 1-3
     documents.py     # .xoj/.xopp parsing (Document ABC, Page, Layer, Stroke)
     models.py        # HTR pipelines (compute_predictions, WordPrediction, CropRecorder)
-    inference_models.py  # ONNX models loaded from HuggingFace Hub (detectors, SimpleHTRModel)
+    inference_models.py  # ONNX models loaded from HuggingFace Hub (detectors, SimpleHTRModel, SimpleHTROnDBModel)
     utils.py         # Argument parsing, xournalpp CLI export
     xio.py           # PDF I/O (PyMuPDF), benchmark/example loading (HuggingFace Hub)
     benchmark.py     # Benchmark logic (run_benchmark, precision/recall/CER, HTML report)
@@ -1860,7 +1890,7 @@ convert their raw output before returning (see <a href="../ADRs/005_prediction_b
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 9, 2026 20:49:58 BST">October 9, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 22, 2026 16:11:08 BST">October 22, 2026</span>
   </span>
 
     
@@ -1919,10 +1949,10 @@ convert their raw output before returning (see <a href="../ADRs/005_prediction_b
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>
