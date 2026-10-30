@@ -35,6 +35,18 @@ class WordPrediction:
     ymax: float
 
 
+# Pipelines that detect words by grouping strokes (issue #168) and read them
+# with SimpleHTR, mapped to the stroke grouping detector they use.
+ONLINE_DETECTOR_PIPELINES = {
+    "2026-10-30_online_gap_threshold_simple_htr": "gap_threshold",
+    "2026-10-30_online_clustering_simple_htr": "clustering",
+    "2026-10-30_online_pairwise_gbm_simple_htr": "pairwise_gbm",
+}
+
+# Padding, in document units, around the strokes of a group when cropping it.
+ONLINE_DETECTOR_CROP_PADDING = 3.0
+
+
 # Pipelines that cut word crops and recognise them one by one, and can
 # therefore fill a `CropRecorder`.
 CROP_RECORDING_PIPELINES = {
@@ -48,6 +60,7 @@ CROP_RECORDING_PIPELINES = {
     "2026-10-09_yolo_detector_ppocrv5",
     "2026-10-17_yolo_detector_simple_htr_ondb",
     "2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab",
+    *ONLINE_DETECTOR_PIPELINES,
 }
 
 
@@ -548,6 +561,77 @@ def compute_predictions(
                     )
                     for text, box in model.read_page(img)
                 ]
+
+    elif pipeline_name in ONLINE_DETECTOR_PIPELINES:
+        # Imported here as the detectors' metrics import this module.
+        from xournalpp_htr.training.online_word_detector.data import unlabeled_pages
+        from xournalpp_htr.training.online_word_detector.pipeline import fit_grouper
+
+        RENDER_DPI = 150
+        nr_pages = len(document.pages)
+
+        # Fit without the document itself, so benchmarking it is held-out.
+        grouper = fit_grouper(
+            ONLINE_DETECTOR_PIPELINES[pipeline_name], document.path.name
+        )
+        recognizer = SimpleHTRModel.from_pretrained()
+
+        stroke_pages = unlabeled_pages(document)
+
+        for page_index in tqdm(range(nr_pages), desc="Recognition"):
+            layers = [p for p in stroke_pages if p.page_index == page_index]
+            if not layers:
+                print(f"Page {page_index} is empty. Skipping HTR.")
+                predictions[page_index] = []
+                continue
+
+            with tempfile.NamedTemporaryFile(
+                dir="/tmp",
+                delete=False,
+                prefix=f"xournalpp_htr__page{page_index}__",
+                suffix=".jpg",
+            ) as tmpfile:
+                written_file = document.save_page_as_image(
+                    page_index, Path(tmpfile.name), False, dpi=RENDER_DPI
+                )
+
+            img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
+            if crop_recorder is not None:
+                crop_recorder.render_dpi = RENDER_DPI
+                crop_recorder.pages[page_index] = img
+
+            px_per_unit = RENDER_DPI / document.DPI
+            predictions_page = []
+            for layer in layers:
+                for group in grouper.predict(layer):
+                    xs = np.concatenate([layer.strokes[i][0] for i in group])
+                    ys = np.concatenate([layer.strokes[i][1] for i in group])
+                    pad = ONLINE_DETECTOR_CROP_PADDING
+                    xmin, xmax = xs.min() - pad, xs.max() + pad
+                    ymin, ymax = ys.min() - pad, ys.max() + pad
+
+                    x_lo = max(0, int(xmin * px_per_unit))
+                    y_lo = max(0, int(ymin * px_per_unit))
+                    x_hi = min(img.shape[1], int(xmax * px_per_unit))
+                    y_hi = min(img.shape[0], int(ymax * px_per_unit))
+                    crop = img[y_lo:y_hi, x_lo:x_hi]
+                    if crop.size == 0:
+                        continue
+
+                    prediction = WordPrediction(
+                        text=recognizer.recognize(crop),
+                        xmin=float(xmin),
+                        xmax=float(xmax),
+                        ymin=float(ymin),
+                        ymax=float(ymax),
+                    )
+                    predictions_page.append(prediction)
+                    if crop_recorder is not None:
+                        crop_recorder.crops[id(prediction)] = crop
+                        crop_recorder.network_inputs[id(prediction)] = (
+                            recognizer.preprocess(crop)
+                        )
+            predictions[page_index] = predictions_page
 
     else:
         raise NotImplementedError(f'Pipeline "{pipeline_name}" not implemented.')

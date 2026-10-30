@@ -77,3 +77,19 @@ def _pages_of_sample(xopp_path: Path, gt_path: Path) -> list[StrokePage]:
                 )
             )
     return pages
+
+
+def unlabeled_pages(document) -> list[StrokePage]:
+    """Return every non-empty layer of `document` as a `StrokePage` without labels."""
+    return [
+        StrokePage(
+            document=document.path.name,
+            page_index=page_index,
+            layer_index=layer_index,
+            strokes=[(s.x, s.y) for s in layer.strokes],
+            labels=np.full(len(layer.strokes), NON_TEXT),
+        )
+        for page_index, page in enumerate(document.pages)
+        for layer_index, layer in enumerate(page.layers)
+        if layer.strokes
+    ]
