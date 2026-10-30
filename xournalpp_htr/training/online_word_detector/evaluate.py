@@ -13,29 +13,63 @@ from xournalpp_htr.training.online_word_detector.data import StrokePage, load_pa
 from xournalpp_htr.training.online_word_detector.detectors import GROUPERS
 from xournalpp_htr.training.online_word_detector.metrics import (
     GroupCounts,
+    box_counts,
     group_counts,
 )
 
 MIN_WORDS_FOR_MACRO = 10
 
 
+METRICS = {"exact": group_counts, "box": box_counts}
+
+
 def cross_validate(
     name: str, pages: list[StrokePage], beta: float
-) -> dict[str, GroupCounts]:
-    """Return the held-out `GroupCounts` of detector `name` per document."""
+) -> dict[str, dict[str, GroupCounts]]:
+    """Return the held-out `GroupCounts` of detector `name`, per metric and document.
+
+    ``exact`` requires a predicted group to be exactly a ground truth word;
+    ``box`` uses the benchmark's box-coverage matching.
+    """
     by_document: dict[str, list[StrokePage]] = defaultdict(list)
     for page in pages:
         by_document[page.document].append(page)
 
-    results = {}
+    results: dict[str, dict[str, GroupCounts]] = {m: {} for m in METRICS}
     for held_out, test_pages in by_document.items():
         train_pages = [p for p in pages if p.document != held_out]
         grouper = GROUPERS[name](beta=beta).fit(train_pages)
-        counts = GroupCounts()
-        for page in test_pages:
-            counts = counts + group_counts(grouper.predict(page), page)
-        results[held_out] = counts
+        predictions = [grouper.predict(page) for page in test_pages]
+        for metric, count in METRICS.items():
+            results[metric][held_out] = sum(
+                (
+                    count(pred, page)
+                    for pred, page in zip(predictions, test_pages, strict=True)
+                ),
+                GroupCounts(),
+            )
     return results
+
+
+def print_table(results: dict[str, GroupCounts]) -> None:
+    print(f"{'held-out document':<28}{'words':>6}{'P':>7}{'R':>7}{'F1':>7}")
+    for document, c in results.items():
+        print(
+            f"{document[:26]:<28}{c.n_gt:>6}{c.precision:>7.2f}"
+            f"{c.recall:>7.2f}{c.f_beta():>7.2f}"
+        )
+    pooled = sum(results.values(), GroupCounts())
+    macro = [c for c in results.values() if c.n_gt >= MIN_WORDS_FOR_MACRO]
+    print(
+        f"{'pooled':<28}{pooled.n_gt:>6}{pooled.precision:>7.2f}"
+        f"{pooled.recall:>7.2f}{pooled.f_beta():>7.2f}"
+    )
+    print(
+        f"{'macro (>=%d words)' % MIN_WORDS_FOR_MACRO:<28}{'':>6}"
+        f"{sum(c.precision for c in macro) / len(macro):>7.2f}"
+        f"{sum(c.recall for c in macro) / len(macro):>7.2f}"
+        f"{sum(c.f_beta() for c in macro) / len(macro):>7.2f}"
+    )
 
 
 def main() -> None:
@@ -55,25 +89,9 @@ def main() -> None:
 
     for name in args.detectors:
         results = cross_validate(name, pages, args.beta)
-        print(f"\n== {name} (tuned for F{args.beta:g}) ==")
-        print(f"{'held-out document':<28}{'words':>6}{'P':>7}{'R':>7}{'F1':>7}")
-        for document, c in results.items():
-            print(
-                f"{document[:26]:<28}{c.n_gt:>6}{c.precision:>7.2f}"
-                f"{c.recall:>7.2f}{c.f_beta():>7.2f}"
-            )
-        pooled = sum(results.values(), GroupCounts())
-        macro = [c for c in results.values() if c.n_gt >= MIN_WORDS_FOR_MACRO]
-        print(
-            f"{'pooled':<28}{pooled.n_gt:>6}{pooled.precision:>7.2f}"
-            f"{pooled.recall:>7.2f}{pooled.f_beta():>7.2f}"
-        )
-        print(
-            f"{'macro (>=%d words)' % MIN_WORDS_FOR_MACRO:<28}{'':>6}"
-            f"{sum(c.precision for c in macro) / len(macro):>7.2f}"
-            f"{sum(c.recall for c in macro) / len(macro):>7.2f}"
-            f"{sum(c.f_beta() for c in macro) / len(macro):>7.2f}"
-        )
+        for metric in METRICS:
+            print(f"\n== {name}, {metric} match (tuned for F{args.beta:g}) ==")
+            print_table(results[metric])
 
 
 if __name__ == "__main__":

@@ -2,6 +2,10 @@
 
 from dataclasses import dataclass
 
+import numpy as np
+
+from xournalpp_htr.benchmark import GroundTruthWord, _match
+from xournalpp_htr.models import WordPrediction
 from xournalpp_htr.training.online_word_detector.data import StrokePage
 
 
@@ -46,4 +50,30 @@ def group_counts(predicted: list[frozenset[int]], page: StrokePage) -> GroupCoun
         n_correct=sum(group in gt for group in predicted),
         n_predicted=len(predicted),
         n_gt=len(gt),
+    )
+
+
+def _box(page: StrokePage, strokes: frozenset[int]) -> tuple[float, ...]:
+    xs = np.concatenate([page.strokes[i][0] for i in strokes])
+    ys = np.concatenate([page.strokes[i][1] for i in strokes])
+    return float(xs.min()), float(xs.max()), float(ys.min()), float(ys.max())
+
+
+def box_counts(predicted: list[frozenset[int]], page: StrokePage) -> GroupCounts:
+    """Count the predicted groups whose box the benchmark accepts as a GT word.
+
+    Uses the benchmark's own matching (coverage of the GT box, capped area), so
+    the result is comparable to the benchmark's detection precision and recall.
+    """
+    gt_words = [
+        GroundTruthWord("", *_box(page, group), page_index=page.page_index)
+        for group in page.groups
+    ]
+    predictions = {
+        page.page_index: [WordPrediction("", *_box(page, group)) for group in predicted]
+    }
+    return GroupCounts(
+        n_correct=len(_match(gt_words, predictions)),
+        n_predicted=len(predicted),
+        n_gt=len(gt_words),
     )
