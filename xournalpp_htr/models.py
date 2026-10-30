@@ -41,6 +41,7 @@ ONLINE_DETECTOR_PIPELINES = {
     "2026-10-30_online_gap_threshold_simple_htr": "gap_threshold",
     "2026-10-30_online_clustering_simple_htr": "clustering",
     "2026-10-30_online_pairwise_gbm_simple_htr": "pairwise_gbm",
+    "2026-10-30_online_pairwise_gbm_tuned_simple_htr": "pairwise_gbm_tuned",
 }
 
 # Padding, in document units, around the strokes of a group when cropping it.

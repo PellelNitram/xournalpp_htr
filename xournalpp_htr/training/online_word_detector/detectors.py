@@ -23,6 +23,7 @@ from xournalpp_htr.training.online_word_detector.features import (
 )
 from xournalpp_htr.training.online_word_detector.metrics import (
     GroupCounts,
+    box_counts,
     group_counts,
 )
 
@@ -149,15 +150,18 @@ class PairwiseClassifierGrouper(StrokeGrouper):
     strokes of drawings and diagrams are split like word boundaries.
     """
 
+    _features = staticmethod(consecutive_pair_features)
+
     def __init__(self, beta: float = 1.0, seed: int = 0):
         super().__init__(beta)
+        self.seed = seed
         self.threshold = 0.5
         self._model = GradientBoostingClassifier(
             n_estimators=100, max_depth=2, random_state=seed
         )
 
     def fit(self, pages):
-        features = np.concatenate([consecutive_pair_features(p) for p in pages])
+        features = np.concatenate([self._features(p) for p in pages])
         labels = np.concatenate(
             [
                 (p.labels[:-1] == p.labels[1:]) & (p.labels[:-1] != NON_TEXT)
@@ -167,15 +171,57 @@ class PairwiseClassifierGrouper(StrokeGrouper):
         self._model.fit(features, labels)
         return self
 
-    def predict(self, page):
+    def _merge_probabilities(self, page: StrokePage) -> np.ndarray:
         if len(page.strokes) == 1:
-            return [frozenset([0])]
-        proba = self._model.predict_proba(consecutive_pair_features(page))[:, 1]
-        return _groups_from_merges(len(page.strokes), proba >= self.threshold)
+            return np.empty(0)
+        return self._model.predict_proba(self._features(page))[:, 1]
+
+    def predict(self, page):
+        return _groups_from_merges(
+            len(page.strokes), self._merge_probabilities(page) >= self.threshold
+        )
+
+
+class TunedPairwiseClassifierGrouper(PairwiseClassifierGrouper):
+    """`PairwiseClassifierGrouper` with a merge threshold tuned on held-out documents.
+
+    The classifier's probabilities are not calibrated, so 0.5 is a poor
+    threshold. It is chosen on out-of-fold probabilities, obtained by leaving
+    each training document out in turn, so no test page is involved.
+    """
+
+    def fit(self, pages):
+        super().fit(pages)
+        documents = sorted({p.document for p in pages})
+        if len(documents) < 2:
+            return self
+
+        out_of_fold = []
+        for held_out in documents:
+            inner = PairwiseClassifierGrouper(self.beta, self.seed).fit(
+                [p for p in pages if p.document != held_out]
+            )
+            out_of_fold += [
+                (p, inner._merge_probabilities(p))
+                for p in pages
+                if p.document == held_out
+            ]
+
+        best_score = -1.0
+        for threshold in np.arange(0.05, 0.96, 0.05):
+            total = GroupCounts()
+            for page, proba in out_of_fold:
+                groups = _groups_from_merges(len(page.strokes), proba >= threshold)
+                total = total + box_counts(groups, page)
+            if total.f_beta(self.beta) > best_score:
+                best_score = total.f_beta(self.beta)
+                self.threshold = float(threshold)
+        return self
 
 
 GROUPERS: dict[str, type[StrokeGrouper]] = {
     "gap_threshold": GapThresholdGrouper,
     "clustering": ClusteringGrouper,
     "pairwise_gbm": PairwiseClassifierGrouper,
+    "pairwise_gbm_tuned": TunedPairwiseClassifierGrouper,
 }
