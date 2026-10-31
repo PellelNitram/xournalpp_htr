@@ -68,7 +68,7 @@ export class Renderer {
         };
     }
 
-    render(strokes, annotations, selectedIndices, highlightedAnnotationId, classes, selectionRect) {
+    render(strokes, annotations, selectedIndices, highlightedAnnotationId, classes, selectionRect, highlightUnassigned = false) {
         const ctx = this.ctx;
         const dpr = this.dpr;
 
@@ -113,7 +113,7 @@ export class Renderer {
                 const cls = classMap.get(ann.className);
                 color = cls ? cls.color : '#888888';
             } else {
-                color = '#aaaaaa';
+                color = highlightUnassigned ? '#ff2d55' : '#aaaaaa';
             }
 
             if (isSelected) {
@@ -124,7 +124,15 @@ export class Renderer {
                 lineWidth = stroke.width * 2;
             }
 
+            if (highlightUnassigned && !ann) {
+                lineWidth = Math.max(lineWidth, stroke.width * 2);
+                this.drawUnassignedHalo(stroke, lineWidth);
+            }
+
+            // Dim annotated strokes so the unassigned ones stand out
+            ctx.globalAlpha = highlightUnassigned && ann ? 0.25 : 1;
             this.drawStroke(stroke, color, lineWidth, isSelected);
+            ctx.globalAlpha = 1;
         }
 
         ctx.restore();
@@ -141,6 +149,23 @@ export class Renderer {
             ctx.strokeRect(x, y, w, h);
             ctx.restore();
         }
+    }
+
+    drawUnassignedHalo(stroke, lineWidth) {
+        const ctx = this.ctx;
+        const points = stroke.points;
+        if (points.length < 2) return;
+
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255, 45, 85, 0.3)';
+        ctx.lineWidth = lineWidth + 6 / this.scale;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.stroke();
     }
 
     drawStroke(stroke, color, lineWidth, isSelected) {

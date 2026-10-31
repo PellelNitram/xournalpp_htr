@@ -44,6 +44,7 @@ const state = {
     selectedStrokes: new Set(),
     highlightedAnnotation: null,
     tool: 'rect',        // 'rect' | 'stroke' | 'pan'
+    highlightUnassigned: false,
     createdAt: null,
 };
 
@@ -161,6 +162,9 @@ function init() {
         updateZoom(); render();
     });
     $('#btn-zoom-fit').addEventListener('click', fitToView);
+
+    // Highlight unassigned strokes
+    $('#btn-highlight-unassigned').addEventListener('click', toggleHighlightUnassigned);
 
     // Canvas events
     canvas.addEventListener('mousedown', handleMouseDown);
@@ -388,6 +392,14 @@ function updateZoom() {
     zoomLevel.textContent = renderer.getZoomPercent() + '%';
 }
 
+function toggleHighlightUnassigned() {
+    state.highlightUnassigned = !state.highlightUnassigned;
+    const btn = $('#btn-highlight-unassigned');
+    btn.classList.toggle('active', state.highlightUnassigned);
+    btn.setAttribute('aria-pressed', String(state.highlightUnassigned));
+    render();
+}
+
 function render() {
     const page = currentPage();
     if (!page) {
@@ -406,7 +418,8 @@ function render() {
         state.selectedStrokes,
         state.highlightedAnnotation,
         FIXED_CLASSES,
-        selectionRect
+        selectionRect,
+        state.highlightUnassigned
     );
 }
 
@@ -538,6 +551,7 @@ function onKeyDown(e) {
         case 's': setTool('stroke'); break;
         case 'p': setTool('pan'); break;
         case 'f': fitToView(); break;
+        case 'h': toggleHighlightUnassigned(); break;
         case '+': case '=':
             renderer.zoom(1, container.clientWidth / 2, container.clientHeight / 2);
             updateZoom(); render(); break;

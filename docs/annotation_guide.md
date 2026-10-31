@@ -15,7 +15,7 @@ in `data/` of the `PellelNitram/xournalpp_htr_benchmark` dataset.
 - Annotate the **copy in the dataset repo** — editing a source file after annotation
   invalidates its labels.
 - Auto-save is browser-local only. Export every session.
-- `R` rect select · `S` stroke select · `P` pan · `+`/`-` zoom · `F` fit
+- `R` rect select · `S` stroke select · `P` pan · `+`/`-` zoom · `F` fit · `H` highlight unassigned strokes
 
 ## Classes
 
