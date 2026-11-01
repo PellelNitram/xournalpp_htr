@@ -1,0 +1,19 @@
+xournalpp_htr/training/online_word_detector/detectors.py
+  s_c3bd910db75a2d::t_47d8b920c5779b 193-194,201-204,206,208,213
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "d40244c14762210da6e027689f289d7a0747127f",
+  "prompts": {},
+  "sessions": {
+    "s_c3bd910db75a2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6a988c4b-abd6-4e1f-956b-8b17c181ed3f",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
