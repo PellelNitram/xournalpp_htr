@@ -190,21 +190,27 @@ class TunedPairwiseClassifierGrouper(PairwiseClassifierGrouper):
     each training document out in turn, so no test page is involved.
     """
 
+    MAX_TUNING_FOLDS = 6
+
     def fit(self, pages):
         super().fit(pages)
         documents = sorted({p.document for p in pages})
         if len(documents) < 2:
             return self
 
+        # Hold out documents in at most `MAX_TUNING_FOLDS` groups, so that
+        # training sets with very many documents (writers) stay affordable.
+        n_folds = min(len(documents), self.MAX_TUNING_FOLDS)
+        fold_of = {d: i % n_folds for i, d in enumerate(documents)}
         out_of_fold = []
-        for held_out in documents:
+        for fold in range(n_folds):
             inner = PairwiseClassifierGrouper(self.beta, self.seed).fit(
-                [p for p in pages if p.document != held_out]
+                [p for p in pages if fold_of[p.document] != fold]
             )
             out_of_fold += [
                 (p, inner._merge_probabilities(p))
                 for p in pages
-                if p.document == held_out
+                if fold_of[p.document] == fold
             ]
 
         best_score = -1.0
