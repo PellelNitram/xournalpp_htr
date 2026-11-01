@@ -4,6 +4,7 @@
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import NamedTuple
 
 import cv2
 import matplotlib.pyplot as plt
@@ -11,6 +12,7 @@ import numpy as np
 from htr_pipeline import DetectorConfig, LineClusteringConfig, read_page
 from tqdm import tqdm
 
+from xournalpp_htr.documents import StrokesDocument
 from xournalpp_htr.inference_models import (
     PPOCRv5Model,
     RFDETRWordDetectorModel,
@@ -35,40 +37,46 @@ class WordPrediction:
     ymax: float
 
 
-# Pipelines that detect words by grouping strokes (issue #168) and read them
-# with SimpleHTR, mapped to the stroke grouping detector they use, the data it
-# is fit on (the benchmark, leaving the scored document out, or IAM-OnDB) and
-# the recognizer (SimpleHTR, or the one retrained on IAM-OnDB renders).
+class OnlineDetectorPipeline(NamedTuple):
+    """Setup of a pipeline that detects words by grouping strokes (issue #168)."""
+
+    #: Stroke grouping detector, see `online_word_detector.detectors.GROUPERS`.
+    detector: str
+    #: Data it is fit on: the benchmark, leaving the scored document out, or IAM-OnDB.
+    train_on: str
+    #: "simple_htr", or "simple_htr_ondb" for the one retrained on IAM-OnDB renders.
+    recognizer: str
+    #: Render each crop from the strokes of its word alone, instead of cutting it
+    #: out of the page, so that neighbouring words inside the box stay out.
+    isolate_strokes: bool = False
+
+
 ONLINE_DETECTOR_PIPELINES = {
-    "2026-10-30_online_gap_threshold_simple_htr": (
-        "gap_threshold",
-        "benchmark",
-        "simple_htr",
+    "2026-10-30_online_gap_threshold_simple_htr": OnlineDetectorPipeline(
+        "gap_threshold", "benchmark", "simple_htr"
     ),
-    "2026-10-30_online_clustering_simple_htr": (
-        "clustering",
-        "benchmark",
-        "simple_htr",
+    "2026-10-30_online_clustering_simple_htr": OnlineDetectorPipeline(
+        "clustering", "benchmark", "simple_htr"
     ),
-    "2026-10-30_online_pairwise_gbm_simple_htr": (
-        "pairwise_gbm",
-        "benchmark",
-        "simple_htr",
+    "2026-10-30_online_pairwise_gbm_simple_htr": OnlineDetectorPipeline(
+        "pairwise_gbm", "benchmark", "simple_htr"
     ),
-    "2026-10-30_online_pairwise_gbm_tuned_simple_htr": (
-        "pairwise_gbm_tuned",
-        "benchmark",
-        "simple_htr",
+    "2026-10-30_online_pairwise_gbm_tuned_simple_htr": OnlineDetectorPipeline(
+        "pairwise_gbm_tuned", "benchmark", "simple_htr"
     ),
-    "2026-11-01_online_pairwise_gbm_iam_simple_htr": (
-        "pairwise_gbm_tuned",
-        "iam",
-        "simple_htr",
+    "2026-11-01_online_pairwise_gbm_iam_simple_htr": OnlineDetectorPipeline(
+        "pairwise_gbm_tuned", "iam", "simple_htr"
     ),
-    "2026-11-01_online_pairwise_gbm_iam_simple_htr_ondb": (
-        "pairwise_gbm_tuned",
-        "iam",
-        "simple_htr_ondb",
+    "2026-11-01_online_pairwise_gbm_iam_simple_htr_ondb": OnlineDetectorPipeline(
+        "pairwise_gbm_tuned", "iam", "simple_htr_ondb"
+    ),
+    "2026-11-01_online_pairwise_gbm_iam_isolated_simple_htr": OnlineDetectorPipeline(
+        "pairwise_gbm_tuned", "iam", "simple_htr", isolate_strokes=True
+    ),
+    "2026-11-01_online_pairwise_gbm_iam_isolated_simple_htr_ondb": (
+        OnlineDetectorPipeline(
+            "pairwise_gbm_tuned", "iam", "simple_htr_ondb", isolate_strokes=True
+        )
     ),
 }
 
@@ -106,6 +114,30 @@ class CropRecorder:
     pages: dict[PageIndex, np.ndarray] = field(default_factory=dict)
     crops: dict[int, np.ndarray] = field(default_factory=dict)
     network_inputs: dict[int, np.ndarray] = field(default_factory=dict)
+
+
+def _render_isolated_strokes(
+    strokes: list[tuple[np.ndarray, np.ndarray]],
+    box: tuple[float, float, float, float],
+    dpi: float,
+) -> np.ndarray:
+    """Render only `strokes` into a grayscale image of `box` (document units).
+
+    Goes through the same rendering and JPEG round trip as the page renders,
+    so the crop looks like one cut out of a page, minus any other strokes.
+    """
+    xmin, ymin, xmax, ymax = box
+    document = StrokesDocument(
+        [(x - xmin, y - ymin) for x, y in strokes], xmax - xmin, ymax - ymin
+    )
+    with tempfile.NamedTemporaryFile(
+        dir="/tmp", delete=False, prefix="xournalpp_htr__group__", suffix=".jpg"
+    ) as tmpfile:
+        path = Path(tmpfile.name)
+    document.save_page_as_image(0, path, False, dpi=dpi)
+    image = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+    path.unlink()
+    return image
 
 
 def compute_predictions(
@@ -602,11 +634,9 @@ def compute_predictions(
 
         # Fit on the benchmark without the document itself, so benchmarking it
         # is held-out; the IAM-OnDB fit does not involve the benchmark at all.
-        detector_name, train_on, recognizer_name = ONLINE_DETECTOR_PIPELINES[
-            pipeline_name
-        ]
-        grouper = fit_grouper(detector_name, train_on, document.path.name)
-        if recognizer_name == "simple_htr_ondb":
+        setup = ONLINE_DETECTOR_PIPELINES[pipeline_name]
+        grouper = fit_grouper(setup.detector, setup.train_on, document.path.name)
+        if setup.recognizer == "simple_htr_ondb":
             recognizer = SimpleHTROnDBModel.from_pretrained()
         else:
             recognizer = SimpleHTRModel.from_pretrained()
@@ -645,11 +675,18 @@ def compute_predictions(
                     xmin, xmax = xs.min() - pad, xs.max() + pad
                     ymin, ymax = ys.min() - pad, ys.max() + pad
 
-                    x_lo = max(0, int(xmin * px_per_unit))
-                    y_lo = max(0, int(ymin * px_per_unit))
-                    x_hi = min(img.shape[1], int(xmax * px_per_unit))
-                    y_hi = min(img.shape[0], int(ymax * px_per_unit))
-                    crop = img[y_lo:y_hi, x_lo:x_hi]
+                    if setup.isolate_strokes:
+                        crop = _render_isolated_strokes(
+                            [layer.strokes[i] for i in sorted(group)],
+                            (xmin, ymin, xmax, ymax),
+                            RENDER_DPI,
+                        )
+                    else:
+                        x_lo = max(0, int(xmin * px_per_unit))
+                        y_lo = max(0, int(ymin * px_per_unit))
+                        x_hi = min(img.shape[1], int(xmax * px_per_unit))
+                        y_hi = min(img.shape[0], int(ymax * px_per_unit))
+                        crop = img[y_lo:y_hi, x_lo:x_hi]
                     if crop.size == 0:
                         continue
 
