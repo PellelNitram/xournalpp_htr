@@ -1,0 +1,22 @@
+xournalpp_htr/models.py
+  s_c3bd910db75a2d::t_5c0fd69e615000 39-40,42-49,579-582
+xournalpp_htr/training/online_word_detector/pipeline.py
+  s_c3bd910db75a2d::t_5c0fd69e615000 17,21,23-24,27-29,31-41,44-54
+  s_c3bd910db75a2d::t_7b4263be891868 11-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "37aca7e65ad86cb8e3d1adb808aa47b49ddc2ba3",
+  "prompts": {},
+  "sessions": {
+    "s_c3bd910db75a2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6a988c4b-abd6-4e1f-956b-8b17c181ed3f",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
