@@ -1,0 +1,19 @@
+xournalpp_htr/models.py
+  s_c3bd910db75a2d::t_2697da959de518 39-41,43-57,61-71,75,605-607,609-612
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "f7aec4842f303dfb2f2b74037fcc25238b900703",
+  "prompts": {},
+  "sessions": {
+    "s_c3bd910db75a2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6a988c4b-abd6-4e1f-956b-8b17c181ed3f",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
