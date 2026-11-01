@@ -36,12 +36,17 @@ class WordPrediction:
 
 
 # Pipelines that detect words by grouping strokes (issue #168) and read them
-# with SimpleHTR, mapped to the stroke grouping detector they use.
+# with SimpleHTR, mapped to the stroke grouping detector they use and the data
+# it is fit on: the benchmark (leaving the scored document out) or IAM-OnDB.
 ONLINE_DETECTOR_PIPELINES = {
-    "2026-10-30_online_gap_threshold_simple_htr": "gap_threshold",
-    "2026-10-30_online_clustering_simple_htr": "clustering",
-    "2026-10-30_online_pairwise_gbm_simple_htr": "pairwise_gbm",
-    "2026-10-30_online_pairwise_gbm_tuned_simple_htr": "pairwise_gbm_tuned",
+    "2026-10-30_online_gap_threshold_simple_htr": ("gap_threshold", "benchmark"),
+    "2026-10-30_online_clustering_simple_htr": ("clustering", "benchmark"),
+    "2026-10-30_online_pairwise_gbm_simple_htr": ("pairwise_gbm", "benchmark"),
+    "2026-10-30_online_pairwise_gbm_tuned_simple_htr": (
+        "pairwise_gbm_tuned",
+        "benchmark",
+    ),
+    "2026-11-01_online_pairwise_gbm_iam_simple_htr": ("pairwise_gbm_tuned", "iam"),
 }
 
 # Padding, in document units, around the strokes of a group when cropping it.
@@ -571,10 +576,10 @@ def compute_predictions(
         RENDER_DPI = 150
         nr_pages = len(document.pages)
 
-        # Fit without the document itself, so benchmarking it is held-out.
-        grouper = fit_grouper(
-            ONLINE_DETECTOR_PIPELINES[pipeline_name], document.path.name
-        )
+        # Fit on the benchmark without the document itself, so benchmarking it
+        # is held-out; the IAM-OnDB fit does not involve the benchmark at all.
+        detector_name, train_on = ONLINE_DETECTOR_PIPELINES[pipeline_name]
+        grouper = fit_grouper(detector_name, train_on, document.path.name)
         recognizer = SimpleHTRModel.from_pretrained()
 
         stroke_pages = unlabeled_pages(document)

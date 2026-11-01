@@ -8,18 +8,47 @@ from xournalpp_htr.training.online_word_detector.detectors import (
     StrokeGrouper,
 )
 
+#: IAM-OnDB forms the IAM-trained detectors are fit on.
+IAM_FORMS = 700
 
-@lru_cache(maxsize=None)
+
 def fit_grouper(
     name: str,
+    train_on: str = "benchmark",
     held_out_document: str | None = None,
     dataset_version: str | None = None,
 ) -> StrokeGrouper:
-    """Fit detector `name` on the benchmark, leaving out one document.
+    """Fit detector `name` on the benchmark or on IAM-OnDB.
 
-    Benchmarking a pipeline on a document passes that document's file name as
+    ``train_on="benchmark"`` fits on the benchmark leaving out one document:
+    benchmarking a pipeline on a document passes that document's file name as
     `held_out_document`, so the detector is scored on data it was not fit on
     (leave-one-document-out). ``None`` fits on the whole benchmark.
+
+    ``train_on="iam"`` fits on IAM-OnDB pages only, so the benchmark stays a
+    pure test set and `held_out_document` is irrelevant.
     """
+    if train_on == "iam":
+        return _fit_on_iam(name)
+    if train_on != "benchmark":
+        raise ValueError(f"Unknown training data: {train_on}")
+    return _fit_on_benchmark(name, held_out_document, dataset_version)
+
+
+@lru_cache(maxsize=None)
+def _fit_on_benchmark(
+    name: str, held_out_document: str | None, dataset_version: str | None
+) -> StrokeGrouper:
     pages = [p for p in load_pages(dataset_version) if p.document != held_out_document]
+    return GROUPERS[name]().fit(pages)
+
+
+@lru_cache(maxsize=None)
+def _fit_on_iam(name: str) -> StrokeGrouper:
+    # Imported here as it needs the IAM-OnDB training dependencies.
+    from xournalpp_htr.training.online_word_detector.iam_ondb import (
+        load_iam_ondb_pages,
+    )
+
+    pages, _ = load_iam_ondb_pages(IAM_FORMS, synthetic_non_text=False)
     return GROUPERS[name]().fit(pages)
