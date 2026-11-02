@@ -67,3 +67,39 @@ def test_squeeze_word_gaps_shrinks_only_the_gaps():
     # Gaps of 4 and 6 become 2 and 3; the words keep their width.
     assert [float(x.min()) for x, _ in squeezed] == [0.0, 3.0, 7.0]
     assert [float(x.max() - x.min()) for x, _ in squeezed] == [1.0, 1.0, 1.0]
+
+
+def _line_page(boxes_and_strokes):
+    """A page of one stroke per ``(xmin, xmax, ymin, ymax)``."""
+    strokes = [
+        (np.array([x0, x1]), np.array([y0, y1])) for x0, x1, y0, y1 in boxes_and_strokes
+    ]
+    return StrokePage("doc", 0, 0, strokes, np.full(len(strokes), NON_TEXT))
+
+
+def test_postprocess_defaults_change_nothing():
+    from xournalpp_htr.training.online_word_detector.postprocess import (
+        PostProcessParams,
+        postprocess_groups,
+    )
+
+    page = _page()
+    groups = [frozenset(g) for g in page.groups]
+    assert postprocess_groups(page, groups, PostProcessParams()) == groups
+
+
+def test_postprocess_merges_fragment_and_drops_underline():
+    from xournalpp_htr.training.online_word_detector.postprocess import (
+        PostProcessParams,
+        postprocess_groups,
+    )
+
+    # Two letters of one word, a detached small "s", and a long flat underline.
+    page = _line_page(
+        [(0, 4, 0, 10), (5, 9, 0, 10), (10, 12, 4, 10), (0, 40, 14, 14.5)]
+    )
+    groups = [frozenset({0, 1}), frozenset({2}), frozenset({3})]
+    params = PostProcessParams(
+        fragment_size=1.0, fragment_gap=0.5, underline_width=2.0, underline_aspect=5.0
+    )
+    assert postprocess_groups(page, groups, params) == [frozenset({0, 1, 2})]

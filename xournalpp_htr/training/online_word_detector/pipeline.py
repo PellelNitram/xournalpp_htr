@@ -14,6 +14,11 @@ IAM_FORMS = 700
 #: Range of the factor the gaps between words are shrunk by for "iam_squeezed".
 IAM_GAP_SQUEEZE = (0.3, 1.0)
 
+#: IAM-OnDB forms the post-processing is tuned on. They come after the forms the
+#: detector is fit on, so the two never share a page.
+IAM_POSTPROCESS_FORMS = 300
+IAM_POSTPROCESS_SKIP_FORMS = IAM_FORMS + 100
+
 
 def fit_grouper(
     name: str,
@@ -30,12 +35,16 @@ def fit_grouper(
 
     ``train_on="iam"`` fits on IAM-OnDB pages only, so the benchmark stays a
     pure test set and `held_out_document` is irrelevant. ``"iam_squeezed"`` does
-    the same with the gaps between words shrunk to `IAM_GAP_SQUEEZE`.
+    the same with the gaps between words shrunk to `IAM_GAP_SQUEEZE`, and
+    ``"iam_squeezed_postprocessed"`` adds the post-processing of the groups,
+    tuned on other IAM-OnDB pages.
     """
     if train_on == "iam":
-        return _fit_on_iam(name, None)
+        return _fit_on_iam(name, None, False)
     if train_on == "iam_squeezed":
-        return _fit_on_iam(name, IAM_GAP_SQUEEZE)
+        return _fit_on_iam(name, IAM_GAP_SQUEEZE, False)
+    if train_on == "iam_squeezed_postprocessed":
+        return _fit_on_iam(name, IAM_GAP_SQUEEZE, True)
     if train_on != "benchmark":
         raise ValueError(f"Unknown training data: {train_on}")
     return _fit_on_benchmark(name, held_out_document, dataset_version)
@@ -50,7 +59,9 @@ def _fit_on_benchmark(
 
 
 @lru_cache(maxsize=None)
-def _fit_on_iam(name: str, gap_squeeze: tuple[float, float] | None) -> StrokeGrouper:
+def _fit_on_iam(
+    name: str, gap_squeeze: tuple[float, float] | None, postprocess: bool
+) -> StrokeGrouper:
     # Imported here as it needs the IAM-OnDB training dependencies.
     from xournalpp_htr.training.online_word_detector.iam_ondb import (
         load_iam_ondb_pages,
@@ -59,4 +70,19 @@ def _fit_on_iam(name: str, gap_squeeze: tuple[float, float] | None) -> StrokeGro
     pages, _ = load_iam_ondb_pages(
         IAM_FORMS, synthetic_non_text=False, gap_squeeze=gap_squeeze
     )
-    return GROUPERS[name]().fit(pages)
+    grouper = GROUPERS[name]().fit(pages)
+    if not postprocess:
+        return grouper
+
+    from xournalpp_htr.training.online_word_detector.postprocess import (
+        PostProcessedGrouper,
+        tune_postprocess,
+    )
+
+    tuning_pages, _ = load_iam_ondb_pages(
+        IAM_POSTPROCESS_FORMS,
+        synthetic_non_text=True,
+        gap_squeeze=gap_squeeze,
+        skip_forms=IAM_POSTPROCESS_SKIP_FORMS,
+    )
+    return PostProcessedGrouper(grouper, tune_postprocess(grouper, tuning_pages))

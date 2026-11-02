@@ -139,12 +139,16 @@ def load_iam_ondb_pages(
     min_gap_ratio: float = 1.5,
     synthetic_non_text: bool = True,
     gap_squeeze: tuple[float, float] | None = None,
+    skip_forms: int = 0,
 ) -> tuple[list[StrokePage], Counter]:
     """Return `n_forms` random IAM-OnDB forms as pages, and why lines were rejected.
 
     The `document` of a page is its writer, so training can hold out writers.
     Forms without a single usable line are skipped. `gap_squeeze` shrinks the gaps
     between words, see `_load_line`, to teach the detector tighter word spacing.
+
+    `skip_forms` leaves out the first forms of the shuffled order, so a second
+    call with the same `seed` can draw forms the first one did not use.
     """
     root = load_IAM_OnDB_dataset()
     writers = load_form_writers(root)
@@ -155,6 +159,7 @@ def load_iam_ondb_pages(
     rng = np.random.default_rng(seed)
     forms = sorted(lines_of_form)
     rng.shuffle(forms)
+    forms = forms[skip_forms:]
 
     pages, stats = [], Counter()
     for form in forms:

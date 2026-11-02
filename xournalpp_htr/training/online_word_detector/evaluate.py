@@ -8,9 +8,13 @@ with few words are listed but left out of the macro average.
 
 import argparse
 from collections import defaultdict
+from collections.abc import Callable
 
 from xournalpp_htr.training.online_word_detector.data import StrokePage, load_pages
-from xournalpp_htr.training.online_word_detector.detectors import GROUPERS
+from xournalpp_htr.training.online_word_detector.detectors import (
+    GROUPERS,
+    StrokeGrouper,
+)
 from xournalpp_htr.training.online_word_detector.metrics import (
     GroupCounts,
     box_counts,
@@ -29,11 +33,13 @@ def cross_validate(
     beta: float,
     extra_train: list[StrokePage] = (),
     use_benchmark_train: bool = True,
+    wrap_fitted: Callable[[StrokeGrouper], StrokeGrouper] | None = None,
 ) -> dict[str, dict[str, GroupCounts]]:
     """Return the held-out `GroupCounts` of detector `name`, per metric and document.
 
     ``extra_train`` pages (e.g. IAM-OnDB) are added to every training set;
-    ``use_benchmark_train=False`` trains on them alone.
+    ``use_benchmark_train=False`` trains on them alone. `wrap_fitted` is applied
+    to every fitted detector, e.g. to add post-processing.
 
     ``exact`` requires a predicted group to be exactly a ground truth word;
     ``box`` uses the benchmark's box-coverage matching.
@@ -47,6 +53,8 @@ def cross_validate(
     if not use_benchmark_train:
         # The training data does not depend on the held-out document.
         shared_grouper = GROUPERS[name](beta=beta).fit(list(extra_train))
+        if wrap_fitted:
+            shared_grouper = wrap_fitted(shared_grouper)
     for held_out, test_pages in by_document.items():
         if shared_grouper is not None:
             grouper = shared_grouper
@@ -55,6 +63,8 @@ def cross_validate(
                 p for p in pages if p.document != held_out
             ]
             grouper = GROUPERS[name](beta=beta).fit(train_pages)
+            if wrap_fitted:
+                grouper = wrap_fitted(grouper)
         predictions = [grouper.predict(page) for page in test_pages]
         for metric, count in METRICS.items():
             results[metric][held_out] = sum(
@@ -109,6 +119,14 @@ def main() -> None:
     )
     parser.add_argument("--iam-forms", type=int, default=700)
     parser.add_argument(
+        "--postprocess",
+        action="store_true",
+        help=(
+            "Merge fragments and drop underlines and dots after detecting, tuned "
+            "on other IAM-OnDB pages (only with --train-on iam)"
+        ),
+    )
+    parser.add_argument(
         "--gap-squeeze",
         type=float,
         nargs=2,
@@ -143,6 +161,28 @@ def main() -> None:
         )
         print(f"IAM-OnDB pages: {dict(stats)}")
 
+    wrap_fitted = None
+    if args.postprocess:
+        if args.train_on != "iam":
+            parser.error("--postprocess needs --train-on iam")
+        from xournalpp_htr.training.online_word_detector.postprocess import (
+            PostProcessedGrouper,
+            tune_postprocess,
+        )
+
+        # Forms the detector did not train on: it uses the first ones.
+        tuning_pages, _ = load_iam_ondb_pages(
+            300,
+            synthetic_non_text=True,
+            gap_squeeze=tuple(args.gap_squeeze) if args.gap_squeeze else None,
+            skip_forms=args.iam_forms + 100,
+        )
+
+        def wrap_fitted(grouper):
+            params = tune_postprocess(grouper, tuning_pages, args.beta)
+            print(f"Post-processing: {params}")
+            return PostProcessedGrouper(grouper, params)
+
     for name in args.detectors:
         results = cross_validate(
             name,
@@ -150,6 +190,7 @@ def main() -> None:
             args.beta,
             extra_train=iam_pages,
             use_benchmark_train=args.train_on != "iam",
+            wrap_fitted=wrap_fitted,
         )
         for metric in METRICS:
             print(
