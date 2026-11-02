@@ -1,0 +1,20 @@
+scripts/bootstrap_crop_analysis.py
+  s_c3bd910db75a2d::t_118c31277a58a6 83-86
+  s_c3bd910db75a2d::t_62d458f24399e4 1-82,87-175
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "83995b783fc4e644cb40d6931c1be82df15dbc9f",
+  "prompts": {},
+  "sessions": {
+    "s_c3bd910db75a2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6a988c4b-abd6-4e1f-956b-8b17c181ed3f",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
