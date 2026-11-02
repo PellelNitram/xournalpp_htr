@@ -1,0 +1,30 @@
+xournalpp_htr/models.py
+  s_c3bd910db75a2d::t_cbc4c53aa1efa1 45-46,82-87
+  s_c3bd910db75a2d::t_5deeedc6dddb22 88-89
+xournalpp_htr/training/online_word_detector/evaluate.py
+  s_c3bd910db75a2d::t_6db5ddaae36625 112-121,140-142
+  s_c3bd910db75a2d::t_7f4e18dcff0b43 111
+tests/test_online_word_detector.py
+  s_c3bd910db75a2d::t_6db5ddaae36625 54-67,69
+  s_c3bd910db75a2d::t_9e77bd909f282f 68
+xournalpp_htr/training/online_word_detector/iam_ondb.py
+  s_c3bd910db75a2d::t_6db5ddaae36625 46-67,69-73,75-79,94-96,141,146-147,165-167
+xournalpp_htr/training/online_word_detector/pipeline.py
+  s_c3bd910db75a2d::t_cbc4c53aa1efa1 14-16,32-33,36-38,53,59-61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "72863967c899086177894ac899288fbbd34484f7",
+  "prompts": {},
+  "sessions": {
+    "s_c3bd910db75a2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6a988c4b-abd6-4e1f-956b-8b17c181ed3f",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
