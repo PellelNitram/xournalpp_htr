@@ -119,6 +119,12 @@ def main() -> None:
     )
     parser.add_argument("--iam-forms", type=int, default=700)
     parser.add_argument(
+        "--iam-seed",
+        type=int,
+        default=0,
+        help="Seed of the random draw of IAM-OnDB forms",
+    )
+    parser.add_argument(
         "--postprocess",
         action="store_true",
         help=(
@@ -156,6 +162,7 @@ def main() -> None:
 
         iam_pages, stats = load_iam_ondb_pages(
             args.iam_forms,
+            seed=args.iam_seed,
             synthetic_non_text=args.synthetic,
             gap_squeeze=tuple(args.gap_squeeze) if args.gap_squeeze else None,
         )
@@ -173,6 +180,7 @@ def main() -> None:
         # Forms the detector did not train on: it uses the first ones.
         tuning_pages, _ = load_iam_ondb_pages(
             300,
+            seed=args.iam_seed,
             synthetic_non_text=True,
             gap_squeeze=tuple(args.gap_squeeze) if args.gap_squeeze else None,
             skip_forms=args.iam_forms + 100,
