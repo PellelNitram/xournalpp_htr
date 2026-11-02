@@ -43,10 +43,40 @@ from xournalpp_htr.xio import load_IAM_OnDB_dataset
 NON_TEXT_ELEMENTS_PER_PAGE = 2.0
 
 
+def _squeeze_word_gaps(
+    strokes: list[Stroke], groups: list[list[int]], factor: float
+) -> list[Stroke]:
+    """Move the words of a line together so each gap between words shrinks.
+
+    Every gap between consecutive words (left to right) becomes `factor` times
+    its size; the words themselves are untouched. The labels stay valid, the
+    words just sit closer, like in tightly written text.
+    """
+    result = list(strokes)
+    shift, previous_right = 0.0, None
+    for group in groups:
+        left = min(strokes[i][0].min() for i in group)
+        right = max(strokes[i][0].max() for i in group)
+        if previous_right is not None:
+            shift += (left - previous_right) * (1.0 - factor)
+        previous_right = right
+        for i in group:
+            result[i] = (strokes[i][0] - shift, strokes[i][1])
+    return result
+
+
 def _load_line(
-    line_id: str, root, min_gap_ratio: float
+    line_id: str,
+    root,
+    min_gap_ratio: float,
+    gap_squeeze: tuple[float, float] | None = None,
+    rng: np.random.Generator | None = None,
 ) -> tuple[list[Stroke] | None, np.ndarray | None, str | None]:
-    """Return the strokes and word labels of a line, or why it is unusable."""
+    """Return the strokes and word labels of a line, or why it is unusable.
+
+    With `gap_squeeze` ``(low, high)``, the gaps between words shrink by a
+    factor drawn uniformly from that range for the line.
+    """
     df, text = IAM_OnDB_Dataset.load_IAM_OnDB_sample(line_id, root)
     df["y"] *= -1  # the loader flips y upwards; documents have y pointing down
 
@@ -60,6 +90,9 @@ def _load_line(
     groups, reason = split_into_words(extents, len(words), min_gap_ratio)
     if reason:
         return None, None, reason
+
+    if gap_squeeze is not None:
+        strokes = _squeeze_word_gaps(strokes, groups, rng.uniform(*gap_squeeze))
 
     labels = np.empty(len(strokes), dtype=int)
     for word_id, group in enumerate(groups):
@@ -105,11 +138,13 @@ def load_iam_ondb_pages(
     seed: int = 0,
     min_gap_ratio: float = 1.5,
     synthetic_non_text: bool = True,
+    gap_squeeze: tuple[float, float] | None = None,
 ) -> tuple[list[StrokePage], Counter]:
     """Return `n_forms` random IAM-OnDB forms as pages, and why lines were rejected.
 
     The `document` of a page is its writer, so training can hold out writers.
-    Forms without a single usable line are skipped.
+    Forms without a single usable line are skipped. `gap_squeeze` shrinks the gaps
+    between words, see `_load_line`, to teach the detector tighter word spacing.
     """
     root = load_IAM_OnDB_dataset()
     writers = load_form_writers(root)
@@ -127,7 +162,9 @@ def load_iam_ondb_pages(
             break
         lines = []
         for line_id in lines_of_form[form]:
-            strokes, labels, reason = _load_line(line_id, root, min_gap_ratio)
+            strokes, labels, reason = _load_line(
+                line_id, root, min_gap_ratio, gap_squeeze, rng
+            )
             if reason:
                 stats[f"rejected_{reason}"] += 1
                 continue

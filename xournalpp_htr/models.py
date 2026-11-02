@@ -42,7 +42,8 @@ class OnlineDetectorPipeline(NamedTuple):
 
     #: Stroke grouping detector, see `online_word_detector.detectors.GROUPERS`.
     detector: str
-    #: Data it is fit on: the benchmark, leaving the scored document out, or IAM-OnDB.
+    #: Data it is fit on: the benchmark, leaving the scored document out, or
+    #: IAM-OnDB, possibly with the gaps between words shrunk ("iam_squeezed").
     train_on: str
     #: "simple_htr", or "simple_htr_ondb" for the one retrained on IAM-OnDB renders.
     recognizer: str
@@ -76,6 +77,14 @@ ONLINE_DETECTOR_PIPELINES = {
     "2026-11-01_online_pairwise_gbm_iam_isolated_simple_htr_ondb": (
         OnlineDetectorPipeline(
             "pairwise_gbm_tuned", "iam", "simple_htr_ondb", isolate_strokes=True
+        )
+    ),
+    "2026-11-02_online_pairwise_gbm_iam_squeezed_isolated_simple_htr_ondb": (
+        OnlineDetectorPipeline(
+            "pairwise_gbm_tuned",
+            "iam_squeezed",
+            "simple_htr_ondb",
+            isolate_strokes=True,
         )
     ),
 }

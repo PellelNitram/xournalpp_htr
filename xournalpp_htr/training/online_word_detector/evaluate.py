@@ -109,6 +109,17 @@ def main() -> None:
     )
     parser.add_argument("--iam-forms", type=int, default=700)
     parser.add_argument(
+        "--gap-squeeze",
+        type=float,
+        nargs=2,
+        metavar=("LOW", "HIGH"),
+        default=None,
+        help=(
+            "Shrink the gaps between words of the IAM-OnDB lines by a factor "
+            "drawn uniformly from [LOW, HIGH] per line"
+        ),
+    )
+    parser.add_argument(
         "--synthetic",
         action=argparse.BooleanOptionalAction,
         default=True,
@@ -126,7 +137,9 @@ def main() -> None:
         )
 
         iam_pages, stats = load_iam_ondb_pages(
-            args.iam_forms, synthetic_non_text=args.synthetic
+            args.iam_forms,
+            synthetic_non_text=args.synthetic,
+            gap_squeeze=tuple(args.gap_squeeze) if args.gap_squeeze else None,
         )
         print(f"IAM-OnDB pages: {dict(stats)}")
 
