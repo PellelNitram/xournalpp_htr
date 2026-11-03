@@ -1,0 +1,47 @@
+xournalpp_htr/training/word_detector_online/metrics.py
+  s_c3bd910db75a2d::t_e23a6a86ba3ecb 1-79
+tests/test_word_detector_online.py
+  s_c3bd910db75a2d::t_0eee46901c19cd 6-8,57,81,92
+xournalpp_htr/training/word_detector_online/detectors.py
+  s_c3bd910db75a2d::t_aa03d5b8889b42 92,165,205
+  s_c3bd910db75a2d::t_e23a6a86ba3ecb 1-91,93-164,166-204,206-218
+xournalpp_htr/models.py
+  s_c3bd910db75a2d::t_23259f90ac12fe 100-102
+  s_c3bd910db75a2d::t_3278e7982ee1c6 47-48
+  s_c3bd910db75a2d::t_e23a6a86ba3ecb 43,651-652
+xournalpp_htr/training/word_detector_online/model.py
+  s_c3bd910db75a2d::t_aa03d5b8889b42 1-127
+  s_c3bd910db75a2d::t_55b52ca65e6bab 128-129
+xournalpp_htr/training/word_detector_online/pipeline.py
+  s_c3bd910db75a2d::t_e23a6a86ba3ecb 1-35,38-43,46-92
+  s_c3bd910db75a2d::t_3278e7982ee1c6 36-37,44-45,93-113
+xournalpp_htr/training/word_detector_online/data.py
+  s_c3bd910db75a2d::t_d70db0b36024d8 1-68
+xournalpp_htr/training/word_detector_online/iam_ondb.py
+  s_c3bd910db75a2d::t_e23a6a86ba3ecb 1-188,192-193
+xournalpp_htr/training/word_detector_online/strokes.py
+  s_c3bd910db75a2d::t_d70db0b36024d8 1-31
+xournalpp_htr/training/word_detector_online/features.py
+  s_c3bd910db75a2d::t_d70db0b36024d8 9
+  s_c3bd910db75a2d::t_e23a6a86ba3ecb 1-8,10-95
+xournalpp_htr/training/word_detector_online/evaluate.py
+  s_c3bd910db75a2d::t_e23a6a86ba3ecb 1-212
+xournalpp_htr/training/word_detector_online/postprocess.py
+  s_c3bd910db75a2d::t_e23a6a86ba3ecb 1-167
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "373c99f39c2268bce376a8276be01b88f29d3d27",
+  "prompts": {},
+  "sessions": {
+    "s_c3bd910db75a2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6a988c4b-abd6-4e1f-956b-8b17c181ed3f",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Martin L <konten.ma.le@gmail.com>"
+    }
+  }
+}
