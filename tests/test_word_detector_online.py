@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 
-from xournalpp_htr.training.online_word_detector.data import NON_TEXT, StrokePage
-from xournalpp_htr.training.online_word_detector.detectors import GROUPERS
-from xournalpp_htr.training.online_word_detector.synthetic import (
+from xournalpp_htr.training.word_detector_online.data import NON_TEXT, StrokePage
+from xournalpp_htr.training.word_detector_online.detectors import GROUPERS
+from xournalpp_htr.training.word_detector_online.synthetic import (
     KINDS,
     random_element,
 )
@@ -54,7 +54,7 @@ def test_groups_ignore_non_text():
 
 
 def test_squeeze_word_gaps_shrinks_only_the_gaps():
-    from xournalpp_htr.training.online_word_detector.iam_ondb import (
+    from xournalpp_htr.training.word_detector_online.iam_ondb import (
         _squeeze_word_gaps,
     )
 
@@ -78,7 +78,7 @@ def _line_page(boxes_and_strokes):
 
 
 def test_postprocess_defaults_change_nothing():
-    from xournalpp_htr.training.online_word_detector.postprocess import (
+    from xournalpp_htr.training.word_detector_online.postprocess import (
         PostProcessParams,
         postprocess_groups,
     )
@@ -89,7 +89,7 @@ def test_postprocess_defaults_change_nothing():
 
 
 def test_postprocess_merges_fragment_and_drops_underline():
-    from xournalpp_htr.training.online_word_detector.postprocess import (
+    from xournalpp_htr.training.word_detector_online.postprocess import (
         PostProcessParams,
         postprocess_groups,
     )

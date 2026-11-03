@@ -2,8 +2,8 @@
 
 from functools import lru_cache
 
-from xournalpp_htr.training.online_word_detector.data import load_pages
-from xournalpp_htr.training.online_word_detector.detectors import (
+from xournalpp_htr.training.word_detector_online.data import load_pages
+from xournalpp_htr.training.word_detector_online.detectors import (
     GROUPERS,
     StrokeGrouper,
 )
@@ -33,12 +33,16 @@ def fit_grouper(
     `held_out_document`, so the detector is scored on data it was not fit on
     (leave-one-document-out). ``None`` fits on the whole benchmark.
 
+    ``train_on="hub"`` loads the published detector instead of fitting one.
+
     ``train_on="iam"`` fits on IAM-OnDB pages only, so the benchmark stays a
     pure test set and `held_out_document` is irrelevant. ``"iam_squeezed"`` does
     the same with the gaps between words shrunk to `IAM_GAP_SQUEEZE`, and
     ``"iam_squeezed_postprocessed"`` adds the post-processing of the groups,
     tuned on other IAM-OnDB pages.
     """
+    if train_on == "hub":
+        return _load_from_hub()
     if train_on == "iam":
         return _fit_on_iam(name, None, False)
     if train_on == "iam_squeezed":
@@ -63,7 +67,7 @@ def _fit_on_iam(
     name: str, gap_squeeze: tuple[float, float] | None, postprocess: bool
 ) -> StrokeGrouper:
     # Imported here as it needs the IAM-OnDB training dependencies.
-    from xournalpp_htr.training.online_word_detector.iam_ondb import (
+    from xournalpp_htr.training.word_detector_online.iam_ondb import (
         load_iam_ondb_pages,
     )
 
@@ -74,7 +78,7 @@ def _fit_on_iam(
     if not postprocess:
         return grouper
 
-    from xournalpp_htr.training.online_word_detector.postprocess import (
+    from xournalpp_htr.training.word_detector_online.postprocess import (
         PostProcessedGrouper,
         tune_postprocess,
     )
@@ -86,3 +90,24 @@ def _fit_on_iam(
         skip_forms=IAM_POSTPROCESS_SKIP_FORMS,
     )
     return PostProcessedGrouper(grouper, tune_postprocess(grouper, tuning_pages))
+
+
+class _HubGrouper(StrokeGrouper):
+    """The published `OnlineWordDetectorModel` as a `StrokeGrouper`."""
+
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+
+    def fit(self, pages):
+        raise NotImplementedError("The published detector is loaded, not fitted.")
+
+    def predict(self, page):
+        return self.model.group_strokes(page.strokes)
+
+
+@lru_cache(maxsize=None)
+def _load_from_hub() -> StrokeGrouper:
+    from xournalpp_htr.inference_models import OnlineWordDetectorModel
+
+    return _HubGrouper(OnlineWordDetectorModel.from_pretrained())

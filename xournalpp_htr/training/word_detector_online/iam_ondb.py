@@ -18,16 +18,6 @@ from collections import Counter, defaultdict
 import numpy as np
 
 from xournalpp_htr.training.data.datasets import IAM_OnDB_Dataset
-from xournalpp_htr.training.online_word_detector.data import NON_TEXT, StrokePage
-from xournalpp_htr.training.online_word_detector.features import (
-    bounding_boxes,
-    page_scale,
-)
-from xournalpp_htr.training.online_word_detector.synthetic import (
-    KINDS,
-    Stroke,
-    random_element,
-)
 from xournalpp_htr.training.simple_htr_ondb.prepare_data import (
     form_of,
     list_line_ids,
@@ -36,6 +26,16 @@ from xournalpp_htr.training.simple_htr_ondb.prepare_data import (
 from xournalpp_htr.training.simple_htr_ondb.word_splitting import (
     group_tokens,
     split_into_words,
+)
+from xournalpp_htr.training.word_detector_online.data import NON_TEXT, StrokePage
+from xournalpp_htr.training.word_detector_online.features import (
+    bounding_boxes,
+    page_scale,
+)
+from xournalpp_htr.training.word_detector_online.synthetic import (
+    KINDS,
+    Stroke,
+    random_element,
 )
 from xournalpp_htr.xio import load_IAM_OnDB_dataset
 

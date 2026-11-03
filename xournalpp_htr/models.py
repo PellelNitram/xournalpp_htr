@@ -40,11 +40,12 @@ class WordPrediction:
 class OnlineDetectorPipeline(NamedTuple):
     """Setup of a pipeline that detects words by grouping strokes (issue #168)."""
 
-    #: Stroke grouping detector, see `online_word_detector.detectors.GROUPERS`.
+    #: Stroke grouping detector, see `word_detector_online.detectors.GROUPERS`.
     detector: str
     #: Data it is fit on: the benchmark, leaving the scored document out, or
     #: IAM-OnDB, possibly with the gaps between words shrunk ("iam_squeezed") and
-    #: the groups post-processed ("iam_squeezed_postprocessed").
+    #: the groups post-processed ("iam_squeezed_postprocessed"). "hub" loads the
+    #: published `OnlineWordDetectorModel` instead of fitting a detector.
     train_on: str
     #: "simple_htr", or "simple_htr_ondb" for the one retrained on IAM-OnDB renders.
     recognizer: str
@@ -95,6 +96,9 @@ ONLINE_DETECTOR_PIPELINES = {
             "simple_htr_ondb",
             isolate_strokes=True,
         )
+    ),
+    "2026-11-03_online_word_detector_hub_simple_htr_ondb": OnlineDetectorPipeline(
+        "pairwise_gbm_tuned", "hub", "simple_htr_ondb", isolate_strokes=True
     ),
 }
 
@@ -644,8 +648,8 @@ def compute_predictions(
 
     elif pipeline_name in ONLINE_DETECTOR_PIPELINES:
         # Imported here as the detectors' metrics import this module.
-        from xournalpp_htr.training.online_word_detector.data import unlabeled_pages
-        from xournalpp_htr.training.online_word_detector.pipeline import fit_grouper
+        from xournalpp_htr.training.word_detector_online.data import unlabeled_pages
+        from xournalpp_htr.training.word_detector_online.pipeline import fit_grouper
 
         RENDER_DPI = 150
         nr_pages = len(document.pages)

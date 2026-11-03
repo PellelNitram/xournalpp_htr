@@ -6,7 +6,7 @@ import numpy as np
 
 from xournalpp_htr.benchmark import GroundTruthWord, _match
 from xournalpp_htr.models import WordPrediction
-from xournalpp_htr.training.online_word_detector.data import StrokePage
+from xournalpp_htr.training.word_detector_online.data import StrokePage
 
 
 @dataclass

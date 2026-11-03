@@ -15,17 +15,18 @@ from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial.distance import squareform
 from sklearn.ensemble import GradientBoostingClassifier
 
-from xournalpp_htr.training.online_word_detector.data import NON_TEXT, StrokePage
-from xournalpp_htr.training.online_word_detector.features import (
+from xournalpp_htr.training.word_detector_online.data import NON_TEXT, StrokePage
+from xournalpp_htr.training.word_detector_online.features import (
     PAIR_FEATURE_NAMES,
     box_distance_matrix,
     consecutive_pair_features,
 )
-from xournalpp_htr.training.online_word_detector.metrics import (
+from xournalpp_htr.training.word_detector_online.metrics import (
     GroupCounts,
     box_counts,
     group_counts,
 )
+from xournalpp_htr.training.word_detector_online.model import groups_from_merges
 
 _GAP_X = PAIR_FEATURE_NAMES.index("gap_x")
 _CENTER_DY = PAIR_FEATURE_NAMES.index("center_dy")
@@ -66,21 +67,6 @@ class StrokeGrouper(ABC):
         return best_params
 
 
-def _groups_from_merges(
-    n_strokes: int, merge_with_next: np.ndarray
-) -> list[frozenset[int]]:
-    """Cut the stroke sequence wherever ``merge_with_next[i]`` is False."""
-    groups, current = [], [0]
-    for i in range(1, n_strokes):
-        if merge_with_next[i - 1]:
-            current.append(i)
-        else:
-            groups.append(frozenset(current))
-            current = [i]
-    groups.append(frozenset(current))
-    return groups
-
-
 class GapThresholdGrouper(StrokeGrouper):
     """Merge consecutive strokes whose boxes are close and on the same line."""
 
@@ -104,7 +90,7 @@ class GapThresholdGrouper(StrokeGrouper):
         merge = (features[:, _GAP_X] < self.max_gap) & (
             np.abs(features[:, _CENTER_DY]) < self.max_line_offset
         )
-        return _groups_from_merges(len(page.strokes), merge)
+        return groups_from_merges(len(page.strokes), merge)
 
 
 class ClusteringGrouper(StrokeGrouper):
@@ -177,7 +163,7 @@ class PairwiseClassifierGrouper(StrokeGrouper):
         return self._model.predict_proba(self._features(page))[:, 1]
 
     def predict(self, page):
-        return _groups_from_merges(
+        return groups_from_merges(
             len(page.strokes), self._merge_probabilities(page) >= self.threshold
         )
 
@@ -217,7 +203,7 @@ class TunedPairwiseClassifierGrouper(PairwiseClassifierGrouper):
         for threshold in np.arange(0.05, 0.96, 0.05):
             total = GroupCounts()
             for page, proba in out_of_fold:
-                groups = _groups_from_merges(len(page.strokes), proba >= threshold)
+                groups = groups_from_merges(len(page.strokes), proba >= threshold)
                 total = total + box_counts(groups, page)
             if total.f_beta(self.beta) > best_score:
                 best_score = total.f_beta(self.beta)

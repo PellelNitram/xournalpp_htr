@@ -1,6 +1,6 @@
 """Leave-one-document-out cross-validation of the stroke grouping detectors.
 
-Run with ``python -m xournalpp_htr.training.online_word_detector.evaluate``.
+Run with ``python -m xournalpp_htr.training.word_detector_online.evaluate``.
 The benchmark has only a handful of documents, each by a different writer, so
 each document is a fold and holding one out also holds out its writer; folds
 with few words are listed but left out of the macro average.
@@ -10,12 +10,12 @@ import argparse
 from collections import defaultdict
 from collections.abc import Callable
 
-from xournalpp_htr.training.online_word_detector.data import StrokePage, load_pages
-from xournalpp_htr.training.online_word_detector.detectors import (
+from xournalpp_htr.training.word_detector_online.data import StrokePage, load_pages
+from xournalpp_htr.training.word_detector_online.detectors import (
     GROUPERS,
     StrokeGrouper,
 )
-from xournalpp_htr.training.online_word_detector.metrics import (
+from xournalpp_htr.training.word_detector_online.metrics import (
     GroupCounts,
     box_counts,
     group_counts,
@@ -156,7 +156,7 @@ def main() -> None:
 
     iam_pages = []
     if args.train_on != "benchmark":
-        from xournalpp_htr.training.online_word_detector.iam_ondb import (
+        from xournalpp_htr.training.word_detector_online.iam_ondb import (
             load_iam_ondb_pages,
         )
 
@@ -172,7 +172,7 @@ def main() -> None:
     if args.postprocess:
         if args.train_on != "iam":
             parser.error("--postprocess needs --train-on iam")
-        from xournalpp_htr.training.online_word_detector.postprocess import (
+        from xournalpp_htr.training.word_detector_online.postprocess import (
             PostProcessedGrouper,
             tune_postprocess,
         )

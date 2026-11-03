@@ -10,13 +10,13 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from xournalpp_htr.training.online_word_detector.data import StrokePage
-from xournalpp_htr.training.online_word_detector.detectors import StrokeGrouper
-from xournalpp_htr.training.online_word_detector.features import (
+from xournalpp_htr.training.word_detector_online.data import StrokePage
+from xournalpp_htr.training.word_detector_online.detectors import StrokeGrouper
+from xournalpp_htr.training.word_detector_online.features import (
     bounding_boxes,
     page_scale,
 )
-from xournalpp_htr.training.online_word_detector.metrics import (
+from xournalpp_htr.training.word_detector_online.metrics import (
     GroupCounts,
     box_counts,
 )
