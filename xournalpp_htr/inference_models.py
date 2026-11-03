@@ -31,6 +31,14 @@ from xournalpp_htr.training.shared.postprocessing import (
     fg_by_cc,
     normalize_image_transform,
 )
+from xournalpp_htr.training.word_detector_online.features import (
+    consecutive_pair_features,
+)
+from xournalpp_htr.training.word_detector_online.model import (
+    TreeEnsemble,
+    groups_from_merges,
+)
+from xournalpp_htr.training.word_detector_online.strokes import NON_TEXT, StrokePage
 
 
 class HFHubInferenceModel(ABC):
@@ -739,3 +747,66 @@ class RFDETRWordDetectorModel(HFHubInferenceModel):
             if x2 > x1 and y2 > y1:
                 boxes.append(BoundingBox(x1, y1, x2, y2))
         return boxes
+
+
+class OnlineWordDetectorModel(HFHubInferenceModel):
+    """Stroke-based word detector: groups the strokes of a page into words.
+
+    Unlike the other detectors it works on the pen strokes, not on a rendering
+    of the page. The repository contains ``model.npz`` (the boosted trees as
+    plain arrays) and ``config.json`` (merge threshold and training setup). A
+    boosted model scores each pair of consecutive strokes as "same word" or
+    not, and the stroke sequence is cut where that score falls below the
+    threshold. Evaluation is plain numpy, no scikit-learn or onnxruntime. This
+    model performs word *detection* only -- it produces no transcription.
+    """
+
+    HF_REPO_ID = "PellelNitram/xournalpp-htr-word-detector-online"
+
+    def __init__(self, ensemble: TreeEnsemble, config: dict, revision: str):
+        super().__init__(revision)
+        self.ensemble = ensemble
+        self.config = config
+        self.threshold = float(config["threshold"])
+
+    @classmethod
+    def from_pretrained(cls, revision: str = "main") -> "OnlineWordDetectorModel":
+        model_path = hf_hub_download(cls.HF_REPO_ID, "model.npz", revision=revision)
+        config_path = hf_hub_download(cls.HF_REPO_ID, "config.json", revision=revision)
+        return cls._from_files(Path(model_path), Path(config_path), revision)
+
+    @classmethod
+    def from_local(
+        cls, model_dir: Path, revision: str = "local"
+    ) -> "OnlineWordDetectorModel":
+        """Load ``model.npz`` and ``config.json`` from a local export directory."""
+        model_dir = Path(model_dir)
+        return cls._from_files(
+            model_dir / "model.npz", model_dir / "config.json", revision
+        )
+
+    @classmethod
+    def _from_files(
+        cls, model_path: Path, config_path: Path, revision: str
+    ) -> "OnlineWordDetectorModel":
+        with open(config_path) as f:
+            config = json.load(f)
+        return cls(TreeEnsemble.load(model_path), config, revision)
+
+    def group_strokes(
+        self, strokes: List[tuple[np.ndarray, np.ndarray]]
+    ) -> List[frozenset[int]]:
+        """Group strokes into words.
+
+        :param strokes: ``(x, y)`` coordinate arrays, one per stroke, in writing
+            order.
+        :returns: Disjoint sets of stroke indices covering all strokes, one per
+            detected word.
+        """
+        if not strokes:
+            return []
+        if len(strokes) == 1:
+            return [frozenset([0])]
+        page = StrokePage("", 0, 0, list(strokes), np.full(len(strokes), NON_TEXT))
+        proba = self.ensemble.predict_proba(consecutive_pair_features(page))
+        return groups_from_merges(len(strokes), proba >= self.threshold)
