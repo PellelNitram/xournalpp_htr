@@ -1,6 +1,5 @@
 ---
 library_name: numpy
-license: gpl-2.0
 tags:
   - handwriting-recognition
   - htr
@@ -75,12 +74,4 @@ The vision-based YOLO detector with SimpleHTR scores 77.0%, 72.4%, 27.5% and
 
 ## License and data
 
-- **License:** GPL-2.0, like the code of
-  [Xournal++ HTR](https://github.com/PellelNitram/xournalpp_htr).
-- **Training data:**
-  [IAM-OnDB](https://fki.tic.heia-fr.ch/databases/iam-on-line-handwriting-database)
-  (Liwicki and Bunke, ICDAR 2005), used under its terms of use. The data is not
-  redistributed; the model holds only the parameters of the trees.
-- **Evaluation data:** the
-  [Xournal++ HTR benchmark](https://huggingface.co/datasets/PellelNitram/xournalpp_htr_benchmark),
-  which is not used for training.
+_To be added by the maintainer._
