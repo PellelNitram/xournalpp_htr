@@ -9,8 +9,8 @@ horizontal gaps; lines whose gaps do not match the transcription are left out of
 the page. The labels therefore follow a gap rule and cover only lines where it
 works cleanly.
 
-Optionally, synthetic non-text strokes (underlines, arrows, boxes, ...) are
-added, as IAM-OnDB has none.
+The gaps between words can be shrunk, as IAM-OnDB words are spaced more widely
+than in tightly written notes.
 """
 
 from collections import Counter, defaultdict
@@ -27,20 +27,16 @@ from xournalpp_htr.training.simple_htr_ondb.word_splitting import (
     group_tokens,
     split_into_words,
 )
-from xournalpp_htr.training.word_detector_online.data import NON_TEXT, StrokePage
-from xournalpp_htr.training.word_detector_online.features import (
-    bounding_boxes,
-    page_scale,
-)
-from xournalpp_htr.training.word_detector_online.synthetic import (
-    KINDS,
-    Stroke,
-    random_element,
-)
+from xournalpp_htr.training.word_detector_online.strokes import StrokePage
 from xournalpp_htr.xio import load_IAM_OnDB_dataset
 
-#: Mean number of synthetic non-text elements added per page.
-NON_TEXT_ELEMENTS_PER_PAGE = 2.0
+Stroke = tuple[np.ndarray, np.ndarray]
+
+#: IAM-OnDB forms the published detector is trained on.
+TRAINING_FORMS = 700
+
+#: Range of the factor the gaps between words are shrunk by when training it.
+TRAINING_GAP_SQUEEZE = (0.3, 1.0)
 
 
 def _squeeze_word_gaps(
@@ -100,55 +96,17 @@ def _load_line(
     return strokes, labels, None
 
 
-def _add_non_text(
-    lines: list[tuple[list[Stroke], np.ndarray]], rng: np.random.Generator
-) -> list[tuple[list[Stroke], np.ndarray]]:
-    """Insert random non-text elements after randomly chosen lines.
-
-    Elements are drawn after the line they sit next to, as in writing order.
-    """
-    result = [(list(strokes), labels) for strokes, labels in lines]
-    for _ in range(rng.poisson(NON_TEXT_ELEMENTS_PER_PAGE)):
-        k = int(rng.integers(len(lines)))
-        strokes, labels = lines[k]
-        boxes = bounding_boxes(_as_page(strokes, labels))
-        line_box = (
-            boxes[:, 0].min(),
-            boxes[:, 1].min(),
-            boxes[:, 2].max(),
-            boxes[:, 3].max(),
-        )
-        element = random_element(
-            str(rng.choice(KINDS)), line_box, page_scale(boxes), rng
-        )
-        extra_strokes, extra_labels = result[k]
-        result[k] = (
-            extra_strokes + element,
-            np.concatenate([extra_labels, np.full(len(element), NON_TEXT)]),
-        )
-    return result
-
-
-def _as_page(strokes: list[Stroke], labels: np.ndarray) -> StrokePage:
-    return StrokePage("", 0, 0, strokes, labels)
-
-
 def load_iam_ondb_pages(
     n_forms: int,
     seed: int = 0,
     min_gap_ratio: float = 1.5,
-    synthetic_non_text: bool = True,
     gap_squeeze: tuple[float, float] | None = None,
-    skip_forms: int = 0,
 ) -> tuple[list[StrokePage], Counter]:
     """Return `n_forms` random IAM-OnDB forms as pages, and why lines were rejected.
 
     The `document` of a page is its writer, so training can hold out writers.
-    Forms without a single usable line are skipped. `gap_squeeze` shrinks the gaps
-    between words, see `_load_line`, to teach the detector tighter word spacing.
-
-    `skip_forms` leaves out the first forms of the shuffled order, so a second
-    call with the same `seed` can draw forms the first one did not use.
+    Forms without a single usable line are skipped. `gap_squeeze` shrinks the
+    gaps between words, see `_load_line`.
     """
     root = load_IAM_OnDB_dataset()
     writers = load_form_writers(root)
@@ -159,7 +117,6 @@ def load_iam_ondb_pages(
     rng = np.random.default_rng(seed)
     forms = sorted(lines_of_form)
     rng.shuffle(forms)
-    forms = forms[skip_forms:]
 
     pages, stats = [], Counter()
     for form in forms:
@@ -180,8 +137,6 @@ def load_iam_ondb_pages(
             stats["skipped_forms"] += 1
             continue
 
-        if synthetic_non_text:
-            lines = _add_non_text(lines, rng)
         pages.append(
             StrokePage(
                 document=f"iam:{writers[form]}",
@@ -192,6 +147,5 @@ def load_iam_ondb_pages(
             )
         )
     stats["pages"] = len(pages)
-    stats["non_text_strokes"] = sum(int((p.labels == NON_TEXT).sum()) for p in pages)
     stats["strokes"] = sum(len(p.strokes) for p in pages)
     return pages, stats

@@ -4,7 +4,6 @@
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import NamedTuple
 
 import cv2
 import matplotlib.pyplot as plt
@@ -14,6 +13,7 @@ from tqdm import tqdm
 
 from xournalpp_htr.documents import StrokesDocument
 from xournalpp_htr.inference_models import (
+    OnlineWordDetectorModel,
     PPOCRv5Model,
     RFDETRWordDetectorModel,
     SimpleHTRModel,
@@ -37,70 +37,11 @@ class WordPrediction:
     ymax: float
 
 
-class OnlineDetectorPipeline(NamedTuple):
-    """Setup of a pipeline that detects words by grouping strokes (issue #168)."""
-
-    #: Stroke grouping detector, see `word_detector_online.detectors.GROUPERS`.
-    detector: str
-    #: Data it is fit on: the benchmark, leaving the scored document out, or
-    #: IAM-OnDB, possibly with the gaps between words shrunk ("iam_squeezed") and
-    #: the groups post-processed ("iam_squeezed_postprocessed"). "hub" loads the
-    #: published `OnlineWordDetectorModel` instead of fitting a detector.
-    train_on: str
-    #: "simple_htr", or "simple_htr_ondb" for the one retrained on IAM-OnDB renders.
-    recognizer: str
-    #: Render each crop from the strokes of its word alone, instead of cutting it
-    #: out of the page, so that neighbouring words inside the box stay out.
-    isolate_strokes: bool = False
-
-
-ONLINE_DETECTOR_PIPELINES = {
-    "2026-10-30_online_gap_threshold_simple_htr": OnlineDetectorPipeline(
-        "gap_threshold", "benchmark", "simple_htr"
-    ),
-    "2026-10-30_online_clustering_simple_htr": OnlineDetectorPipeline(
-        "clustering", "benchmark", "simple_htr"
-    ),
-    "2026-10-30_online_pairwise_gbm_simple_htr": OnlineDetectorPipeline(
-        "pairwise_gbm", "benchmark", "simple_htr"
-    ),
-    "2026-10-30_online_pairwise_gbm_tuned_simple_htr": OnlineDetectorPipeline(
-        "pairwise_gbm_tuned", "benchmark", "simple_htr"
-    ),
-    "2026-11-01_online_pairwise_gbm_iam_simple_htr": OnlineDetectorPipeline(
-        "pairwise_gbm_tuned", "iam", "simple_htr"
-    ),
-    "2026-11-01_online_pairwise_gbm_iam_simple_htr_ondb": OnlineDetectorPipeline(
-        "pairwise_gbm_tuned", "iam", "simple_htr_ondb"
-    ),
-    "2026-11-01_online_pairwise_gbm_iam_isolated_simple_htr": OnlineDetectorPipeline(
-        "pairwise_gbm_tuned", "iam", "simple_htr", isolate_strokes=True
-    ),
-    "2026-11-01_online_pairwise_gbm_iam_isolated_simple_htr_ondb": (
-        OnlineDetectorPipeline(
-            "pairwise_gbm_tuned", "iam", "simple_htr_ondb", isolate_strokes=True
-        )
-    ),
-    "2026-11-02_online_pairwise_gbm_iam_squeezed_isolated_simple_htr_ondb": (
-        OnlineDetectorPipeline(
-            "pairwise_gbm_tuned",
-            "iam_squeezed",
-            "simple_htr_ondb",
-            isolate_strokes=True,
-        )
-    ),
-    "2026-11-02_online_pairwise_gbm_iam_squeezed_postprocessed_isolated_simple_htr_ondb": (
-        OnlineDetectorPipeline(
-            "pairwise_gbm_tuned",
-            "iam_squeezed_postprocessed",
-            "simple_htr_ondb",
-            isolate_strokes=True,
-        )
-    ),
-    "2026-11-03_online_word_detector_hub_simple_htr_ondb": OnlineDetectorPipeline(
-        "pairwise_gbm_tuned", "hub", "simple_htr_ondb", isolate_strokes=True
-    ),
-}
+# Pipeline that detects words by grouping the strokes with the published
+# stroke-based detector (issue #168) and reads each word with SimpleHTR-OnDB. Each
+# crop is rendered from the strokes of its word alone, so that neighbouring words
+# inside its box stay out.
+ONLINE_DETECTOR_PIPELINES = {"2026-11-03_online_word_detector_hub_simple_htr_ondb"}
 
 
 # Padding, in document units, around the strokes of a group when cropping it.
@@ -647,21 +588,14 @@ def compute_predictions(
                 ]
 
     elif pipeline_name in ONLINE_DETECTOR_PIPELINES:
-        # Imported here as the detectors' metrics import this module.
+        # Imported here, as the other pipelines do not need the detector's training code.
         from xournalpp_htr.training.word_detector_online.data import unlabeled_pages
-        from xournalpp_htr.training.word_detector_online.pipeline import fit_grouper
 
         RENDER_DPI = 150
         nr_pages = len(document.pages)
 
-        # Fit on the benchmark without the document itself, so benchmarking it
-        # is held-out; the IAM-OnDB fit does not involve the benchmark at all.
-        setup = ONLINE_DETECTOR_PIPELINES[pipeline_name]
-        grouper = fit_grouper(setup.detector, setup.train_on, document.path.name)
-        if setup.recognizer == "simple_htr_ondb":
-            recognizer = SimpleHTROnDBModel.from_pretrained()
-        else:
-            recognizer = SimpleHTRModel.from_pretrained()
+        detector = OnlineWordDetectorModel.from_pretrained()
+        recognizer = SimpleHTROnDBModel.from_pretrained()
 
         stroke_pages = unlabeled_pages(document)
 
@@ -687,28 +621,20 @@ def compute_predictions(
                 crop_recorder.render_dpi = RENDER_DPI
                 crop_recorder.pages[page_index] = img
 
-            px_per_unit = RENDER_DPI / document.DPI
             predictions_page = []
             for layer in layers:
-                for group in grouper.predict(layer):
+                for group in detector.group_strokes(layer.strokes):
                     xs = np.concatenate([layer.strokes[i][0] for i in group])
                     ys = np.concatenate([layer.strokes[i][1] for i in group])
                     pad = ONLINE_DETECTOR_CROP_PADDING
                     xmin, xmax = xs.min() - pad, xs.max() + pad
                     ymin, ymax = ys.min() - pad, ys.max() + pad
 
-                    if setup.isolate_strokes:
-                        crop = _render_isolated_strokes(
-                            [layer.strokes[i] for i in sorted(group)],
-                            (xmin, ymin, xmax, ymax),
-                            RENDER_DPI,
-                        )
-                    else:
-                        x_lo = max(0, int(xmin * px_per_unit))
-                        y_lo = max(0, int(ymin * px_per_unit))
-                        x_hi = min(img.shape[1], int(xmax * px_per_unit))
-                        y_hi = min(img.shape[0], int(ymax * px_per_unit))
-                        crop = img[y_lo:y_hi, x_lo:x_hi]
+                    crop = _render_isolated_strokes(
+                        [layer.strokes[i] for i in sorted(group)],
+                        (xmin, ymin, xmax, ymax),
+                        RENDER_DPI,
+                    )
                     if crop.size == 0:
                         continue
 

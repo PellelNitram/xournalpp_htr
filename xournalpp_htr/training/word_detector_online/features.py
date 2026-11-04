@@ -69,27 +69,3 @@ def consecutive_pair_features(page: StrokePage) -> np.ndarray:
             ]
         )
     return np.array(rows).reshape(-1, len(PAIR_FEATURE_NAMES))
-
-
-def box_distance_matrix(page: StrokePage, vertical_weight: float) -> np.ndarray:
-    """Pairwise distance between stroke bounding boxes, in page-scale units.
-
-    The distance is the Euclidean norm of the horizontal and the (weighted)
-    vertical gap between two boxes, which is zero if they overlap. A weight
-    above one pushes strokes of different lines apart.
-    """
-    boxes = bounding_boxes(page)
-    scale = page_scale(boxes)
-    gap_x = np.maximum(
-        0.0,
-        np.maximum(
-            boxes[:, None, 0] - boxes[None, :, 2], boxes[None, :, 0] - boxes[:, None, 2]
-        ),
-    )
-    gap_y = np.maximum(
-        0.0,
-        np.maximum(
-            boxes[:, None, 1] - boxes[None, :, 3], boxes[None, :, 1] - boxes[:, None, 3]
-        ),
-    )
-    return np.hypot(gap_x, vertical_weight * gap_y) / scale

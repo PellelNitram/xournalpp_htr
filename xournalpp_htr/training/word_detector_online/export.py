@@ -1,8 +1,7 @@
 """Export the trained WordDetectorOnline detector as the inference artifact.
 
 The detector trains in minutes, so there is no separate checkpoint: this script
-trains it on IAM-OnDB, exactly as the ``iam_squeezed`` benchmark pipelines do,
-and writes the files consumed by
+trains it on IAM-OnDB pages (700 forms, gaps between words shrunk) and writes the files consumed by
 :class:`xournalpp_htr.inference_models.OnlineWordDetectorModel`:
 
 * ``model.npz``   -- the boosted trees as plain arrays (no pickle, no ONNX).
@@ -24,15 +23,16 @@ import subprocess
 from pathlib import Path
 
 from xournalpp_htr.training.word_detector_online.detectors import (
+    GROUPERS,
     PairwiseClassifierGrouper,
 )
 from xournalpp_htr.training.word_detector_online.features import PAIR_FEATURE_NAMES
-from xournalpp_htr.training.word_detector_online.model import TreeEnsemble
-from xournalpp_htr.training.word_detector_online.pipeline import (
-    IAM_FORMS,
-    IAM_GAP_SQUEEZE,
-    fit_grouper,
+from xournalpp_htr.training.word_detector_online.iam_ondb import (
+    TRAINING_FORMS,
+    TRAINING_GAP_SQUEEZE,
+    load_iam_ondb_pages,
 )
+from xournalpp_htr.training.word_detector_online.model import TreeEnsemble
 
 HF_REPO_ID = "PellelNitram/xournalpp-htr-word-detector-online"
 DETECTOR = "pairwise_gbm_tuned"
@@ -74,14 +74,15 @@ def write_artifacts(
 
 def export(output_dir: Path) -> dict[str, Path]:
     """Train on IAM-OnDB and write the artifact files to ``output_dir``."""
-    grouper = fit_grouper(DETECTOR, "iam_squeezed")
+    pages, _ = load_iam_ondb_pages(TRAINING_FORMS, gap_squeeze=TRAINING_GAP_SQUEEZE)
+    grouper = GROUPERS[DETECTOR]().fit(pages)
     paths = write_artifacts(
         grouper,
         output_dir,
         training={
             "dataset": "IAM-OnDB",
-            "forms": IAM_FORMS,
-            "gap_squeeze": list(IAM_GAP_SQUEEZE),
+            "forms": TRAINING_FORMS,
+            "gap_squeeze": list(TRAINING_GAP_SQUEEZE),
             "detector": DETECTOR,
             "code_revision": _git_sha(),
         },
