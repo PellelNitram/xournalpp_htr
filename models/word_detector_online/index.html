@@ -1,0 +1,1679 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Developing handwritten text recognition for Xournal++">
+      
+      
+      
+      
+        <link rel="prev" href="../word_detector_rf_detr/">
+      
+      
+        <link rel="next" href="../trocr/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>WordDetectorOnline - Xournal++ HTR</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#worddetectoronline-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Xournal++ HTR" class="md-header__button md-logo" aria-label="Xournal++ HTR" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Xournal++ HTR
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              WordDetectorOnline
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/PellelNitram/xournalpp_htr" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    PellelNitram/xournalpp_htr
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Xournal++ HTR" class="md-nav__button md-logo" aria-label="Xournal++ HTR" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Xournal++ HTR
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/PellelNitram/xournalpp_htr" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    PellelNitram/xournalpp_htr
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started as User
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started as User
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation_user/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started as Developer
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started as Developer
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation_developer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../demo_setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../annotation_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Annotation Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADRs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    ADRs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/001_design_of_huggingface_space_dockerfile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    001 Design of HuggingFace Space Dockerfile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/002_use_HuggingFace_ecosystem_for_ML/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    002 Use HuggingFace ecosystem for ML
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/003_define_target_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    003 Define target architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/004_ground_truth_schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    004 Ground truth schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/005_prediction_bounding_box_coordinate_system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    005 Prediction bounding box coordinate system
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/006_model_registry_and_training_environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    006 Model registry and training environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/007_model_demos_local_only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    007 Model demos local only
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/008_keep_htr_pipeline_until_native_parity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    008 Keep htr_pipeline until native parity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PoCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    PoCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PoCs/simplify_installation_with_single_file_executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Simplify Installation with single file executable
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../word_detector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WordDetector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../simple_htr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SimpleHTR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../simple_htr_ondb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SimpleHTR-OnDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../word_detector_yolo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WordDetectorYOLO
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../word_detector_rf_detr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WordDetectorRFDETR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WordDetectorOnline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../trocr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TrOCR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pp_ocrv5/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PP-OCRv5
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../labels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Issue Labels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../funding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Funding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="worddetectoronline-model">WordDetectorOnline model</h1>
+<p>Stroke-based word detector. It works on the pen strokes of a page instead of a
+rendering of it: a small gradient boosted model scores each pair of consecutive
+strokes as "same word" or not, and the stroke sequence is cut into words where
+the score falls below a threshold. It performs detection only; a recognizer
+(<a href="../simple_htr/">SimpleHTR</a> or <a href="../simple_htr_ondb/">SimpleHTR-OnDB</a>) reads the
+words afterwards. Integrated into Xournal++ HTR according to the
+<a href="../ADRs/">ADRs</a> (in particular
+<a href="../../ADRs/006_model_registry_and_training_environment/">ADR 006</a>), with one
+exception: the artifact is a numpy file, not ONNX (see below). Tracked in issue</p>
+<h1 id="168">168.</h1>
+<p>The source lives under
+<a href="https://github.com/PellelNitram/xournalpp_htr/tree/master/xournalpp_htr/training/word_detector_online"><code>xournalpp_htr/training/word_detector_online/</code></a>.</p>
+<h2 id="structure-adr-006">Structure (ADR 006)</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+<th>Deps</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>strokes.py</code></td>
+<td><code>StrokePage</code>, the strokes of a page plus word labels</td>
+<td>base</td>
+</tr>
+<tr>
+<td><code>features.py</code></td>
+<td>Spatial features of consecutive strokes</td>
+<td>base</td>
+</tr>
+<tr>
+<td><code>model.py</code></td>
+<td>Boosted trees as plain arrays, numpy evaluation, cutting into words</td>
+<td>base</td>
+</tr>
+<tr>
+<td><code>detectors.py</code></td>
+<td>The boosted detector and the tuning of its merge threshold</td>
+<td>base</td>
+</tr>
+<tr>
+<td><code>iam_ondb.py</code></td>
+<td>IAM-OnDB forms as training pages, with the gaps between words shrunk</td>
+<td><code>training-simple-htr-ondb</code></td>
+</tr>
+<tr>
+<td><code>data.py</code></td>
+<td>The benchmark documents as labelled stroke pages</td>
+<td>base</td>
+</tr>
+<tr>
+<td><code>metrics.py</code>, <code>evaluate.py</code></td>
+<td>Exact and box-coverage scoring, evaluation CLI</td>
+<td>base</td>
+</tr>
+<tr>
+<td><code>export.py</code></td>
+<td>Trains on IAM-OnDB, writes <code>model.npz</code> + <code>config.json</code>, HF Hub upload</td>
+<td><code>training-simple-htr-ondb</code></td>
+</tr>
+<tr>
+<td><code>model_card.md</code></td>
+<td>Published as the HF repo's <code>README.md</code></td>
+<td>none</td>
+</tr>
+</tbody>
+</table>
+<p>The HF-Hub-backed inference class lives in <code>xournalpp_htr/inference_models.py</code> as
+<code>OnlineWordDetectorModel</code>. Deviations from the model conventions: there is no
+ONNX file (the trees are stored as plain arrays and evaluated in numpy, so
+inference needs neither onnxruntime nor scikit-learn), no separate checkpoint
+(training takes minutes, <code>export.py</code> trains and exports in one go), no Hydra
+config and no Gradio demo yet.</p>
+<h2 id="training-setup-step-by-step">Training setup (step-by-step)</h2>
+<p>No GPU is needed. Training takes minutes on a CPU, most of it spent reading
+IAM-OnDB (not timed separately).</p>
+<ol>
+<li>Clone and install the base package (<code>bash INSTALL_LINUX.sh</code>), then
+   <code>uv sync --extra training-simple-htr-ondb</code> for the IAM-OnDB loader.</li>
+<li>Authenticate with HuggingFace (<code>hf auth login</code>): the IAM-OnDB dataset repo
+   is private.</li>
+<li>Check the install with <code>make tests-not-slow</code>.</li>
+<li>Score a detector on the benchmark, leaving the training data out of it:</li>
+</ol>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>xournalpp_htr.training.word_detector_online.evaluate
+</code></pre></div>
+<p>It trains on IAM-OnDB pages and scores every benchmark document.
+   <code>--iam-seed</code> changes the draw of IAM-OnDB forms and <code>--gap-squeeze LOW HIGH</code>
+   the shrinking of the gaps between words.
+5. Export:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>xournalpp_htr.training.word_detector_online.export<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output-dir<span class="w"> </span>exports/word_detector_online
+</code></pre></div>
+<ol>
+<li>Validate: the test <code>tests/test_word_detector_online_model.py</code> checks that the
+   numpy evaluation reproduces scikit-learn's probabilities, and benchmarking the
+   pipeline that loads the model must give the numbers under <em>Best model</em>.</li>
+<li>Upload with <code>export.py --upload</code> once validated.</li>
+</ol>
+<h2 id="inference">Inference</h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">xournalpp_htr.inference_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">OnlineWordDetectorModel</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">OnlineWordDetectorModel</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">()</span>
+<span class="n">words</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">group_strokes</span><span class="p">(</span><span class="n">strokes</span><span class="p">)</span>  <span class="c1"># [(x, y), ...] -&gt; [frozenset({0, 1}), ...]</span>
+</code></pre></div>
+<p><code>strokes</code> is a list of <code>(x, y)</code> arrays in writing order and document units. The
+benchmark pipeline <code>2026-11-03_online_word_detector_hub_simple_htr_ondb</code> uses the
+published model, renders each word from its own strokes and reads it with
+SimpleHTR-OnDB.</p>
+<h2 id="best-model">Best model</h2>
+<p>Detector trained on 700 IAM-OnDB forms stitched into pages with the gaps between
+words shrunk by a factor of 0.3 to 1.0, merge threshold tuned on out-of-fold
+probabilities, no post-processing. Benchmark pipeline
+<code>2026-11-03_online_word_detector_hub_simple_htr_ondb</code>
+(SimpleHTR-OnDB reading crops rendered from each word's strokes): precision
+84.1%, recall 87.4%, CER 27.3% (case-insensitive), recall × (1 − CER) 63.6%.
+YOLO with SimpleHTR scores 77.0%, 72.4%, 27.5% and 52.5% on the same 406 words;
+a paired bootstrap puts the online pipeline's lead in the combined score at +11
+points (95% interval [+4.5, +15.9] resampling documents), driven by recall.</p>
+<h2 id="experiments">Experiments</h2>
+<p>The pipelines and detectors of the experiments below, and the code only they
+used, were removed because users cannot run them: they refit a detector on every
+run or need the private IAM-OnDB dataset. The experiments stay documented here;
+the code is in the git history up to commit <code>1e4bcb2</code>, for example
+<code>git show 1e4bcb2:xournalpp_htr/training/word_detector_online/postprocess.py</code>.
+The pipeline names below are the ones that existed then.</p>
+<p>All numbers are on the benchmark of 7 documents by 7 writers (406 words) with
+the benchmark's box-coverage matching. The benchmark is never part of the
+training data of the IAM-OnDB detectors; the benchmark-trained detectors are
+scored leave-one-document-out, which also holds out the writer.</p>
+<h3 id="2026-11-02-stability-and-post-processing">2026-11-02 — Stability and post-processing</h3>
+<ul>
+<li><strong>Hypothesis:</strong> the squeeze range and the draw of IAM-OnDB forms hardly matter,
+  and merging fragments and dropping underlines improves the combined score.</li>
+<li><strong>Setup:</strong> detection scores of the IAM-trained detector for squeeze ranges
+  0.5–1.0, 0.2–1.0, 0.3–1.3 and 0.5–1.3, for five seeds of the form draw, and
+  with post-processing tuned on 300 other IAM-OnDB forms (<code>postprocess.py</code>).</li>
+<li><strong>Results:</strong> all squeezed ranges give detection F1 0.85–0.86 (unsqueezed 0.84).
+  Five form draws give F1 0.86 each (precision 85–88%, recall 85–87%).
+  Post-processing raises precision from 84.1% to 87.1% and lowers recall from
+  87.4% to 86.2%, so the combined score falls from 63.6% to 62.8%.</li>
+<li><strong>Conclusion:</strong> keep the 0.3–1.0 squeeze and no post-processing; the detector
+  is stable across draws of the training forms.</li>
+</ul>
+<h3 id="2026-11-02-squeezing-the-gaps-between-words">2026-11-02 — Squeezing the gaps between words</h3>
+<ul>
+<li><strong>Hypothesis:</strong> the detector merges neighbouring words because IAM-OnDB word
+  gaps are wider than the benchmark's.</li>
+<li><strong>Setup:</strong> per IAM-OnDB line, the gaps between words shrink by a random factor
+  between 0.3 and 1.0 (<code>iam_ondb.py</code>).</li>
+<li><strong>Results:</strong> recall 81.5% → 87.4%, precision 88.5% → 84.1%, CER 31.9% → 27.3%,
+  recall × (1 − CER) 55.5% → 63.6%.</li>
+<li><strong>Conclusion:</strong> adopted. Remaining errors: hard handwriting, fragmented words
+  and stray strokes (underlines, arrows) attached to words.</li>
+</ul>
+<h3 id="2026-11-01-crops-rendered-from-each-words-own-strokes">2026-11-01 — Crops rendered from each word's own strokes</h3>
+<ul>
+<li><strong>Hypothesis:</strong> crops cut from the page render contain neighbouring words,
+  which hurts recognition.</li>
+<li><strong>Setup:</strong> each crop is rendered from the strokes of its word alone.</li>
+<li><strong>Results:</strong> with SimpleHTR-OnDB CER 36.6% → 31.9% and recall × (1 − CER)
+  51.7% → 55.5%; with SimpleHTR 38.4% → 34.2%.</li>
+<li><strong>Conclusion:</strong> adopted; this is an advantage over the vision-based detectors.</li>
+</ul>
+<h3 id="2026-11-01-training-on-iam-ondb-pages">2026-11-01 — Training on IAM-OnDB pages</h3>
+<ul>
+<li><strong>Hypothesis:</strong> IAM-OnDB, with many writers, can replace the benchmark
+  documents as training data.</li>
+<li><strong>Setup:</strong> lines of a form are combined at their original positions into pages
+  (line breaks included); words come from gap cutting
+  (<code>simple_htr_ondb/word_splitting.py</code>); optional synthetic underlines, arrows,
+  boxes and connector curves.</li>
+<li><strong>Results:</strong> single IAM lines: detection F1 0.65; stitched pages: 0.84;
+  synthetic non-text strokes: 0.83, no gain. Reference, benchmark-trained:
+  0.77.</li>
+<li><strong>Conclusion:</strong> stitched pages are what matters. The word labels follow a gap
+  rule and only lines where it works cleanly are kept (about 1,800 of 5,000
+  examined lines were rejected, mostly as ambiguous gaps), which is a known
+  limitation.</li>
+</ul>
+<h3 id="2026-10-30-detectors-trained-on-the-benchmark">2026-10-30 — Detectors trained on the benchmark</h3>
+<ul>
+<li><strong>Hypothesis:</strong> an algorithm on the strokes can find words as well as the
+  vision-based detectors.</li>
+<li><strong>Setup:</strong> gap threshold, single-linkage clustering and boosting on features
+  of consecutive strokes, leave-one-document-out on the benchmark.</li>
+<li><strong>Results:</strong> detection F1 (box coverage) 0.77 for the gap threshold, 0.65 for
+  clustering and 0.76 for boosting with threshold 0.5, 0.77 with the threshold
+  tuned on held-out documents; the tuned boosting pipeline reaches recall 81.3%
+  at precision 73.8%.</li>
+<li><strong>Conclusion:</strong> boosting works best; the benchmark alone is too small to train
+  on honestly, which led to IAM-OnDB.</li>
+</ul>
+<h2 id="current-status">Current status</h2>
+<ul>
+<li><code>OnlineWordDetectorModel</code> loads <code>model.npz</code> + <code>config.json</code> and groups strokes.</li>
+<li>One benchmark pipeline, <code>2026-11-03_online_word_detector_hub_simple_htr_ondb</code>,
+  uses the published detector; its numbers are under <em>Best model</em>.</li>
+<li>Known issues: in a sample of the wrong crops about a quarter were merged
+  words, and split words mostly show up as spurious boxes; strokes of arrows and underlines next to words become spurious boxes or steal a
+  word's match; recognition errors on hard handwriting are not addressed here.</li>
+<li>The benchmark is small, so differences of a few points are not reliable.</li>
+<li>Missing compared with the model conventions: Gradio demo, Hydra config.</li>
+</ul>
+<h2 id="outlook">Outlook</h2>
+<ul>
+<li>Better recognition of clean but misread crops (fine-tune the recognizer on
+  stroke renders with realistic grouping noise).</li>
+<li>Merge fragments and drop non-word strokes with a learned model instead of
+  rules.</li>
+<li>Word labels for IAM-OnDB that do not depend on a gap rule.</li>
+<li>A Gradio demo to inspect the groups visually.</li>
+</ul>
+
+
+
+
+
+
+
+  
+    
+  
+  
+    
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 4, 2026 10:34:11 GMT">November 4, 2026</span>
+  </span>
+
+    
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Created">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 3, 2026 16:49:56 GMT">November 3, 2026</span>
+  </span>
+
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>
