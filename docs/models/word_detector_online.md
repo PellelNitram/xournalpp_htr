@@ -21,12 +21,10 @@ The source lives under
 | `strokes.py` | `StrokePage`, the strokes of a page plus word labels | base |
 | `features.py` | Spatial features of consecutive strokes | base |
 | `model.py` | Boosted trees as plain arrays, numpy evaluation, cutting into words | base |
-| `detectors.py` | The detectors tried (gap threshold, clustering, boosting) | base |
-| `iam_ondb.py`, `synthetic.py` | IAM-OnDB forms as training pages, synthetic non-text strokes | `training-simple-htr-ondb` |
+| `detectors.py` | The boosted detector and the tuning of its merge threshold | base |
+| `iam_ondb.py` | IAM-OnDB forms as training pages, with the gaps between words shrunk | `training-simple-htr-ondb` |
 | `data.py` | The benchmark documents as labelled stroke pages | base |
-| `metrics.py`, `evaluate.py` | Exact and box-coverage scoring, cross-validation CLI | base |
-| `postprocess.py` | Optional merging of fragments and dropping of underlines | base |
-| `pipeline.py` | Fits (or loads) a detector for the benchmark pipelines | `training-simple-htr-ondb` |
+| `metrics.py`, `evaluate.py` | Exact and box-coverage scoring, evaluation CLI | base |
 | `export.py` | Trains on IAM-OnDB, writes `model.npz` + `config.json`, HF Hub upload | `training-simple-htr-ondb` |
 | `model_card.md` | Published as the HF repo's `README.md` | none |
 
@@ -50,13 +48,12 @@ IAM-OnDB (not timed separately).
 4. Score a detector on the benchmark, leaving the training data out of it:
 
    ```bash
-   uv run python -m xournalpp_htr.training.word_detector_online.evaluate \
-       --detectors pairwise_gbm_tuned --train-on iam --no-synthetic \
-       --gap-squeeze 0.3 1.0
+   uv run python -m xournalpp_htr.training.word_detector_online.evaluate
    ```
 
-   `--train-on benchmark` instead does leave-one-document-out on the benchmark
-   documents; `--iam-seed` changes the draw of IAM-OnDB forms.
+   It trains on IAM-OnDB pages and scores every benchmark document.
+   `--iam-seed` changes the draw of IAM-OnDB forms and `--gap-squeeze LOW HIGH`
+   the shrinking of the gaps between words.
 5. Export:
 
    ```bash
@@ -66,8 +63,7 @@ IAM-OnDB (not timed separately).
 
 6. Validate: the test `tests/test_word_detector_online_model.py` checks that the
    numpy evaluation reproduces scikit-learn's probabilities, and benchmarking the
-   pipeline that loads the exported model must reproduce the numbers of the
-   pipeline that fits it (see the experiment log).
+   pipeline that loads the model must give the numbers under *Best model*.
 7. Upload with `export.py --upload` once validated.
 
 ## Inference
@@ -89,7 +85,7 @@ SimpleHTR-OnDB.
 Detector trained on 700 IAM-OnDB forms stitched into pages with the gaps between
 words shrunk by a factor of 0.3 to 1.0, merge threshold tuned on out-of-fold
 probabilities, no post-processing. Benchmark pipeline
-`2026-11-02_online_pairwise_gbm_iam_squeezed_isolated_simple_htr_ondb`
+`2026-11-03_online_word_detector_hub_simple_htr_ondb`
 (SimpleHTR-OnDB reading crops rendered from each word's strokes): precision
 84.1%, recall 87.4%, CER 27.3% (case-insensitive), recall × (1 − CER) 63.6%.
 YOLO with SimpleHTR scores 77.0%, 72.4%, 27.5% and 52.5% on the same 406 words;
@@ -97,6 +93,13 @@ a paired bootstrap puts the online pipeline's lead in the combined score at +11
 points (95% interval [+4.5, +15.9] resampling documents), driven by recall.
 
 ## Experiments
+
+The pipelines and detectors of the experiments below, and the code only they
+used, were removed because users cannot run them: they refit a detector on every
+run or need the private IAM-OnDB dataset. The experiments stay documented here;
+the code is in the git history up to commit `1e4bcb2`, for example
+`git show 1e4bcb2:xournalpp_htr/training/word_detector_online/postprocess.py`.
+The pipeline names below are the ones that existed then.
 
 All numbers are on the benchmark of 7 documents by 7 writers (406 words) with
 the benchmark's box-coverage matching. The benchmark is never part of the
@@ -169,8 +172,8 @@ scored leave-one-document-out, which also holds out the writer.
 ## Current status
 
 - `OnlineWordDetectorModel` loads `model.npz` + `config.json` and groups strokes.
-- Benchmark pipelines exist for each experiment above; the best one is listed
-  under *Best model*.
+- One benchmark pipeline, `2026-11-03_online_word_detector_hub_simple_htr_ondb`,
+  uses the published detector; its numbers are under *Best model*.
 - Known issues: in a sample of the wrong crops about a quarter were merged
   words, and split words mostly show up as spurious boxes; strokes of arrows and underlines next to words become spurious boxes or steal a
   word's match; recognition errors on hard handwriting are not addressed here.

@@ -53,7 +53,7 @@ training pages.
 
 Benchmark of 7 handwritten Xournal++ documents by 7 writers (406 words), with
 the detector followed by SimpleHTR-OnDB on crops rendered from each word's
-strokes (pipeline `2026-11-02_online_pairwise_gbm_iam_squeezed_isolated_simple_htr_ondb`):
+strokes (pipeline `2026-11-03_online_word_detector_hub_simple_htr_ondb`):
 
 | Metric | Value |
 |---|---|
