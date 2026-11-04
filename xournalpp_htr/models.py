@@ -11,7 +11,9 @@ import numpy as np
 from htr_pipeline import DetectorConfig, LineClusteringConfig, read_page
 from tqdm import tqdm
 
+from xournalpp_htr.documents import StrokesDocument
 from xournalpp_htr.inference_models import (
+    OnlineWordDetectorModel,
     PPOCRv5Model,
     RFDETRWordDetectorModel,
     SimpleHTRModel,
@@ -35,6 +37,17 @@ class WordPrediction:
     ymax: float
 
 
+# Pipeline that detects words by grouping the strokes with the published
+# stroke-based detector (issue #168) and reads each word with SimpleHTR-OnDB. Each
+# crop is rendered from the strokes of its word alone, so that neighbouring words
+# inside its box stay out.
+ONLINE_DETECTOR_PIPELINES = {"2026-11-03_online_word_detector_hub_simple_htr_ondb"}
+
+
+# Padding, in document units, around the strokes of a group when cropping it.
+ONLINE_DETECTOR_CROP_PADDING = 3.0
+
+
 # Pipelines that cut word crops and recognise them one by one, and can
 # therefore fill a `CropRecorder`.
 CROP_RECORDING_PIPELINES = {
@@ -48,6 +61,7 @@ CROP_RECORDING_PIPELINES = {
     "2026-10-09_yolo_detector_ppocrv5",
     "2026-10-17_yolo_detector_simple_htr_ondb",
     "2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab",
+    *ONLINE_DETECTOR_PIPELINES,
 }
 
 
@@ -63,6 +77,30 @@ class CropRecorder:
     pages: dict[PageIndex, np.ndarray] = field(default_factory=dict)
     crops: dict[int, np.ndarray] = field(default_factory=dict)
     network_inputs: dict[int, np.ndarray] = field(default_factory=dict)
+
+
+def _render_isolated_strokes(
+    strokes: list[tuple[np.ndarray, np.ndarray]],
+    box: tuple[float, float, float, float],
+    dpi: float,
+) -> np.ndarray:
+    """Render only `strokes` into a grayscale image of `box` (document units).
+
+    Goes through the same rendering and JPEG round trip as the page renders,
+    so the crop looks like one cut out of a page, minus any other strokes.
+    """
+    xmin, ymin, xmax, ymax = box
+    document = StrokesDocument(
+        [(x - xmin, y - ymin) for x, y in strokes], xmax - xmin, ymax - ymin
+    )
+    with tempfile.NamedTemporaryFile(
+        dir="/tmp", delete=False, prefix="xournalpp_htr__group__", suffix=".jpg"
+    ) as tmpfile:
+        path = Path(tmpfile.name)
+    document.save_page_as_image(0, path, False, dpi=dpi)
+    image = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+    path.unlink()
+    return image
 
 
 def compute_predictions(
@@ -548,6 +586,72 @@ def compute_predictions(
                     )
                     for text, box in model.read_page(img)
                 ]
+
+    elif pipeline_name in ONLINE_DETECTOR_PIPELINES:
+        # Imported here, as the other pipelines do not need the detector's training code.
+        from xournalpp_htr.training.word_detector_online.data import unlabeled_pages
+
+        RENDER_DPI = 150
+        nr_pages = len(document.pages)
+
+        detector = OnlineWordDetectorModel.from_pretrained()
+        recognizer = SimpleHTROnDBModel.from_pretrained()
+
+        stroke_pages = unlabeled_pages(document)
+
+        for page_index in tqdm(range(nr_pages), desc="Recognition"):
+            layers = [p for p in stroke_pages if p.page_index == page_index]
+            if not layers:
+                print(f"Page {page_index} is empty. Skipping HTR.")
+                predictions[page_index] = []
+                continue
+
+            with tempfile.NamedTemporaryFile(
+                dir="/tmp",
+                delete=False,
+                prefix=f"xournalpp_htr__page{page_index}__",
+                suffix=".jpg",
+            ) as tmpfile:
+                written_file = document.save_page_as_image(
+                    page_index, Path(tmpfile.name), False, dpi=RENDER_DPI
+                )
+
+            img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
+            if crop_recorder is not None:
+                crop_recorder.render_dpi = RENDER_DPI
+                crop_recorder.pages[page_index] = img
+
+            predictions_page = []
+            for layer in layers:
+                for group in detector.group_strokes(layer.strokes):
+                    xs = np.concatenate([layer.strokes[i][0] for i in group])
+                    ys = np.concatenate([layer.strokes[i][1] for i in group])
+                    pad = ONLINE_DETECTOR_CROP_PADDING
+                    xmin, xmax = xs.min() - pad, xs.max() + pad
+                    ymin, ymax = ys.min() - pad, ys.max() + pad
+
+                    crop = _render_isolated_strokes(
+                        [layer.strokes[i] for i in sorted(group)],
+                        (xmin, ymin, xmax, ymax),
+                        RENDER_DPI,
+                    )
+                    if crop.size == 0:
+                        continue
+
+                    prediction = WordPrediction(
+                        text=recognizer.recognize(crop),
+                        xmin=float(xmin),
+                        xmax=float(xmax),
+                        ymin=float(ymin),
+                        ymax=float(ymax),
+                    )
+                    predictions_page.append(prediction)
+                    if crop_recorder is not None:
+                        crop_recorder.crops[id(prediction)] = crop
+                        crop_recorder.network_inputs[id(prediction)] = (
+                            recognizer.preprocess(crop)
+                        )
+            predictions[page_index] = predictions_page
 
     else:
         raise NotImplementedError(f'Pipeline "{pipeline_name}" not implemented.')

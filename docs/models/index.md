@@ -16,6 +16,8 @@ model.
 - [WordDetectorRFDETR](word_detector_rf_detr.md) — RF-DETR-based word-level
   bounding-box detector (fine-tuned
   [RF-DETR](https://github.com/roboflow/rf-detr)).
+- [WordDetectorOnline](word_detector_online.md) — stroke-based word detector
+  that groups pen strokes into words (boosted trees, trained on IAM-OnDB).
 - [SimpleHTR-OnDB](simple_htr_ondb.md) — SimpleHTR retrained on IAM-OnDB
   strokes rendered like Xournal++ pages, alone and combined with IAM-DB.
 - [TrOCR](trocr.md) — Microsoft's pretrained word-level text recognition,

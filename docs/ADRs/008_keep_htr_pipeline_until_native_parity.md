@@ -71,8 +71,9 @@ under-detects.
 - The `htr_pipeline` dependency and its installation cost persist.
 - Both pipelines must be maintained in `compute_predictions()` meanwhile.
 - Weak measurement: 6 documents, one holding 55% of the words, no error bars, and
-  likely a single writer -- cross-writer generalisation is untested. Tuning the
-  detector against 211 words risks overfitting. Growing the corpus would
+  a single annotator for all of them. The documents have different writers, but
+  there are few of them, so cross-writer generalisation is only thinly tested.
+  Tuning the detector against 211 words risks overfitting. Growing the corpus would
   strengthen the gate; not tracked here.
 - The threshold may be discarded once #145 lands.
 
