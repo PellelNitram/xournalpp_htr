@@ -17,18 +17,15 @@ from collections import Counter, defaultdict
 
 import numpy as np
 
-from xournalpp_htr.training.data.datasets import IAM_OnDB_Dataset
-from xournalpp_htr.training.simple_htr_ondb.prepare_data import (
-    form_of,
-    list_line_ids,
-    load_form_writers,
-)
 from xournalpp_htr.training.simple_htr_ondb.word_splitting import (
     group_tokens,
     split_into_words,
 )
 from xournalpp_htr.training.word_detector_online.strokes import StrokePage
 from xournalpp_htr.xio import load_IAM_OnDB_dataset
+
+# The IAM-OnDB dataset helpers need torch (the training extra), so they are imported
+# inside the functions that read the dataset; this module stays importable without it.
 
 Stroke = tuple[np.ndarray, np.ndarray]
 
@@ -73,6 +70,8 @@ def _load_line(
     With `gap_squeeze` ``(low, high)``, the gaps between words shrink by a
     factor drawn uniformly from that range for the line.
     """
+    from xournalpp_htr.training.data.datasets import IAM_OnDB_Dataset
+
     df, text = IAM_OnDB_Dataset.load_IAM_OnDB_sample(line_id, root)
     df["y"] *= -1  # the loader flips y upwards; documents have y pointing down
 
@@ -108,6 +107,12 @@ def load_iam_ondb_pages(
     Forms without a single usable line are skipped. `gap_squeeze` shrinks the
     gaps between words, see `_load_line`.
     """
+    from xournalpp_htr.training.simple_htr_ondb.prepare_data import (
+        form_of,
+        list_line_ids,
+        load_form_writers,
+    )
+
     root = load_IAM_OnDB_dataset()
     writers = load_form_writers(root)
     lines_of_form = defaultdict(list)
