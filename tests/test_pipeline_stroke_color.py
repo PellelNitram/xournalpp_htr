@@ -28,9 +28,11 @@ PIPELINES = [
     "2026-10-17_yolo_detector_simple_htr_ondb",
     "2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab",
     "2026-11-03_online_word_detector_hub_simple_htr_ondb",
+    "2026-11-09_yolo_detector_lfm3_vl",
 ]
 
 MODEL_CLASSES = [
+    "LFM3VLModel",
     "OnlineWordDetectorModel",
     "PPOCRv5Model",
     "RFDETRWordDetectorModel",
