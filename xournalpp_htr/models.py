@@ -133,7 +133,7 @@ def compute_predictions(
                 TMP_FILE = Path(tmpfile.name)
 
                 written_file = document.save_page_as_image(
-                    page_index, TMP_FILE, False, dpi=RENDER_DPI
+                    page_index, TMP_FILE, True, dpi=RENDER_DPI
                 )
 
                 # Confirm that page is not empty
@@ -198,7 +198,7 @@ def compute_predictions(
                 TMP_FILE = Path(tmpfile.name)
 
                 written_file = document.save_page_as_image(
-                    page_index, TMP_FILE, False, dpi=RENDER_DPI
+                    page_index, TMP_FILE, True, dpi=RENDER_DPI
                 )
 
                 if (
@@ -270,7 +270,7 @@ def compute_predictions(
                 TMP_FILE = Path(tmpfile.name)
 
                 written_file = document.save_page_as_image(
-                    page_index, TMP_FILE, False, dpi=RENDER_DPI
+                    page_index, TMP_FILE, True, dpi=RENDER_DPI
                 )
 
                 if (
@@ -334,7 +334,7 @@ def compute_predictions(
                 TMP_FILE = Path(tmpfile.name)
 
                 written_file = document.save_page_as_image(
-                    page_index, TMP_FILE, False, dpi=RENDER_DPI
+                    page_index, TMP_FILE, True, dpi=RENDER_DPI
                 )
 
                 if (
@@ -409,7 +409,7 @@ def compute_predictions(
                 TMP_FILE = Path(tmpfile.name)
 
                 written_file = document.save_page_as_image(
-                    page_index, TMP_FILE, False, dpi=RENDER_DPI
+                    page_index, TMP_FILE, True, dpi=RENDER_DPI
                 )
 
                 if (
@@ -489,7 +489,7 @@ def compute_predictions(
                 TMP_FILE = Path(tmpfile.name)
 
                 written_file = document.save_page_as_image(
-                    page_index, TMP_FILE, False, dpi=RENDER_DPI
+                    page_index, TMP_FILE, True, dpi=RENDER_DPI
                 )
 
                 if (
@@ -562,7 +562,7 @@ def compute_predictions(
                 TMP_FILE = Path(tmpfile.name)
 
                 written_file = document.save_page_as_image(
-                    page_index, TMP_FILE, False, dpi=RENDER_DPI
+                    page_index, TMP_FILE, True, dpi=RENDER_DPI
                 )
 
                 if (
@@ -613,7 +613,7 @@ def compute_predictions(
                 suffix=".jpg",
             ) as tmpfile:
                 written_file = document.save_page_as_image(
-                    page_index, Path(tmpfile.name), False, dpi=RENDER_DPI
+                    page_index, Path(tmpfile.name), True, dpi=RENDER_DPI
                 )
 
             img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
