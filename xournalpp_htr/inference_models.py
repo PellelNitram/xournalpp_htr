@@ -541,6 +541,37 @@ class LFM3VLModel:
 
     PROMPT = "Transcribe the handwritten word in this image. Reply with the word only."
 
+    # Whole-page reading. The model reports boxes as coordinates normalised to
+    # 0..1000 (image width/height), which stay valid however the server resizes
+    # the image. The prompt contains no square brackets on purpose.
+    PAGE_PROMPT = (
+        "Transcribe every word of handwriting in this image, in reading order. "
+        "Reply with ONLY a JSON array of objects, each with field t (the "
+        "recognized word as a string) and field b (a 4-element array of numbers "
+        "x0, y0, x1, y1 giving that word's bounding box as normalized "
+        "coordinates in the range 0 to 1000, where x0 is 1000 times the left "
+        "edge divided by the image width, y0 is 1000 times the top edge divided "
+        "by the image height, x1 the right edge and y1 the bottom edge). "
+        "Do not write any other text."
+    )
+    # GBNF grammar forcing exactly that JSON array. Hand-written rather than
+    # `json_schema`: llama.cpp's generated grammars can abort sampler setup
+    # (ggml-org/llama.cpp#22396).
+    PAGE_GRAMMAR = r"""root ::= "[" space (element ("," space element)*)? "]" space
+element ::= "{" space "\"t\"" space ":" space string "," space "\"b\"" space ":" space "[" space number ("," space number){3} "]" space "}" space
+string ::= "\"" char* "\""
+char ::= [^"\\\x7F\x00-\x1F] | "\\" (["\\bfnrt] | "u" [0-9a-fA-F]{4})
+number ::= "-"? [0-9]+ ("." [0-9]+)? ([eE] [-+]? [0-9]+)?
+space ::= [ \t\n]*
+"""
+    # Longest image edge sent for a page, in pixels: bounds the vision
+    # encoder's cost on CPU.
+    PAGE_MAX_IMAGE_DIM = 2048
+    # A dense page of ~500 words fits comfortably.
+    PAGE_MAX_NEW_TOKENS = 8192
+    # A page takes minutes on CPU.
+    PAGE_TIMEOUT_SECONDS = 20 * 60
+
     # Generous for a single word crop, but leaves room for crops where the
     # detector merged several words.
     MAX_NEW_TOKENS = 32
@@ -571,8 +602,10 @@ class LFM3VLModel:
         """What the model sees: the crop itself, the server resizes it."""
         return image_grayscale
 
-    def recognize(self, image_grayscale: np.ndarray) -> str:
-        """Recognise the text in a grayscale word image."""
+    def _chat(
+        self, image_grayscale: np.ndarray, prompt: str, timeout: float, **params
+    ) -> str:
+        """Send one image with ``prompt`` to the server, return the reply text."""
         ok, png = cv2.imencode(".png", image_grayscale)
         if not ok:
             raise ValueError("Could not encode the image as PNG.")
@@ -583,24 +616,89 @@ class LFM3VLModel:
                     "role": "user",
                     "content": [
                         {"type": "image_url", "image_url": {"url": data_url}},
-                        {"type": "text", "text": self.PROMPT},
+                        {"type": "text", "text": prompt},
                     ],
                 }
             ],
-            "max_tokens": self.MAX_NEW_TOKENS,
             "temperature": 0,
+            **params,
         }
         request = urllib.request.Request(
             f"{self.server_url}/v1/chat/completions",
             data=json.dumps(body).encode(),
             headers={"Content-Type": "application/json"},
         )
-        with urllib.request.urlopen(request, timeout=self.TIMEOUT_SECONDS) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
             reply = json.load(response)
         return reply["choices"][0]["message"]["content"].strip()
 
+    def recognize(self, image_grayscale: np.ndarray) -> str:
+        """Recognise the text in a grayscale word image."""
+        return self._chat(
+            image_grayscale,
+            self.PROMPT,
+            self.TIMEOUT_SECONDS,
+            max_tokens=self.MAX_NEW_TOKENS,
+        )
+
     def recognize_batch(self, images_grayscale: list[np.ndarray]) -> list[str]:
         return [self.recognize(image) for image in images_grayscale]
+
+    def read_page(self, image_grayscale: np.ndarray) -> list[tuple[str, BoundingBox]]:
+        """Detect and recognise words on a whole page, in one model call.
+
+        Returns:
+            (text, box) pairs, with boxes in pixels of ``image_grayscale``.
+        """
+        height, width = image_grayscale.shape[:2]
+        scale = self.PAGE_MAX_IMAGE_DIM / max(height, width)
+        sent = image_grayscale
+        if scale < 1:
+            sent = cv2.resize(
+                image_grayscale, (round(width * scale), round(height * scale))
+            )
+        reply = self._chat(
+            sent,
+            self.PAGE_PROMPT,
+            self.PAGE_TIMEOUT_SECONDS,
+            max_tokens=self.PAGE_MAX_NEW_TOKENS,
+            grammar=self.PAGE_GRAMMAR,
+            repeat_penalty=1.1,
+        )
+
+        words = []
+        for item in self._parse_page_reply(reply):
+            x0, y0, x1, y1 = (min(max(float(v), 0.0), 1000.0) for v in item["b"])
+            text = str(item["t"]).strip()
+            if not text or x1 <= x0 or y1 <= y0:
+                continue
+            words.append(
+                (
+                    text,
+                    BoundingBox(
+                        x_min=x0 / 1000 * width,
+                        y_min=y0 / 1000 * height,
+                        x_max=x1 / 1000 * width,
+                        y_max=y1 / 1000 * height,
+                    ),
+                )
+            )
+        return words
+
+    @staticmethod
+    def _parse_page_reply(reply: str) -> list[dict]:
+        """Parse the JSON array of words, keeping the complete entries of a
+        reply that was cut off at the token limit."""
+        try:
+            return json.loads(reply)
+        except json.JSONDecodeError:
+            cut = reply.rfind("}")
+            if cut == -1:
+                return []
+            try:
+                return json.loads(reply[: cut + 1] + "]")
+            except json.JSONDecodeError:
+                return []
 
 
 class YOLOWordDetectorModel(HFHubInferenceModel):

@@ -593,6 +593,49 @@ def compute_predictions(
                     for text, box in model.read_page(img)
                 ]
 
+    elif pipeline_name == "2026-11-09_lfm3_vl_page":
+        RENDER_DPI = 150
+        nr_pages = len(document.pages)
+
+        # LFM3-VL-2B reads whole pages and returns the word boxes itself, no
+        # separate detector (issue #171).
+        model = LFM3VLModel.from_pretrained()
+
+        for page_index in tqdm(range(nr_pages), desc="Recognition"):
+            with tempfile.NamedTemporaryFile(
+                dir="/tmp",
+                delete=False,
+                prefix=f"xournalpp_htr__page{page_index}__",
+                suffix=".jpg",
+            ) as tmpfile:
+                TMP_FILE = Path(tmpfile.name)
+
+                written_file = document.save_page_as_image(
+                    page_index, TMP_FILE, True, dpi=RENDER_DPI
+                )
+
+                if (
+                    len(document.pages[page_index].layers) == 0
+                    or len(document.pages[page_index].layers[0].strokes) == 0
+                ):
+                    print(f"Page {page_index} is empty. Skipping HTR.")
+                    predictions[page_index] = []
+                    continue
+
+                img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
+
+                coord_scale = document.DPI / RENDER_DPI
+                predictions[page_index] = [
+                    WordPrediction(
+                        text=text,
+                        xmin=box.x_min * coord_scale,
+                        xmax=box.x_max * coord_scale,
+                        ymin=box.y_min * coord_scale,
+                        ymax=box.y_max * coord_scale,
+                    )
+                    for text, box in model.read_page(img)
+                ]
+
     elif pipeline_name in ONLINE_DETECTOR_PIPELINES:
         # Imported here, as the other pipelines do not need the detector's training code.
         from xournalpp_htr.training.word_detector_online.data import unlabeled_pages

@@ -119,8 +119,12 @@ def test_main_ppocrv5(
 
 
 @pytest.mark.slow
-def test_main_yolo_detector_lfm3_vl(
-    get_path_to_minimal_test_data: Path, tmp_path: Path
+@pytest.mark.parametrize(
+    "pipeline",
+    ["2026-11-09_yolo_detector_lfm3_vl", "2026-11-09_lfm3_vl_page"],
+)
+def test_main_lfm3_vl(
+    pipeline: str, get_path_to_minimal_test_data: Path, tmp_path: Path
 ) -> None:
     from xournalpp_htr.inference_models import LFM3VLModel
 
@@ -130,8 +134,8 @@ def test_main_yolo_detector_lfm3_vl(
         pytest.skip("needs a running llama-server, see LFM3VLModel")
     args = {
         "input_file": get_path_to_minimal_test_data,
-        "output_file": tmp_path / Path("test_main_yolo_detector_lfm3_vl.pdf"),
-        "pipeline": "2026-11-09_yolo_detector_lfm3_vl",
+        "output_file": tmp_path / Path(f"test_main_{pipeline}.pdf"),
+        "pipeline": pipeline,
         "prediction_image_dir": None,
         "show_predictions": False,
         "small_text": False,
