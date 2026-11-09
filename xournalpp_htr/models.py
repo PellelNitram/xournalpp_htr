@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 from xournalpp_htr.documents import StrokesDocument
 from xournalpp_htr.inference_models import (
+    LFM3VLModel,
     OnlineWordDetectorModel,
     PPOCRv5Model,
     RFDETRWordDetectorModel,
@@ -61,6 +62,7 @@ CROP_RECORDING_PIPELINES = {
     "2026-10-09_yolo_detector_ppocrv5",
     "2026-10-17_yolo_detector_simple_htr_ondb",
     "2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab",
+    "2026-11-09_yolo_detector_lfm3_vl",
     *ONLINE_DETECTOR_PIPELINES,
 }
 
@@ -461,6 +463,7 @@ def compute_predictions(
         "2026-10-05_yolo_detector_trocr_large",
         "2026-10-09_yolo_detector_trocr_large_strip_punct",
         "2026-10-09_yolo_detector_ppocrv5",
+        "2026-11-09_yolo_detector_lfm3_vl",
     ):
         RENDER_DPI = 150
         nr_pages = len(document.pages)
@@ -468,11 +471,14 @@ def compute_predictions(
         detector = YOLOWordDetectorModel.from_pretrained()
         # Same detector as 2026-09-02_yolo_detector, but pretrained TrOCR in
         # place of SimpleHTR (issue #156), base or large checkpoint.
-        # PP-OCRv5 recognition only (issue #157) takes the same slot.
+        # PP-OCRv5 recognition only (issue #157) takes the same slot, as does
+        # LFM3-VL-2B behind a llama-server (issue #171).
         if pipeline_name == "2026-10-05_yolo_detector_trocr":
             recognizer = TrOCRModel.from_pretrained()
         elif pipeline_name == "2026-10-09_yolo_detector_ppocrv5":
             recognizer = PPOCRv5Model.from_pretrained()
+        elif pipeline_name == "2026-11-09_yolo_detector_lfm3_vl":
+            recognizer = LFM3VLModel.from_pretrained()
         else:
             recognizer = TrOCRLargeModel.from_pretrained()
         strip_punct = (

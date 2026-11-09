@@ -12,8 +12,11 @@ inference signature varies too much across models. The central inference API is
 is model lifecycle (loading and version introspection) only.
 """
 
+import base64
 import json
+import os
 import re
+import urllib.request
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import ClassVar, List
@@ -515,6 +518,89 @@ class PPOCRv5Model:
                     )
                 )
         return words
+
+
+class LFM3VLModel:
+    """Liquid AI's LFM3-VL-2B vision-language model, run by a ``llama-server``.
+
+    Pretrained and used as is (issue #171); not our own export, so it does not
+    follow ADR 006's HF Hub layout. The model runs in a separate ``llama.cpp``
+    server that we talk to over its OpenAI-compatible HTTP API, so this class
+    needs no extra dependency. Start the server with::
+
+        llama-server -hf LiquidAI/LFM3-VL-2B-GGUF:Q4_0 --reasoning off
+
+    ``--reasoning off`` is required: otherwise the model spends its token
+    budget thinking and returns an empty reply. The server address is read
+    from the ``XOURNALPP_HTR_LLAMA_SERVER_URL`` environment variable
+    (default `DEFAULT_SERVER_URL`).
+    """
+
+    DEFAULT_SERVER_URL = "http://127.0.0.1:8080"
+    SERVER_URL_ENV_VAR = "XOURNALPP_HTR_LLAMA_SERVER_URL"
+
+    PROMPT = "Transcribe the handwritten word in this image. Reply with the word only."
+
+    # Generous for a single word crop, but leaves room for crops where the
+    # detector merged several words.
+    MAX_NEW_TOKENS = 32
+    TIMEOUT_SECONDS = 300
+
+    def __init__(self, server_url: str):
+        self.server_url = server_url.rstrip("/")
+
+    @classmethod
+    def from_pretrained(cls) -> "LFM3VLModel":
+        """Connect to the running ``llama-server``; fail early if unreachable."""
+        server_url = os.environ.get(cls.SERVER_URL_ENV_VAR, cls.DEFAULT_SERVER_URL)
+        model = cls(server_url)
+        try:
+            with urllib.request.urlopen(
+                f"{model.server_url}/health", timeout=10
+            ) as response:
+                response.read()
+        except OSError as e:
+            raise ConnectionError(
+                f"LFM3VLModel could not reach a llama-server at {model.server_url}. "
+                "Start one with `llama-server -hf LiquidAI/LFM3-VL-2B-GGUF:Q4_0 "
+                f"--reasoning off`, or set {cls.SERVER_URL_ENV_VAR}."
+            ) from e
+        return model
+
+    def preprocess(self, image_grayscale: np.ndarray) -> np.ndarray:
+        """What the model sees: the crop itself, the server resizes it."""
+        return image_grayscale
+
+    def recognize(self, image_grayscale: np.ndarray) -> str:
+        """Recognise the text in a grayscale word image."""
+        ok, png = cv2.imencode(".png", image_grayscale)
+        if not ok:
+            raise ValueError("Could not encode the image as PNG.")
+        data_url = "data:image/png;base64," + base64.b64encode(png).decode()
+        body = {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image_url", "image_url": {"url": data_url}},
+                        {"type": "text", "text": self.PROMPT},
+                    ],
+                }
+            ],
+            "max_tokens": self.MAX_NEW_TOKENS,
+            "temperature": 0,
+        }
+        request = urllib.request.Request(
+            f"{self.server_url}/v1/chat/completions",
+            data=json.dumps(body).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(request, timeout=self.TIMEOUT_SECONDS) as response:
+            reply = json.load(response)
+        return reply["choices"][0]["message"]["content"].strip()
+
+    def recognize_batch(self, images_grayscale: list[np.ndarray]) -> list[str]:
+        return [self.recognize(image) for image in images_grayscale]
 
 
 class YOLOWordDetectorModel(HFHubInferenceModel):
