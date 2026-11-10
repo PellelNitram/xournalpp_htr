@@ -334,7 +334,9 @@ def test_lfm3_vl_read_page_maps_normalised_boxes_to_pixels(fake_llama_server):
             '{"t": "edge", "b": [900, 900, 1200, 1000]}]'  # clamped to 1000
         )
     )
-    words = model.read_page(np.full((200, 400), 255, dtype=np.uint8))
+    page = np.full((200, 400), 255, dtype=np.uint8)
+    page[90:110, 50:350] = 0  # some ink, else the page is skipped
+    words = model.read_page(page)
 
     assert [text for text, _ in words] == ["hi", "edge"]
     box = words[0][1]
@@ -353,7 +355,8 @@ def test_lfm3_vl_read_page_downscales_large_pages_and_sends_grammar(
 
     url, requests = fake_llama_server
     model = LFM3VLModel(url)
-    page = np.full((3000, 1000), 255, dtype=np.uint8)
+    page = np.full((100, 4096), 255, dtype=np.uint8)
+    page[40:60, 100:300] = 0  # some ink, else the strip is skipped
     assert model.read_page(page) == []  # the fake server replies "brain": no JSON
 
     _, body = requests[0]
@@ -370,3 +373,51 @@ def test_lfm3_vl_parse_page_reply_keeps_complete_entries_of_cut_off_reply():
     cut = '[{"t": "a", "b": [1, 2, 3, 4]}, {"t": "b", "b": [5, 6'
     assert LFM3VLModel._parse_page_reply(cut) == [{"t": "a", "b": [1, 2, 3, 4]}]
     assert LFM3VLModel._parse_page_reply("not json") == []
+
+
+def test_lfm3_vl_read_page_reads_in_strips_and_finds_overlap_words_once():
+    from xournalpp_htr.inference_models import LFM3VLModel
+
+    model = LFM3VLModel("http://unused")
+    page = np.full((1000, 400), 255, dtype=np.uint8)
+    page[:] = 255
+    page[::50] = 0  # ink everywhere, so no strip is skipped
+    calls = []
+
+    def fake_read_strip(strip):
+        calls.append(strip.shape[0])
+        # One word per strip at page y 450..500, which lies in the overlap of
+        # strips 0 (0..600) and 1 (400..1000).
+        top = 0 if len(calls) == 1 else 400
+        return [("mid", BoundingBox(0, 450 - top, 100, 500 - top))]
+
+    model._read_strip = fake_read_strip
+    words = model.read_page(page)
+
+    assert calls == [600, 600]
+    assert [text for text, _ in words] == ["mid"]  # not found twice
+    box = words[0][1]
+    assert (box.y_min, box.y_max) == (450.0, 500.0)
+
+
+def test_lfm3_vl_read_page_skips_strips_without_ink():
+    from xournalpp_htr.inference_models import LFM3VLModel
+
+    model = LFM3VLModel("http://unused")
+    model._read_strip = lambda strip: pytest.fail("blank strip was sent")
+    assert model.read_page(np.full((1000, 400), 255, dtype=np.uint8)) == []
+
+
+def test_lfm3_vl_read_strip_drops_duplicate_boxes():
+    from xournalpp_htr.inference_models import LFM3VLModel
+
+    model = LFM3VLModel("http://unused")
+    model._chat = (
+        lambda *args, **kwargs: (
+            '[{"t": "a", "b": [100, 100, 300, 300]}, '
+            '{"t": "a", "b": [110, 105, 310, 305]}, '  # same box again: dropped
+            '{"t": "b", "b": [600, 100, 800, 300]}]'
+        )
+    )
+    words = model._read_strip(np.full((100, 400), 255, dtype=np.uint8))
+    assert [text for text, _ in words] == ["a", "b"]
