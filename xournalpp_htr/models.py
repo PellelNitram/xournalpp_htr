@@ -49,6 +49,14 @@ ONLINE_DETECTOR_PIPELINES = {"2026-11-03_online_word_detector_hub_simple_htr_ond
 ONLINE_DETECTOR_CROP_PADDING = 3.0
 
 
+# Pipelines that let LFM3-VL-2B read whole pages and return the word boxes
+# (issue #171). The second one then snaps each box to the strokes inside it.
+LFM3_VL_PAGE_PIPELINES = {
+    "2026-11-09_lfm3_vl_page",
+    "2026-11-10_lfm3_vl_page_snapped",
+}
+
+
 # Pipelines that cut word crops and recognise them one by one, and can
 # therefore fill a `CropRecorder`.
 CROP_RECORDING_PIPELINES = {
@@ -79,6 +87,58 @@ class CropRecorder:
     pages: dict[PageIndex, np.ndarray] = field(default_factory=dict)
     crops: dict[int, np.ndarray] = field(default_factory=dict)
     network_inputs: dict[int, np.ndarray] = field(default_factory=dict)
+
+
+def snap_predictions_to_strokes(
+    predictions: list[WordPrediction],
+    strokes: list[tuple[np.ndarray, np.ndarray]],
+    min_inside: float = 0.5,
+) -> list[WordPrediction]:
+    """Replace each predicted box by the bounding box of the strokes inside it.
+
+    Every stroke goes to the box that contains the largest fraction of its
+    points (the smaller box on ties), provided that fraction is at least
+    `min_inside`. A box that gets no stroke is kept as it is. Boxes from a model
+    that only sees pixels are rarely tight on the ink; the strokes are exact.
+    """
+    if not predictions or not strokes:
+        return predictions
+
+    boxes = np.array([[p.xmin, p.ymin, p.xmax, p.ymax] for p in predictions])
+    areas = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
+    # Tiny differences in area decide ties, so keep them out of the fractions.
+    order = np.argsort(areas, kind="stable")
+
+    assigned: list[list[int]] = [[] for _ in predictions]
+    for i, (xs, ys) in enumerate(strokes):
+        inside = (
+            (xs[:, None] >= boxes[None, :, 0])
+            & (xs[:, None] <= boxes[None, :, 2])
+            & (ys[:, None] >= boxes[None, :, 1])
+            & (ys[:, None] <= boxes[None, :, 3])
+        ).mean(axis=0)
+        # Walk the boxes smallest first and keep the first maximum.
+        best = order[np.argmax(inside[order])]
+        if inside[best] >= min_inside:
+            assigned[best].append(i)
+
+    snapped = []
+    for prediction, indices in zip(predictions, assigned, strict=True):
+        if not indices:
+            snapped.append(prediction)
+            continue
+        xs = np.concatenate([strokes[i][0] for i in indices])
+        ys = np.concatenate([strokes[i][1] for i in indices])
+        snapped.append(
+            WordPrediction(
+                text=prediction.text,
+                xmin=float(xs.min()),
+                xmax=float(xs.max()),
+                ymin=float(ys.min()),
+                ymax=float(ys.max()),
+            )
+        )
+    return snapped
 
 
 def _render_isolated_strokes(
@@ -593,7 +653,7 @@ def compute_predictions(
                     for text, box in model.read_page(img)
                 ]
 
-    elif pipeline_name == "2026-11-09_lfm3_vl_page":
+    elif pipeline_name in LFM3_VL_PAGE_PIPELINES:
         RENDER_DPI = 150
         nr_pages = len(document.pages)
 
@@ -625,7 +685,7 @@ def compute_predictions(
                 img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
 
                 coord_scale = document.DPI / RENDER_DPI
-                predictions[page_index] = [
+                predictions_page = [
                     WordPrediction(
                         text=text,
                         xmin=box.x_min * coord_scale,
@@ -635,6 +695,16 @@ def compute_predictions(
                     )
                     for text, box in model.read_page(img)
                 ]
+                if pipeline_name == "2026-11-10_lfm3_vl_page_snapped":
+                    predictions_page = snap_predictions_to_strokes(
+                        predictions_page,
+                        [
+                            (stroke.x, stroke.y)
+                            for layer in document.pages[page_index].layers
+                            for stroke in layer.strokes
+                        ],
+                    )
+                predictions[page_index] = predictions_page
 
     elif pipeline_name in ONLINE_DETECTOR_PIPELINES:
         # Imported here, as the other pipelines do not need the detector's training code.
