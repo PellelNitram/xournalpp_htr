@@ -379,25 +379,29 @@ def test_lfm3_vl_read_page_reads_in_strips_and_finds_overlap_words_once():
     from xournalpp_htr.inference_models import LFM3VLModel
 
     model = LFM3VLModel("http://unused")
-    page = np.full((1000, 400), 255, dtype=np.uint8)
-    page[:] = 255
+    strip_height = model.PAGE_STRIP_HEIGHT
+    stride = strip_height - model.PAGE_STRIP_OVERLAP
+    # Two strips: 0..strip_height and stride..stride + strip_height.
+    page = np.full((stride + strip_height, 400), 255, dtype=np.uint8)
     page[::50] = 0  # ink everywhere, so no strip is skipped
     calls = []
 
+    # One word in the overlap of the two strips.
+    word_top = stride + 10
+    word_bottom = word_top + 40
+
     def fake_read_strip(strip):
         calls.append(strip.shape[0])
-        # One word per strip at page y 450..500, which lies in the overlap of
-        # strips 0 (0..600) and 1 (400..1000).
-        top = 0 if len(calls) == 1 else 400
-        return [("mid", BoundingBox(0, 450 - top, 100, 500 - top))]
+        top = 0 if len(calls) == 1 else stride
+        return [("mid", BoundingBox(0, word_top - top, 100, word_bottom - top))]
 
     model._read_strip = fake_read_strip
     words = model.read_page(page)
 
-    assert calls == [600, 600]
+    assert calls == [strip_height, strip_height]
     assert [text for text, _ in words] == ["mid"]  # not found twice
     box = words[0][1]
-    assert (box.y_min, box.y_max) == (450.0, 500.0)
+    assert (box.y_min, box.y_max) == (word_top, word_bottom)
 
 
 def test_lfm3_vl_read_page_skips_strips_without_ink():
