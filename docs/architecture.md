@@ -92,6 +92,7 @@ graph TD
     - `2026-10-09_ppocrv5_det_rec` -- PP-OCRv5's own text detector and recogniser on whole pages (`PPOCRv5Model.read_page`), no YOLO detector (issue #157). Needs the `ppocr` extra. Detection is line-based and split into words by `rapidocr`, so word boxes differ from the benchmark's word-level ground truth (see [pp_ocrv5](models/pp_ocrv5.md)).
     - `2026-11-09_yolo_detector_lfm3_vl` -- `2026-09-02_yolo_detector` with Liquid AI's pretrained LFM3-VL-2B (`LFM3VLModel`) in place of SimpleHTR, one call per crop to a `llama-server` (issue #171). Lowest CER of all pipelines, but a benchmark run takes about 20 minutes on CPU and it needs the server; optional (see [lfm3_vl](models/lfm3_vl.md)).
     - `2026-11-21_rnote_lfm3_vl` -- Replica of the Rnote experiment that reads whole pages with LFM3-VL-2B: one call per page, and the model returns the word boxes (`LFM3VLModel.read_page_like_rnote`, issue #171). Finds far fewer words than the YOLO detector (recall about 38%); kept for the comparison (see [lfm3_vl](models/lfm3_vl.md)).
+    - `2026-11-21_indra_page` -- Datalab's pretrained Indra OCR on whole pages (`IndraModel.read_page`): its own line detector and recogniser, with the lines cut into words at the recogniser's spaces, no YOLO detector (issue #166). Runs as ONNX through `indra-ocr` and needs the `indra` extra. Second best pipeline without a server, behind `2026-11-03_online_word_detector_hub_simple_htr_ondb` (see [indra](models/indra.md)).
 
     All pipelines after `2024-07-18_htr_pipeline` render at 150 DPI, crop each detected word and recognise it independently (with `SimpleHTRModel` unless noted otherwise), so there is no cross-word context. Output is a dictionary mapping page indices to lists of predictions (text + bounding box coordinates in document units, see [ADR 005](ADRs/005_prediction_bounding_box_coordinate_system.md)).
 
@@ -171,6 +172,7 @@ convert their raw output before returning (see [ADR 005](ADRs/005_prediction_bou
 | `pyctcdecode` | Beam search CTC decoding (`2026-10-05_yolo_detector_beam_vocab`) |
 | `transformers` + `torch` | TrOCR recognition (`2026-10-05_yolo_detector_trocr`, optional `trocr` extra) |
 | `rapidocr` | PP-OCRv5 recognition and detection (`2026-10-09_yolo_detector_ppocrv5`, `2026-10-09_ppocrv5_det_rec`, optional `ppocr` extra) |
+| `indra-ocr` | Indra whole-page reading (`2026-11-21_indra_page`, optional `indra` extra) |
 | `scikit-learn` | DBSCAN clustering for line detection |
 | `pymupdf` | Embeds text into PDF (Step 3) |
 | `gradio` | Web demo UI (demo only) |

@@ -520,6 +520,94 @@ class PPOCRv5Model:
         return words
 
 
+class IndraModel:
+    """Datalab's Indra OCR, run as ONNX through the ``indra-ocr`` package.
+
+    Pretrained and used as is (issue #166); like PP-OCRv5 it is not our own
+    export, so it does not follow ADR 006's HF Hub layout. Weights are
+    downloaded by ``indra-ocr`` on first use. Needs the ``indra`` extra;
+    ``indra_ocr`` is imported lazily so the base install stays lean.
+
+    Indra reads whole pages (its own line detector and recogniser) and is
+    built for printed documents. On word crops cut by another detector it
+    does far worse, as it relies on the context of a line, so there is no
+    word-recognition mode.
+    """
+
+    # Words are cut where the recogniser emits a space. Its tokens carry the x
+    # position of their CTC peak, so a word spans from its first to its last
+    # token, and the box is stretched to the midpoint of the gap to each
+    # neighbouring word (the line's ends for the first and last word).
+
+    def __init__(self, engine):
+        self.engine = engine
+
+    @classmethod
+    def from_pretrained(cls) -> "IndraModel":
+        try:
+            import indra_ocr
+        except ImportError as e:
+            raise ImportError(
+                "IndraModel needs the `indra` extra: `uv sync --extra indra`."
+            ) from e
+
+        # `Converter.ocr` is the ONNX engine; the converter itself reads PDFs.
+        return cls(indra_ocr.load(threads=4).ocr)
+
+    def read_page(self, image_grayscale: np.ndarray) -> list[tuple[str, BoundingBox]]:
+        """Detect and recognise words on a whole page.
+
+        Indra detects text lines; each is split into words at the recogniser's
+        space tokens. Words come with axis-aligned boxes.
+        """
+        engine = self.engine
+        boxes = engine.detect(image_grayscale)
+        if len(boxes) == 0:
+            return []
+
+        words = []
+        for line_box, (_text, _conf, tokens) in zip(
+            boxes, engine.recognize(image_grayscale, boxes), strict=True
+        ):
+            if not tokens:  # line below the recogniser's confidence floor
+                continue
+            x_min, y_min, x_max, y_max = (float(v) for v in line_box[:4])
+
+            segments: list[list] = [[]]
+            for token in tokens:
+                if engine._is_space(token[0]):
+                    if segments[-1]:
+                        segments.append([])
+                else:
+                    segments[-1].append(token)
+            segments = [segment for segment in segments if segment]
+            spans = [
+                (min(t[1] for t in segment), max(t[1] for t in segment))
+                for segment in segments
+            ]
+
+            for i, (segment, (start, end)) in enumerate(
+                zip(segments, spans, strict=True)
+            ):
+                text = engine._decode(segment).strip()
+                if not text:
+                    continue
+                left = (spans[i - 1][1] + start) / 2 if i > 0 else x_min
+                right = (end + spans[i + 1][0]) / 2 if i + 1 < len(spans) else x_max
+                words.append(
+                    (
+                        text,
+                        BoundingBox(
+                            x_min=max(x_min, left),
+                            y_min=y_min,
+                            x_max=min(x_max, right),
+                            y_max=y_max,
+                        ),
+                    )
+                )
+        return words
+
+
 class LFM3VLModel:
     """Liquid AI's LFM3-VL-2B vision-language model, run by a ``llama-server``.
 

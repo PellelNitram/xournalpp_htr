@@ -241,6 +241,40 @@ def test_ppocrv5_read_page_finds_printed_words(ppocrv5_model):
     assert all(isinstance(box, BoundingBox) for _, box in words)
 
 
+# --- Indra ---
+
+
+@pytest.fixture(scope="module")
+def indra_model():
+    pytest.importorskip("indra_ocr", reason="needs the `indra` extra")
+    from xournalpp_htr.inference_models import IndraModel
+
+    return IndraModel.from_pretrained()
+
+
+@pytest.mark.slow
+def test_indra_read_page_blank_page_is_empty(indra_model):
+    img = np.full((200, 400), 255, dtype=np.uint8)
+    assert indra_model.read_page(img) == []
+
+
+@pytest.mark.slow
+def test_indra_read_page_finds_printed_words(indra_model):
+    import cv2
+
+    img = np.full((160, 800), 255, dtype=np.uint8)
+    cv2.putText(img, "Hello big world", (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 2, 0, 3)
+    words = indra_model.read_page(img)
+    assert all(isinstance(box, BoundingBox) for _, box in words)
+    # The model may add a stray detection on a synthetic image, so look the
+    # words up instead of comparing the whole list.
+    boxes = dict(words)
+    assert {"Hello", "big", "world"} <= boxes.keys()
+    # The words are cut left to right, without overlapping.
+    assert boxes["Hello"].x_max <= boxes["big"].x_min
+    assert boxes["big"].x_max <= boxes["world"].x_min
+
+
 # --- LFM3-VL ---
 
 
