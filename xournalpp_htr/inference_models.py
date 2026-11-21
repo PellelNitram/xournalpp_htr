@@ -12,8 +12,11 @@ inference signature varies too much across models. The central inference API is
 is model lifecycle (loading and version introspection) only.
 """
 
+import base64
 import json
+import os
 import re
+import urllib.request
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import ClassVar, List
@@ -514,6 +517,199 @@ class PPOCRv5Model:
                         ),
                     )
                 )
+        return words
+
+
+class LFM3VLModel:
+    """Liquid AI's LFM3-VL-2B vision-language model, run by a ``llama-server``.
+
+    Pretrained and used as is (issue #171); not our own export, so it does not
+    follow ADR 006's HF Hub layout. The model runs in a separate ``llama.cpp``
+    server that we talk to over its OpenAI-compatible HTTP API, so this class
+    needs no extra dependency. Start the server with::
+
+        llama-server -hf LiquidAI/LFM3-VL-2B-GGUF:Q4_0 --reasoning off
+
+    ``--reasoning off`` is required: otherwise the model spends its token
+    budget thinking and returns an empty reply. ``-np 1 -c 16384 -cram 0``
+    keeps the memory use low (the default 8 GiB prompt cache got a server
+    OOM-killed), and ``-fa on -ctk q8_0 -ctv q8_0`` is a little faster. The server address is read
+    from the ``XOURNALPP_HTR_LLAMA_SERVER_URL`` environment variable
+    (default `DEFAULT_SERVER_URL`).
+    """
+
+    DEFAULT_SERVER_URL = "http://127.0.0.1:8080"
+    SERVER_URL_ENV_VAR = "XOURNALPP_HTR_LLAMA_SERVER_URL"
+
+    PROMPT = "Transcribe the handwritten word in this image. Reply with the word only."
+
+    # --- Replica of the Rnote fork's page reading (issue #171) -------------------
+    # MichaelEssich/rnote, branch `feature/ocr`, commit 9f55d2c
+    # (crates/rnote-engine/src/ocr.rs; GPL-3.0). One call per whole page with
+    # that fork's prompt, grammar and sampling. The model reports boxes as
+    # coordinates normalised to 0..1000 (image width/height).
+    RNOTE_PROMPT = (
+        "Transcribe every word of handwriting in this image, in reading order. "
+        "Reply with ONLY a JSON array of objects, each with field t (the "
+        "recognized word as a string) and field b (a 4-element array of numbers "
+        "x0, y0, x1, y1 giving that word's bounding box as normalized "
+        "coordinates in the range 0 to 1000, where x0 is 1000 times the left "
+        "edge divided by the image width, y0 is 1000 times the top edge divided "
+        "by the image height, x1 the right edge, y1 the bottom edge). "
+        "Do not write any other text."
+    )
+    # GBNF grammar forcing exactly the JSON array the prompt describes. Hand-written
+    # rather than `json_schema`: llama.cpp's generated grammars can abort sampler
+    # setup (ggml-org/llama.cpp#22396).
+    RNOTE_GRAMMAR = r"""root ::= "[" space (element ("," space element)*)? "]" space
+element ::= "{" space "\"t\"" space ":" space string "," space "\"b\"" space ":" space "[" space number ("," space number){3} "]" space "}" space
+string ::= "\"" char* "\""
+char ::= [^"\\\x7F\x00-\x1F] | "\\" (["\\bfnrt] | "u" [0-9a-fA-F]{4})
+number ::= "-"? [0-9]+ ("." [0-9]+)? ([eE] [-+]? [0-9]+)?
+space ::= [ \t\n]*
+"""
+    RNOTE_SAMPLING = {
+        "temperature": 0.1,
+        "top_p": 1.0,
+        "top_k": 50,
+        "min_p": 0.0,
+        "repeat_penalty": 1.1,
+    }
+    RNOTE_MAX_NEW_TOKENS = 8192
+    # A page takes minutes on CPU.
+    RNOTE_TIMEOUT_SECONDS = 20 * 60
+    # Longest page edge, in pixels, that the fork rasterizes pages to.
+    RNOTE_MAX_IMAGE_DIM = 2048
+    RNOTE_MIN_SCALE, RNOTE_MAX_SCALE = 0.5, 4.0
+
+    # Generous for a single word crop, but leaves room for crops where the
+    # detector merged several words.
+    MAX_NEW_TOKENS = 32
+    TIMEOUT_SECONDS = 300
+
+    def __init__(self, server_url: str):
+        self.server_url = server_url.rstrip("/")
+
+    @classmethod
+    def from_pretrained(cls) -> "LFM3VLModel":
+        """Connect to the running ``llama-server``; fail early if unreachable."""
+        server_url = os.environ.get(cls.SERVER_URL_ENV_VAR, cls.DEFAULT_SERVER_URL)
+        model = cls(server_url)
+        try:
+            with urllib.request.urlopen(
+                f"{model.server_url}/health", timeout=10
+            ) as response:
+                response.read()
+        except OSError as e:
+            raise ConnectionError(
+                f"LFM3VLModel could not reach a llama-server at {model.server_url}. "
+                "Start one with `llama-server -hf LiquidAI/LFM3-VL-2B-GGUF:Q4_0 "
+                f"--reasoning off`, or set {cls.SERVER_URL_ENV_VAR}."
+            ) from e
+        return model
+
+    def preprocess(self, image_grayscale: np.ndarray) -> np.ndarray:
+        """What the model sees: the crop itself, the server resizes it."""
+        return image_grayscale
+
+    def _chat(
+        self, image_grayscale: np.ndarray, prompt: str, timeout: float, **params
+    ) -> str:
+        """Send one image with ``prompt`` to the server, return the reply text."""
+        ok, png = cv2.imencode(".png", image_grayscale)
+        if not ok:
+            raise ValueError("Could not encode the image as PNG.")
+        data_url = "data:image/png;base64," + base64.b64encode(png).decode()
+        body = {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image_url", "image_url": {"url": data_url}},
+                        {"type": "text", "text": prompt},
+                    ],
+                }
+            ],
+            "temperature": 0,
+            **params,
+        }
+        request = urllib.request.Request(
+            f"{self.server_url}/v1/chat/completions",
+            data=json.dumps(body).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            reply = json.load(response)
+        return reply["choices"][0]["message"]["content"].strip()
+
+    def recognize(self, image_grayscale: np.ndarray) -> str:
+        """Recognise the text in a grayscale word image."""
+        return self._chat(
+            image_grayscale,
+            self.PROMPT,
+            self.TIMEOUT_SECONDS,
+            max_tokens=self.MAX_NEW_TOKENS,
+        )
+
+    def recognize_batch(self, images_grayscale: list[np.ndarray]) -> list[str]:
+        return [self.recognize(image) for image in images_grayscale]
+
+    @classmethod
+    def rnote_scale(cls, page_width: float, page_height: float) -> float:
+        """Raster scale (pixels per document unit) at which the fork renders a
+        page: its longest edge about `RNOTE_MAX_IMAGE_DIM` pixels, clamped."""
+        scale = cls.RNOTE_MAX_IMAGE_DIM / max(page_width, page_height, 1.0)
+        return min(max(scale, cls.RNOTE_MIN_SCALE), cls.RNOTE_MAX_SCALE)
+
+    def read_page_like_rnote(
+        self, image_grayscale: np.ndarray
+    ) -> list[tuple[str, BoundingBox]]:
+        """Read a whole page in one model call, as the Rnote fork does.
+
+        No strips, no duplicate removal and no snapping: only what the fork does
+        with the reply. A reply that is not a valid JSON array (e.g. one cut off
+        by the context limit) gives no words for the page, as the fork fails
+        the page then.
+
+        Returns:
+            (text, box) pairs, with boxes in pixels of ``image_grayscale``.
+        """
+        height, width = image_grayscale.shape[:2]
+        reply = self._chat(
+            image_grayscale,
+            self.RNOTE_PROMPT,
+            self.RNOTE_TIMEOUT_SECONDS,
+            max_tokens=self.RNOTE_MAX_NEW_TOKENS,
+            grammar=self.RNOTE_GRAMMAR,
+            **self.RNOTE_SAMPLING,
+        )
+        try:
+            words_json = []
+            for item in json.loads(reply):
+                box = [float(v) for v in item["b"]]
+                if len(box) != 4:
+                    raise ValueError("box without 4 numbers")
+                words_json.append((str(item["t"]), box))
+        except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
+            print(f"Rnote replica: unusable reply ({e}); no words for this page.")
+            return []
+
+        words = []
+        for text, (x0, y0, x1, y1) in words_json:
+            text = text.strip()
+            if not text:
+                continue
+            x0, x1 = x0 / 1000 * width, x1 / 1000 * width
+            y0, y1 = y0 / 1000 * height, y1 / 1000 * height
+            if x1 < x0:
+                x0, x1 = x1, x0
+            if y1 < y0:
+                y0, y1 = y1, y0
+            x0, x1 = min(max(x0, 0.0), width), min(max(x1, 0.0), width)
+            y0, y1 = min(max(y0, 0.0), height), min(max(y1, 0.0), height)
+            if x1 - x0 < 1 or y1 - y0 < 1:
+                continue
+            words.append((text, BoundingBox(x_min=x0, y_min=y0, x_max=x1, y_max=y1)))
         return words
 
 

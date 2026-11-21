@@ -239,3 +239,149 @@ def test_ppocrv5_read_page_finds_printed_words(ppocrv5_model):
     words = ppocrv5_model.read_page(img)
     assert "big" in [text for text, _ in words]
     assert all(isinstance(box, BoundingBox) for _, box in words)
+
+
+# --- LFM3-VL ---
+
+
+@pytest.fixture
+def fake_llama_server():
+    """A minimal stand-in for ``llama-server``: /health and chat completions."""
+    import json
+    import threading
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    requests = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+
+        def _reply(self, payload):
+            data = json.dumps(payload).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        def do_GET(self):
+            self._reply({"status": "ok"})
+
+        def do_POST(self):
+            length = int(self.headers["Content-Length"])
+            requests.append((self.path, json.loads(self.rfile.read(length))))
+            self._reply({"choices": [{"message": {"content": " brain \n"}}]})
+
+    server = HTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield f"http://127.0.0.1:{server.server_port}", requests
+    server.shutdown()
+
+
+def test_lfm3_vl_recognize_sends_image_and_strips_reply(fake_llama_server):
+    from xournalpp_htr.inference_models import LFM3VLModel
+
+    url, requests = fake_llama_server
+    text = LFM3VLModel(url).recognize(np.full((40, 80), 255, dtype=np.uint8))
+
+    assert text == "brain"
+    path, body = requests[0]
+    assert path == "/v1/chat/completions"
+    content = body["messages"][0]["content"]
+    assert content[0]["image_url"]["url"].startswith("data:image/png;base64,")
+    assert body["temperature"] == 0
+
+
+def test_lfm3_vl_recognize_batch_returns_one_text_per_image(fake_llama_server):
+    from xournalpp_htr.inference_models import LFM3VLModel
+
+    url, requests = fake_llama_server
+    images = [np.full((40, 80), 255, dtype=np.uint8)] * 3
+    assert LFM3VLModel(url).recognize_batch(images) == ["brain"] * 3
+    assert len(requests) == 3
+
+
+def test_lfm3_vl_from_pretrained_reads_server_url_from_env(
+    fake_llama_server, monkeypatch
+):
+    from xournalpp_htr.inference_models import LFM3VLModel
+
+    url, _ = fake_llama_server
+    monkeypatch.setenv(LFM3VLModel.SERVER_URL_ENV_VAR, url)
+    assert LFM3VLModel.from_pretrained().server_url == url
+
+
+def test_lfm3_vl_from_pretrained_explains_missing_server(monkeypatch):
+    from xournalpp_htr.inference_models import LFM3VLModel
+
+    monkeypatch.setenv(LFM3VLModel.SERVER_URL_ENV_VAR, "http://127.0.0.1:1")
+    with pytest.raises(ConnectionError, match="llama-server"):
+        LFM3VLModel.from_pretrained()
+
+
+# --- LFM3-VL, replica of the Rnote fork ---
+
+
+def test_lfm3_vl_rnote_scale_matches_the_forks_clamping():
+    from xournalpp_htr.inference_models import LFM3VLModel
+
+    assert LFM3VLModel.rnote_scale(1000, 500) == pytest.approx(2.048)
+    assert LFM3VLModel.rnote_scale(10000, 10) == 0.5
+    assert LFM3VLModel.rnote_scale(100, 10) == 4.0
+
+
+def test_lfm3_vl_read_page_like_rnote_sends_the_forks_request(fake_llama_server):
+    from xournalpp_htr.inference_models import LFM3VLModel
+
+    url, requests = fake_llama_server
+    LFM3VLModel(url).read_page_like_rnote(np.full((100, 200), 255, dtype=np.uint8))
+
+    _, body = requests[0]
+    assert body["messages"][0]["content"][1]["text"] == LFM3VLModel.RNOTE_PROMPT
+    assert body["grammar"] == LFM3VLModel.RNOTE_GRAMMAR
+    assert body["max_tokens"] == 8192
+    for name, value in {
+        "temperature": 0.1,
+        "top_p": 1.0,
+        "top_k": 50,
+        "min_p": 0.0,
+        "repeat_penalty": 1.1,
+    }.items():
+        assert body[name] == value
+
+
+def test_lfm3_vl_read_page_like_rnote_handles_boxes_like_the_fork(fake_llama_server):
+    from xournalpp_htr.inference_models import LFM3VLModel
+
+    url, _ = fake_llama_server
+    model = LFM3VLModel(url)
+    model._chat = (
+        lambda *args, **kwargs: (
+            '[{"t": " hi ", "b": [300, 400, 100, 200]}, '  # reversed: swapped
+            '{"t": "", "b": [0, 0, 500, 500]}, '  # empty text: dropped
+            '{"t": "thin", "b": [0, 0, 1, 900]}, '  # under 1 px wide: dropped
+            '{"t": "edge", "b": [900, 900, 1200, 1100]}, '  # clamped
+            '{"t": "dup", "b": [900, 900, 1200, 1100]}]'  # duplicates are kept
+        )
+    )
+    words = model.read_page_like_rnote(np.full((200, 400), 255, dtype=np.uint8))
+
+    assert [text for text, _ in words] == ["hi", "edge", "dup"]
+    box = words[0][1]
+    assert (box.x_min, box.y_min, box.x_max, box.y_max) == (40.0, 40.0, 120.0, 80.0)
+    edge = words[1][1]
+    assert (edge.x_max, edge.y_max) == (400.0, 200.0)
+
+
+def test_lfm3_vl_read_page_like_rnote_gives_no_words_for_an_unusable_reply(capsys):
+    from xournalpp_htr.inference_models import LFM3VLModel
+
+    model = LFM3VLModel("http://unused")
+    # Cut off by the context limit, as a long page's reply can be.
+    model._chat = (
+        lambda *args, **kwargs: '[{"t": "a", "b": [1, 2, 3, 4]}, {"t": "b", "b": [5, 6'
+    )
+    assert model.read_page_like_rnote(np.full((100, 100), 255, dtype=np.uint8)) == []
+    assert "no words for this page" in capsys.readouterr().out

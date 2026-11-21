@@ -28,9 +28,12 @@ PIPELINES = [
     "2026-10-17_yolo_detector_simple_htr_ondb",
     "2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab",
     "2026-11-03_online_word_detector_hub_simple_htr_ondb",
+    "2026-11-09_yolo_detector_lfm3_vl",
+    "2026-11-21_rnote_lfm3_vl",
 ]
 
 MODEL_CLASSES = [
+    "LFM3VLModel",
     "OnlineWordDetectorModel",
     "PPOCRv5Model",
     "RFDETRWordDetectorModel",
@@ -48,6 +51,7 @@ def test_pipeline_renders_pale_strokes_as_black(pipeline_name, monkeypatch):
     # No model weights needed: only the page render is of interest here.
     for name in MODEL_CLASSES:
         monkeypatch.setattr(models, name, MagicMock())
+    models.LFM3VLModel.rnote_scale.return_value = 1.0  # a number, not a mock
     monkeypatch.setattr(models, "read_page", lambda *args, **kwargs: [])
 
     renders = []

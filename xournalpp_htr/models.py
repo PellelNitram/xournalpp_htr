@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 from xournalpp_htr.documents import StrokesDocument
 from xournalpp_htr.inference_models import (
+    LFM3VLModel,
     OnlineWordDetectorModel,
     PPOCRv5Model,
     RFDETRWordDetectorModel,
@@ -61,6 +62,7 @@ CROP_RECORDING_PIPELINES = {
     "2026-10-09_yolo_detector_ppocrv5",
     "2026-10-17_yolo_detector_simple_htr_ondb",
     "2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab",
+    "2026-11-09_yolo_detector_lfm3_vl",
     *ONLINE_DETECTOR_PIPELINES,
 }
 
@@ -461,6 +463,7 @@ def compute_predictions(
         "2026-10-05_yolo_detector_trocr_large",
         "2026-10-09_yolo_detector_trocr_large_strip_punct",
         "2026-10-09_yolo_detector_ppocrv5",
+        "2026-11-09_yolo_detector_lfm3_vl",
     ):
         RENDER_DPI = 150
         nr_pages = len(document.pages)
@@ -468,11 +471,14 @@ def compute_predictions(
         detector = YOLOWordDetectorModel.from_pretrained()
         # Same detector as 2026-09-02_yolo_detector, but pretrained TrOCR in
         # place of SimpleHTR (issue #156), base or large checkpoint.
-        # PP-OCRv5 recognition only (issue #157) takes the same slot.
+        # PP-OCRv5 recognition only (issue #157) takes the same slot, as does
+        # LFM3-VL-2B behind a llama-server (issue #171).
         if pipeline_name == "2026-10-05_yolo_detector_trocr":
             recognizer = TrOCRModel.from_pretrained()
         elif pipeline_name == "2026-10-09_yolo_detector_ppocrv5":
             recognizer = PPOCRv5Model.from_pretrained()
+        elif pipeline_name == "2026-11-09_yolo_detector_lfm3_vl":
+            recognizer = LFM3VLModel.from_pretrained()
         else:
             recognizer = TrOCRLargeModel.from_pretrained()
         strip_punct = (
@@ -585,6 +591,54 @@ def compute_predictions(
                         ymax=box.y_max * coord_scale,
                     )
                     for text, box in model.read_page(img)
+                ]
+
+    elif pipeline_name == "2026-11-21_rnote_lfm3_vl":
+        nr_pages = len(document.pages)
+
+        # Replica of the Rnote fork's handwriting recognition (issue #171): the
+        # whole page in one LFM3-VL-2B call, which returns the word boxes. The
+        # page is rendered, as there, with its longest edge at about 2048 px.
+        model = LFM3VLModel.from_pretrained()
+
+        for page_index in tqdm(range(nr_pages), desc="Recognition"):
+            page_meta = document.pages[page_index].meta_data
+            # Raster pixels per document unit.
+            scale = LFM3VLModel.rnote_scale(
+                float(page_meta["width"]), float(page_meta["height"])
+            )
+
+            with tempfile.NamedTemporaryFile(
+                dir="/tmp",
+                delete=False,
+                prefix=f"xournalpp_htr__page{page_index}__",
+                suffix=".jpg",
+            ) as tmpfile:
+                TMP_FILE = Path(tmpfile.name)
+
+                written_file = document.save_page_as_image(
+                    page_index, TMP_FILE, True, dpi=scale * document.DPI
+                )
+
+                if (
+                    len(document.pages[page_index].layers) == 0
+                    or len(document.pages[page_index].layers[0].strokes) == 0
+                ):
+                    print(f"Page {page_index} is empty. Skipping HTR.")
+                    predictions[page_index] = []
+                    continue
+
+                img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
+
+                predictions[page_index] = [
+                    WordPrediction(
+                        text=text,
+                        xmin=box.x_min / scale,
+                        xmax=box.x_max / scale,
+                        ymin=box.y_min / scale,
+                        ymax=box.y_max / scale,
+                    )
+                    for text, box in model.read_page_like_rnote(img)
                 ]
 
     elif pipeline_name in ONLINE_DETECTOR_PIPELINES:

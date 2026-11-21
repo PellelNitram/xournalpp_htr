@@ -50,6 +50,7 @@ nav:
     - WordDetectorOnline: 'models/word_detector_online.md'
     - TrOCR: 'models/trocr.md'
     - PP-OCRv5: 'models/pp_ocrv5.md'
+    - LFM3-VL-2B: 'models/lfm3_vl.md'
   - Contributing: 'contributing.md'
   - Issue Labels: 'labels.md'
   - Roadmap: 'roadmap.md'
