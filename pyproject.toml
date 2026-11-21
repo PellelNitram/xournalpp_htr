@@ -96,6 +96,13 @@ trocr = [
 ppocr = [
     "rapidocr>=3.10,<4",
 ]
+# Inference-only exception to ADR 006: Indra runs as ONNX through `indra-ocr`,
+# which downloads the weights itself (issue #166, see docs/models/indra.md). It
+# calls the package's engine, not its public API, so the version is pinned.
+# Only the `*_indra_*` pipelines need it.
+indra = [
+    "indra-ocr>=1.1.2,<1.2",
+]
 dev = [
     "jupyter",
 ]
