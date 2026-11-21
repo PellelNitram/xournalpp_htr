@@ -28,6 +28,8 @@ model.
 - [LFM3-VL-2B](lfm3_vl.md) — Liquid AI's pretrained vision-language model, as
   word recogniser and page reader through a `llama-server`; optional and
   experimental (exception to ADR 006).
+- [Indra](indra.md) — Datalab's pretrained whole-page reader (line detection and
+  recognition), run as ONNX through `indra-ocr`; optional (exception to ADR 006).
 
 New models added in the future should follow the same structure: a page under
 `docs/models/<model_name>.md` linked from this index and from the `Models`

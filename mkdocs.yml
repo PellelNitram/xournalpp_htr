@@ -51,6 +51,7 @@ nav:
     - TrOCR: 'models/trocr.md'
     - PP-OCRv5: 'models/pp_ocrv5.md'
     - LFM3-VL-2B: 'models/lfm3_vl.md'
+    - Indra: 'models/indra.md'
   - Contributing: 'contributing.md'
   - Issue Labels: 'labels.md'
   - Roadmap: 'roadmap.md'
