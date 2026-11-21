@@ -425,3 +425,69 @@ def test_lfm3_vl_read_strip_drops_duplicate_boxes():
     )
     words = model._read_strip(np.full((100, 400), 255, dtype=np.uint8))
     assert [text for text, _ in words] == ["a", "b"]
+
+
+# --- LFM3-VL, replica of the Rnote fork ---
+
+
+def test_lfm3_vl_rnote_scale_matches_the_forks_clamping():
+    from xournalpp_htr.inference_models import LFM3VLModel
+
+    assert LFM3VLModel.rnote_scale(1000, 500) == pytest.approx(2.048)
+    assert LFM3VLModel.rnote_scale(10000, 10) == 0.5
+    assert LFM3VLModel.rnote_scale(100, 10) == 4.0
+
+
+def test_lfm3_vl_read_page_like_rnote_sends_the_forks_request(fake_llama_server):
+    from xournalpp_htr.inference_models import LFM3VLModel
+
+    url, requests = fake_llama_server
+    LFM3VLModel(url).read_page_like_rnote(np.full((100, 200), 255, dtype=np.uint8))
+
+    _, body = requests[0]
+    assert body["messages"][0]["content"][1]["text"] == LFM3VLModel.RNOTE_PROMPT
+    assert body["grammar"] == LFM3VLModel.PAGE_GRAMMAR
+    assert body["max_tokens"] == 8192
+    for name, value in {
+        "temperature": 0.1,
+        "top_p": 1.0,
+        "top_k": 50,
+        "min_p": 0.0,
+        "repeat_penalty": 1.1,
+    }.items():
+        assert body[name] == value
+
+
+def test_lfm3_vl_read_page_like_rnote_handles_boxes_like_the_fork(fake_llama_server):
+    from xournalpp_htr.inference_models import LFM3VLModel
+
+    url, _ = fake_llama_server
+    model = LFM3VLModel(url)
+    model._chat = (
+        lambda *args, **kwargs: (
+            '[{"t": " hi ", "b": [300, 400, 100, 200]}, '  # reversed: swapped
+            '{"t": "", "b": [0, 0, 500, 500]}, '  # empty text: dropped
+            '{"t": "thin", "b": [0, 0, 1, 900]}, '  # under 1 px wide: dropped
+            '{"t": "edge", "b": [900, 900, 1200, 1100]}, '  # clamped
+            '{"t": "dup", "b": [900, 900, 1200, 1100]}]'  # duplicates are kept
+        )
+    )
+    words = model.read_page_like_rnote(np.full((200, 400), 255, dtype=np.uint8))
+
+    assert [text for text, _ in words] == ["hi", "edge", "dup"]
+    box = words[0][1]
+    assert (box.x_min, box.y_min, box.x_max, box.y_max) == (40.0, 40.0, 120.0, 80.0)
+    edge = words[1][1]
+    assert (edge.x_max, edge.y_max) == (400.0, 200.0)
+
+
+def test_lfm3_vl_read_page_like_rnote_gives_no_words_for_an_unusable_reply(capsys):
+    from xournalpp_htr.inference_models import LFM3VLModel
+
+    model = LFM3VLModel("http://unused")
+    # Cut off by the context limit, as a long page's reply can be.
+    model._chat = (
+        lambda *args, **kwargs: '[{"t": "a", "b": [1, 2, 3, 4]}, {"t": "b", "b": [5, 6'
+    )
+    assert model.read_page_like_rnote(np.full((100, 100), 255, dtype=np.uint8)) == []
+    assert "no words for this page" in capsys.readouterr().out

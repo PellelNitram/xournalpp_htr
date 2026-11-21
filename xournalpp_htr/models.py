@@ -706,6 +706,54 @@ def compute_predictions(
                     )
                 predictions[page_index] = predictions_page
 
+    elif pipeline_name == "2026-11-21_rnote_lfm3_vl":
+        nr_pages = len(document.pages)
+
+        # Replica of the Rnote fork's handwriting recognition (issue #171): the
+        # whole page in one LFM3-VL-2B call, which returns the word boxes. The
+        # page is rendered, as there, with its longest edge at about 2048 px.
+        model = LFM3VLModel.from_pretrained()
+
+        for page_index in tqdm(range(nr_pages), desc="Recognition"):
+            page_meta = document.pages[page_index].meta_data
+            # Raster pixels per document unit.
+            scale = LFM3VLModel.rnote_scale(
+                float(page_meta["width"]), float(page_meta["height"])
+            )
+
+            with tempfile.NamedTemporaryFile(
+                dir="/tmp",
+                delete=False,
+                prefix=f"xournalpp_htr__page{page_index}__",
+                suffix=".jpg",
+            ) as tmpfile:
+                TMP_FILE = Path(tmpfile.name)
+
+                written_file = document.save_page_as_image(
+                    page_index, TMP_FILE, True, dpi=scale * document.DPI
+                )
+
+                if (
+                    len(document.pages[page_index].layers) == 0
+                    or len(document.pages[page_index].layers[0].strokes) == 0
+                ):
+                    print(f"Page {page_index} is empty. Skipping HTR.")
+                    predictions[page_index] = []
+                    continue
+
+                img = cv2.imread(str(written_file), cv2.IMREAD_GRAYSCALE)
+
+                predictions[page_index] = [
+                    WordPrediction(
+                        text=text,
+                        xmin=box.x_min / scale,
+                        xmax=box.x_max / scale,
+                        ymin=box.y_min / scale,
+                        ymax=box.y_max / scale,
+                    )
+                    for text, box in model.read_page_like_rnote(img)
+                ]
+
     elif pipeline_name in ONLINE_DETECTOR_PIPELINES:
         # Imported here, as the other pipelines do not need the detector's training code.
         from xournalpp_htr.training.word_detector_online.data import unlabeled_pages

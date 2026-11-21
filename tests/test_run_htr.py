@@ -121,7 +121,11 @@ def test_main_ppocrv5(
 @pytest.mark.slow
 @pytest.mark.parametrize(
     "pipeline",
-    ["2026-11-09_yolo_detector_lfm3_vl", "2026-11-09_lfm3_vl_page"],
+    [
+        "2026-11-09_yolo_detector_lfm3_vl",
+        "2026-11-09_lfm3_vl_page",
+        "2026-11-21_rnote_lfm3_vl",
+    ],
 )
 def test_main_lfm3_vl(
     pipeline: str, get_path_to_minimal_test_data: Path, tmp_path: Path
