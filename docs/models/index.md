@@ -25,6 +25,9 @@ model.
   (exception to ADR 006).
 - [PP-OCRv5](pp_ocrv5.md) — PaddlePaddle's pretrained text recognition and
   detection, run as ONNX through `rapidocr`; optional (exception to ADR 006).
+- [LFM3-VL-2B](lfm3_vl.md) — Liquid AI's pretrained vision-language model, as
+  word recogniser and page reader through a `llama-server`; optional and
+  experimental (exception to ADR 006).
 
 New models added in the future should follow the same structure: a page under
 `docs/models/<model_name>.md` linked from this index and from the `Models`
