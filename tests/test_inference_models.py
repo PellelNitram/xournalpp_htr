@@ -321,112 +321,6 @@ def test_lfm3_vl_from_pretrained_explains_missing_server(monkeypatch):
         LFM3VLModel.from_pretrained()
 
 
-def test_lfm3_vl_read_page_maps_normalised_boxes_to_pixels(fake_llama_server):
-    from xournalpp_htr.inference_models import LFM3VLModel
-
-    url, requests = fake_llama_server
-    model = LFM3VLModel(url)
-    model._chat = (
-        lambda *args, **kwargs: (
-            '[{"t": "hi", "b": [100, 200, 300, 400]}, '
-            '{"t": "", "b": [0, 0, 10, 10]}, '  # empty text: dropped
-            '{"t": "flat", "b": [500, 500, 500, 600]}, '  # zero width: dropped
-            '{"t": "edge", "b": [900, 900, 1200, 1000]}]'  # clamped to 1000
-        )
-    )
-    page = np.full((200, 400), 255, dtype=np.uint8)
-    page[90:110, 50:350] = 0  # some ink, else the page is skipped
-    words = model.read_page(page)
-
-    assert [text for text, _ in words] == ["hi", "edge"]
-    box = words[0][1]
-    assert (box.x_min, box.y_min, box.x_max, box.y_max) == (40.0, 40.0, 120.0, 80.0)
-    assert words[1][1].x_max == 400.0
-
-
-def test_lfm3_vl_read_page_downscales_large_pages_and_sends_grammar(
-    fake_llama_server,
-):
-    import base64
-
-    import cv2
-
-    from xournalpp_htr.inference_models import LFM3VLModel
-
-    url, requests = fake_llama_server
-    model = LFM3VLModel(url)
-    page = np.full((100, 4096), 255, dtype=np.uint8)
-    page[40:60, 100:300] = 0  # some ink, else the strip is skipped
-    assert model.read_page(page) == []  # the fake server replies "brain": no JSON
-
-    _, body = requests[0]
-    assert body["grammar"] == LFM3VLModel.PAGE_GRAMMAR
-    data_url = body["messages"][0]["content"][0]["image_url"]["url"]
-    png = base64.b64decode(data_url.split(",", 1)[1])
-    sent = cv2.imdecode(np.frombuffer(png, np.uint8), cv2.IMREAD_GRAYSCALE)
-    assert max(sent.shape) == LFM3VLModel.PAGE_MAX_IMAGE_DIM
-
-
-def test_lfm3_vl_parse_page_reply_keeps_complete_entries_of_cut_off_reply():
-    from xournalpp_htr.inference_models import LFM3VLModel
-
-    cut = '[{"t": "a", "b": [1, 2, 3, 4]}, {"t": "b", "b": [5, 6'
-    assert LFM3VLModel._parse_page_reply(cut) == [{"t": "a", "b": [1, 2, 3, 4]}]
-    assert LFM3VLModel._parse_page_reply("not json") == []
-
-
-def test_lfm3_vl_read_page_reads_in_strips_and_finds_overlap_words_once():
-    from xournalpp_htr.inference_models import LFM3VLModel
-
-    model = LFM3VLModel("http://unused")
-    strip_height = model.PAGE_STRIP_HEIGHT
-    stride = strip_height - model.PAGE_STRIP_OVERLAP
-    # Two strips: 0..strip_height and stride..stride + strip_height.
-    page = np.full((stride + strip_height, 400), 255, dtype=np.uint8)
-    page[::50] = 0  # ink everywhere, so no strip is skipped
-    calls = []
-
-    # One word in the overlap of the two strips.
-    word_top = stride + 10
-    word_bottom = word_top + 40
-
-    def fake_read_strip(strip):
-        calls.append(strip.shape[0])
-        top = 0 if len(calls) == 1 else stride
-        return [("mid", BoundingBox(0, word_top - top, 100, word_bottom - top))]
-
-    model._read_strip = fake_read_strip
-    words = model.read_page(page)
-
-    assert calls == [strip_height, strip_height]
-    assert [text for text, _ in words] == ["mid"]  # not found twice
-    box = words[0][1]
-    assert (box.y_min, box.y_max) == (word_top, word_bottom)
-
-
-def test_lfm3_vl_read_page_skips_strips_without_ink():
-    from xournalpp_htr.inference_models import LFM3VLModel
-
-    model = LFM3VLModel("http://unused")
-    model._read_strip = lambda strip: pytest.fail("blank strip was sent")
-    assert model.read_page(np.full((1000, 400), 255, dtype=np.uint8)) == []
-
-
-def test_lfm3_vl_read_strip_drops_duplicate_boxes():
-    from xournalpp_htr.inference_models import LFM3VLModel
-
-    model = LFM3VLModel("http://unused")
-    model._chat = (
-        lambda *args, **kwargs: (
-            '[{"t": "a", "b": [100, 100, 300, 300]}, '
-            '{"t": "a", "b": [110, 105, 310, 305]}, '  # same box again: dropped
-            '{"t": "b", "b": [600, 100, 800, 300]}]'
-        )
-    )
-    words = model._read_strip(np.full((100, 400), 255, dtype=np.uint8))
-    assert [text for text, _ in words] == ["a", "b"]
-
-
 # --- LFM3-VL, replica of the Rnote fork ---
 
 
@@ -446,7 +340,7 @@ def test_lfm3_vl_read_page_like_rnote_sends_the_forks_request(fake_llama_server)
 
     _, body = requests[0]
     assert body["messages"][0]["content"][1]["text"] == LFM3VLModel.RNOTE_PROMPT
-    assert body["grammar"] == LFM3VLModel.PAGE_GRAMMAR
+    assert body["grammar"] == LFM3VLModel.RNOTE_GRAMMAR
     assert body["max_tokens"] == 8192
     for name, value in {
         "temperature": 0.1,

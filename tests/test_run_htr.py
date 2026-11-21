@@ -123,7 +123,6 @@ def test_main_ppocrv5(
     "pipeline",
     [
         "2026-11-09_yolo_detector_lfm3_vl",
-        "2026-11-09_lfm3_vl_page",
         "2026-11-21_rnote_lfm3_vl",
     ],
 )

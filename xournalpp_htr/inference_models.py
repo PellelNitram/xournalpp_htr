@@ -543,53 +543,11 @@ class LFM3VLModel:
 
     PROMPT = "Transcribe the handwritten word in this image. Reply with the word only."
 
-    # Whole-page reading. The model reports boxes as coordinates normalised to
-    # 0..1000 (image width/height), which stay valid however the server resizes
-    # the image. The prompt contains no square brackets on purpose.
-    PAGE_PROMPT = (
-        "Transcribe every word of handwriting in this image, in reading order. "
-        "Reply with ONLY a JSON array of objects, each with field t (the "
-        "recognized word as a string) and field b (a 4-element array of numbers "
-        "x0, y0, x1, y1 giving that word's bounding box as normalized "
-        "coordinates in the range 0 to 1000, where x0 is 1000 times the left "
-        "edge divided by the image width, y0 is 1000 times the top edge divided "
-        "by the image height, x1 the right edge and y1 the bottom edge). "
-        "Skip arrows and drawings. Write a mathematical formula as one entry "
-        "with one box around the whole formula. "
-        "Do not write any other text."
-    )
-    # GBNF grammar forcing exactly that JSON array. Hand-written rather than
-    # `json_schema`: llama.cpp's generated grammars can abort sampler setup
-    # (ggml-org/llama.cpp#22396).
-    PAGE_GRAMMAR = r"""root ::= "[" space (element ("," space element)*)? "]" space
-element ::= "{" space "\"t\"" space ":" space string "," space "\"b\"" space ":" space "[" space number ("," space number){3} "]" space "}" space
-string ::= "\"" char* "\""
-char ::= [^"\\\x7F\x00-\x1F] | "\\" (["\\bfnrt] | "u" [0-9a-fA-F]{4})
-number ::= "-"? [0-9]+ ("." [0-9]+)? ([eE] [-+]? [0-9]+)?
-space ::= [ \t\n]*
-"""
-    # Longest image edge sent per model call, in pixels: bounds the vision
-    # encoder's cost on CPU.
-    PAGE_MAX_IMAGE_DIM = 2048
-    # A page is read in horizontal strips of this height (pixels), as a model
-    # that sees a whole page makes noisy boxes and duplicates. Neighbouring
-    # strips overlap, so a line cut by one strip edge is whole in the next one.
-    # Should span several text lines, at the 150 DPI the pipelines render at.
-    PAGE_STRIP_HEIGHT = 600
-    PAGE_STRIP_OVERLAP = 200
-    # A strip with fewer dark pixels than this holds no handwriting: skipped.
-    PAGE_STRIP_MIN_INK_PIXELS = 20
-    # Boxes of one strip overlapping more than this are taken as duplicates.
-    PAGE_DUPLICATE_IOU = 0.5
-    # A dense page of ~500 words fits comfortably.
-    PAGE_MAX_NEW_TOKENS = 8192
-    # A page takes minutes on CPU.
-    PAGE_TIMEOUT_SECONDS = 20 * 60
-
     # --- Replica of the Rnote fork's page reading (issue #171) -------------------
     # MichaelEssich/rnote, branch `feature/ocr`, commit 9f55d2c
     # (crates/rnote-engine/src/ocr.rs; GPL-3.0). One call per whole page with
-    # that fork's prompt, grammar (the same as `PAGE_GRAMMAR`) and sampling.
+    # that fork's prompt, grammar and sampling. The model reports boxes as
+    # coordinates normalised to 0..1000 (image width/height).
     RNOTE_PROMPT = (
         "Transcribe every word of handwriting in this image, in reading order. "
         "Reply with ONLY a JSON array of objects, each with field t (the "
@@ -600,6 +558,16 @@ space ::= [ \t\n]*
         "by the image height, x1 the right edge, y1 the bottom edge). "
         "Do not write any other text."
     )
+    # GBNF grammar forcing exactly the JSON array the prompt describes. Hand-written
+    # rather than `json_schema`: llama.cpp's generated grammars can abort sampler
+    # setup (ggml-org/llama.cpp#22396).
+    RNOTE_GRAMMAR = r"""root ::= "[" space (element ("," space element)*)? "]" space
+element ::= "{" space "\"t\"" space ":" space string "," space "\"b\"" space ":" space "[" space number ("," space number){3} "]" space "}" space
+string ::= "\"" char* "\""
+char ::= [^"\\\x7F\x00-\x1F] | "\\" (["\\bfnrt] | "u" [0-9a-fA-F]{4})
+number ::= "-"? [0-9]+ ("." [0-9]+)? ([eE] [-+]? [0-9]+)?
+space ::= [ \t\n]*
+"""
     RNOTE_SAMPLING = {
         "temperature": 0.1,
         "top_p": 1.0,
@@ -608,6 +576,8 @@ space ::= [ \t\n]*
         "repeat_penalty": 1.1,
     }
     RNOTE_MAX_NEW_TOKENS = 8192
+    # A page takes minutes on CPU.
+    RNOTE_TIMEOUT_SECONDS = 20 * 60
     # Longest page edge, in pixels, that the fork rasterizes pages to.
     RNOTE_MAX_IMAGE_DIM = 2048
     RNOTE_MIN_SCALE, RNOTE_MAX_SCALE = 0.5, 4.0
@@ -684,103 +654,6 @@ space ::= [ \t\n]*
     def recognize_batch(self, images_grayscale: list[np.ndarray]) -> list[str]:
         return [self.recognize(image) for image in images_grayscale]
 
-    def read_page(self, image_grayscale: np.ndarray) -> list[tuple[str, BoundingBox]]:
-        """Detect and recognise words on a whole page, in strips.
-
-        Each strip is one model call. A strip owns the band of the page up to
-        the middle of its overlap with its neighbours, and keeps only the words
-        centred in that band, so words in the overlaps are not found twice.
-
-        Returns:
-            (text, box) pairs, with boxes in pixels of ``image_grayscale``.
-        """
-        height = image_grayscale.shape[0]
-        strip_height = self.PAGE_STRIP_HEIGHT
-        stride = strip_height - self.PAGE_STRIP_OVERLAP
-
-        starts = [0]
-        while starts[-1] + strip_height < height:
-            starts.append(min(starts[-1] + stride, height - strip_height))
-
-        words = []
-        for i, top in enumerate(starts):
-            bottom = min(top + strip_height, height)
-            strip = image_grayscale[top:bottom]
-            if (strip < 128).sum() < self.PAGE_STRIP_MIN_INK_PIXELS:
-                continue
-            own_top = 0 if i == 0 else (top + (starts[i - 1] + strip_height)) / 2
-            own_bottom = (
-                height if i == len(starts) - 1 else (starts[i + 1] + bottom) / 2
-            )
-            for text, box in self._read_strip(strip):
-                centre_y = top + (box.y_min + box.y_max) / 2
-                if not own_top <= centre_y < own_bottom:
-                    continue
-                words.append(
-                    (
-                        text,
-                        BoundingBox(
-                            x_min=box.x_min,
-                            y_min=box.y_min + top,
-                            x_max=box.x_max,
-                            y_max=box.y_max + top,
-                        ),
-                    )
-                )
-        return words
-
-    def _read_strip(self, image_grayscale: np.ndarray) -> list[tuple[str, BoundingBox]]:
-        """Read the words of one strip in one model call, dropping duplicates.
-
-        Returns:
-            (text, box) pairs, with boxes in pixels of ``image_grayscale``.
-        """
-        height, width = image_grayscale.shape[:2]
-        scale = self.PAGE_MAX_IMAGE_DIM / max(height, width)
-        sent = image_grayscale
-        if scale < 1:
-            sent = cv2.resize(
-                image_grayscale, (round(width * scale), round(height * scale))
-            )
-        reply = self._chat(
-            sent,
-            self.PAGE_PROMPT,
-            self.PAGE_TIMEOUT_SECONDS,
-            max_tokens=self.PAGE_MAX_NEW_TOKENS,
-            grammar=self.PAGE_GRAMMAR,
-            repeat_penalty=1.1,
-        )
-
-        words: list[tuple[str, BoundingBox]] = []
-        for item in self._parse_page_reply(reply):
-            x0, y0, x1, y1 = (min(max(float(v), 0.0), 1000.0) for v in item["b"])
-            text = str(item["t"]).strip()
-            # The model writes only question marks for symbols it cannot read,
-            # such as arrows.
-            if not text.strip("?") or x1 <= x0 or y1 <= y0:
-                continue
-            box = BoundingBox(
-                x_min=x0 / 1000 * width,
-                y_min=y0 / 1000 * height,
-                x_max=x1 / 1000 * width,
-                y_max=y1 / 1000 * height,
-            )
-            if any(self._iou(box, kept) > self.PAGE_DUPLICATE_IOU for _, kept in words):
-                continue
-            words.append((text, box))
-        return words
-
-    @staticmethod
-    def _iou(a: BoundingBox, b: BoundingBox) -> float:
-        width = min(a.x_max, b.x_max) - max(a.x_min, b.x_min)
-        height = min(a.y_max, b.y_max) - max(a.y_min, b.y_min)
-        if width <= 0 or height <= 0:
-            return 0.0
-        intersection = width * height
-        area_a = (a.x_max - a.x_min) * (a.y_max - a.y_min)
-        area_b = (b.x_max - b.x_min) * (b.y_max - b.y_min)
-        return intersection / (area_a + area_b - intersection)
-
     @classmethod
     def rnote_scale(cls, page_width: float, page_height: float) -> float:
         """Raster scale (pixels per document unit) at which the fork renders a
@@ -805,9 +678,9 @@ space ::= [ \t\n]*
         reply = self._chat(
             image_grayscale,
             self.RNOTE_PROMPT,
-            self.PAGE_TIMEOUT_SECONDS,
+            self.RNOTE_TIMEOUT_SECONDS,
             max_tokens=self.RNOTE_MAX_NEW_TOKENS,
-            grammar=self.PAGE_GRAMMAR,
+            grammar=self.RNOTE_GRAMMAR,
             **self.RNOTE_SAMPLING,
         )
         try:
@@ -838,21 +711,6 @@ space ::= [ \t\n]*
                 continue
             words.append((text, BoundingBox(x_min=x0, y_min=y0, x_max=x1, y_max=y1)))
         return words
-
-    @staticmethod
-    def _parse_page_reply(reply: str) -> list[dict]:
-        """Parse the JSON array of words, keeping the complete entries of a
-        reply that was cut off at the token limit."""
-        try:
-            return json.loads(reply)
-        except json.JSONDecodeError:
-            cut = reply.rfind("}")
-            if cut == -1:
-                return []
-            try:
-                return json.loads(reply[: cut + 1] + "]")
-            except json.JSONDecodeError:
-                return []
 
 
 class YOLOWordDetectorModel(HFHubInferenceModel):
