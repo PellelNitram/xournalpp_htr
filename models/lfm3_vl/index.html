@@ -1,0 +1,2220 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Developing handwritten text recognition for Xournal++">
+      
+      
+      
+      
+        <link rel="prev" href="../pp_ocrv5/">
+      
+      
+        <link rel="next" href="../../contributing/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
+    
+    
+      
+        <title>LFM3-VL-2B - Xournal++ HTR</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#lfm3-vl-2b" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Xournal++ HTR" class="md-header__button md-logo" aria-label="Xournal++ HTR" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Xournal++ HTR
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              LFM3-VL-2B
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/PellelNitram/xournalpp_htr" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    PellelNitram/xournalpp_htr
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Xournal++ HTR" class="md-nav__button md-logo" aria-label="Xournal++ HTR" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Xournal++ HTR
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/PellelNitram/xournalpp_htr" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    PellelNitram/xournalpp_htr
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started as User
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started as User
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation_user/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started as Developer
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started as Developer
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation_developer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../demo_setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../annotation_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Annotation Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADRs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    ADRs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/001_design_of_huggingface_space_dockerfile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    001 Design of HuggingFace Space Dockerfile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/002_use_HuggingFace_ecosystem_for_ML/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    002 Use HuggingFace ecosystem for ML
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/003_define_target_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    003 Define target architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/004_ground_truth_schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    004 Ground truth schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/005_prediction_bounding_box_coordinate_system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    005 Prediction bounding box coordinate system
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/006_model_registry_and_training_environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    006 Model registry and training environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/007_model_demos_local_only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    007 Model demos local only
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/008_keep_htr_pipeline_until_native_parity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    008 Keep htr_pipeline until native parity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PoCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    PoCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PoCs/simplify_installation_with_single_file_executable/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Simplify Installation with single file executable
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../word_detector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WordDetector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../simple_htr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SimpleHTR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../simple_htr_ondb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SimpleHTR-OnDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../word_detector_yolo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WordDetectorYOLO
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../word_detector_rf_detr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WordDetectorRFDETR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../word_detector_online/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WordDetectorOnline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../trocr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TrOCR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pp_ocrv5/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PP-OCRv5
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LFM3-VL-2B
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LFM3-VL-2B
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#gpu-training-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GPU training setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Best model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#experiments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Experiments
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Experiments">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#2026-11-21-replica-of-the-rnote-approach" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-11-21 — Replica of the Rnote approach
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2026-11-21-comparison-with-the-existing-pipelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-11-21 — Comparison with the existing pipelines
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2026-11-21-server-flags-and-where-the-time-goes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-11-21 — Server flags and where the time goes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2026-11-10-page-reading-variants-dropped" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-11-10 — Page reading variants (dropped)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2026-11-09-yolo-detector-with-lfm3-vl-crops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-11-09 — YOLO detector with LFM3-VL crops
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current status
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outlook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outlook
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../labels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Issue Labels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../funding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Funding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#gpu-training-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GPU training setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Best model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#experiments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Experiments
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Experiments">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#2026-11-21-replica-of-the-rnote-approach" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-11-21 — Replica of the Rnote approach
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2026-11-21-comparison-with-the-existing-pipelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-11-21 — Comparison with the existing pipelines
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2026-11-21-server-flags-and-where-the-time-goes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-11-21 — Server flags and where the time goes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2026-11-10-page-reading-variants-dropped" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-11-10 — Page reading variants (dropped)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2026-11-09-yolo-detector-with-lfm3-vl-crops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-11-09 — YOLO detector with LFM3-VL crops
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current status
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outlook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outlook
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="lfm3-vl-2b">LFM3-VL-2B</h1>
+<p>Liquid AI's pretrained vision-language model
+<a href="https://huggingface.co/LiquidAI/LFM3-VL-2B">LFM3-VL-2B</a>, tried as handwriting
+recogniser and as a page reader (issue #171). Inspired by
+<a href="https://github.com/flxzt/rnote/issues/224#issuecomment-6626445202">an experiment</a>
+that makes handwritten Rnote notes searchable with this model.</p>
+<p><strong>Optional and experimental.</strong> It reads handwriting better than our ONNX
+recognisers, but it is far slower and needs an inference server, which our
+ONNX pipelines do not. No pipeline here is a default.</p>
+<p><strong>Exception to ADR 006:</strong> the weights are not our own export. The model runs in
+a separate <a href="https://github.com/ggml-org/llama.cpp"><code>llama-server</code></a> that we talk
+to over HTTP, so there is no new Python dependency and no extra.</p>
+<p>Two pipelines:</p>
+<table>
+<thead>
+<tr>
+<th>Pipeline</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>2026-11-09_yolo_detector_lfm3_vl</code></td>
+<td>The YOLO detector finds the words and the model reads each crop. Word-level contract as in ADR 003.</td>
+</tr>
+<tr>
+<td><code>2026-11-21_rnote_lfm3_vl</code></td>
+<td>Replica of the Rnote experiment: the whole page in one call, and the model returns the word boxes itself.</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="R × (1 − CER) of the Rnote approach and of the best existing pipeline" src="../../images/lfm3_vl_rnote_vs_best.png" /></p>
+<h2 id="gpu-training-setup">GPU training setup</h2>
+<p>Not applicable: we have not trained or finetuned the model.</p>
+<h2 id="inference">Inference</h2>
+<p>Start a <code>llama-server</code> (build b12233 was used), which downloads the model and
+its vision projector on first use:</p>
+<div class="highlight"><pre><span></span><code>llama-server<span class="w"> </span>-hf<span class="w"> </span>LiquidAI/LFM3-VL-2B-GGUF:Q4_0<span class="w"> </span>--port<span class="w"> </span><span class="m">8089</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--reasoning<span class="w"> </span>off<span class="w"> </span>-np<span class="w"> </span><span class="m">1</span><span class="w"> </span>-c<span class="w"> </span><span class="m">16384</span><span class="w"> </span>-cram<span class="w"> </span><span class="m">0</span><span class="w"> </span>-fa<span class="w"> </span>on<span class="w"> </span>-ctk<span class="w"> </span>q8_0<span class="w"> </span>-ctv<span class="w"> </span>q8_0
+</code></pre></div>
+<ul>
+<li><code>--reasoning off</code> is required: otherwise the model spends its token budget
+  thinking and returns an empty reply.</li>
+<li><code>-np 1 -c 16384 -cram 0</code> keeps the memory use low. With the defaults (4 slots
+  and an 8 GiB prompt cache) the server grew to about 6 GB and was
+  OOM-killed on a 15 GB machine.</li>
+<li><code>-fa on -ctk q8_0 -ctv q8_0</code> is about 8% faster on word crops, with
+  identical output on the 10 crops tried.</li>
+<li>For <code>2026-11-21_rnote_lfm3_vl</code> use <code>-c 8192</code> as the Rnote experiment does.</li>
+</ul>
+<p>Point the code at the server, then run a pipeline:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">XOURNALPP_HTR_LLAMA_SERVER_URL</span><span class="o">=</span>http://127.0.0.1:8089<span class="w">   </span><span class="c1"># default: :8080</span>
+uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>scripts/run_benchmark.py<span class="w"> </span>-p<span class="w"> </span><span class="m">2026</span>-11-09_yolo_detector_lfm3_vl
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">xournalpp_htr.inference_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">LFM3VLModel</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">LFM3VLModel</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">()</span>  <span class="c1"># checks that the server is reachable</span>
+<span class="n">texts</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">recognize_batch</span><span class="p">(</span><span class="n">word_images_grayscale</span><span class="p">)</span>  <span class="c1"># one call per crop</span>
+<span class="n">words</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">read_page_like_rnote</span><span class="p">(</span><span class="n">page_image_grayscale</span><span class="p">)</span>  <span class="c1"># [(text, BoundingBox), ...]</span>
+</code></pre></div>
+<h2 id="best-model">Best model</h2>
+<p><code>2026-11-09_yolo_detector_lfm3_vl</code> is the best of the LFM3-VL pipelines and has
+the lowest CER of all pipelines (<strong>19.6%</strong> case-insensitive, word accuracy
+<strong>66.4%</strong>), but it is not the pipeline of record. R×(1-CER) is <strong>58.4%</strong>, below
+<code>2026-11-03_online_word_detector_hub_simple_htr_ondb</code> (<strong>63.6%</strong>), and a benchmark
+run takes about 20 minutes on CPU against under 5 minutes for all ONNX pipelines
+together. See <a href="#experiments">Experiments</a>.</p>
+<h2 id="experiments">Experiments</h2>
+<p>All results below use the benchmark dataset <code>latest</code> as of 2026-11-21 (406
+ground truth words, 295 matched by the YOLO detector), on CPU only (Intel
+i7-8565U, 15 GB RAM). They are single runs unless noted, without significance
+tests. The older tables in other model pages were measured on a smaller version
+of the dataset (169 words) and are not comparable.</p>
+<h3 id="2026-11-21-replica-of-the-rnote-approach">2026-11-21 — Replica of the Rnote approach</h3>
+<ul>
+<li><strong>Hypothesis:</strong> the page-reading approach of the Rnote experiment, run on our
+  benchmark, finds and reads our words as well as our pipelines do.</li>
+<li><strong>Setup:</strong> <code>2026-11-21_rnote_lfm3_vl</code>, code revision <code>28bff74</code>. Replicates
+  <a href="https://github.com/MichaelEssich/rnote"><code>MichaelEssich/rnote</code></a>, branch
+  <code>feature/ocr</code>, commit <code>9f55d2c</code> (<code>crates/rnote-engine/src/ocr.rs</code>, GPL-3.0):
+  the whole page in one call, its prompt and grammar verbatim, its sampling
+  (temperature 0.1, top_k 50, top_p 1, min_p 0, repeat penalty 1.1), 8192 new
+  tokens, page rendered with its longest edge at about 2048 px, and its box
+  handling (swap reversed coordinates, clamp, drop boxes under 1 px). Nothing
+  of ours on top. Differences that remain: our renderer, black strokes on white
+  (the fork renders the note through its own engine), <code>llama-server</code> instead of
+  <code>llama-cli</code>,
+  and our scoring (a prediction must cover 80% of the ground truth box, which
+  is strict for a search feature).</li>
+<li><strong>Command:</strong> <code>uv run python scripts/run_benchmark.py -p 2026-11-21_rnote_lfm3_vl</code>,
+  three times, server as above with <code>-c 8192</code>.</li>
+<li><strong>Results:</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Precision</th>
+<th>Recall</th>
+<th>CER (case-insens.)</th>
+<th>R×(1-CER)</th>
+<th>Word Acc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>36.7%</td>
+<td>38.7%</td>
+<td>22.4%</td>
+<td>30.0%</td>
+<td>73.9% (116/157)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>37.2%</td>
+<td>38.4%</td>
+<td>21.2%</td>
+<td>30.3%</td>
+<td>71.2% (111/156)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>39.7%</td>
+<td>36.2%</td>
+<td>21.0%</td>
+<td>28.6%</td>
+<td>74.8% (110/147)</td>
+</tr>
+<tr>
+<td><strong>Mean</strong></td>
+<td><strong>37.9%</strong></td>
+<td><strong>37.8%</strong></td>
+<td><strong>21.5%</strong></td>
+<td><strong>29.6%</strong></td>
+<td><strong>73.3%</strong></td>
+</tr>
+</tbody>
+</table>
+<p>No page failed (no reply was cut off by the context limit). A run took 30 to
+  35 minutes.
+- <strong>Best model:</strong> not applicable; see the comparison below.
+- <strong>Conclusion:</strong> the model reads the words it finds well (73% word accuracy on
+  matched words) but finds only about 38% of them with a box that covers the
+  word. It works as a rough locator, which is what search needs, but not for
+  our word-level contract. Raw outputs: the three run logs and HTML reports.</p>
+<h3 id="2026-11-21-comparison-with-the-existing-pipelines">2026-11-21 — Comparison with the existing pipelines</h3>
+<p>The existing pipelines, rerun on the same dataset, and the LFM3-VL ones, sorted
+by R×(1-CER). Only ONNX pipelines need no server.</p>
+<table>
+<thead>
+<tr>
+<th>Pipeline</th>
+<th>Precision</th>
+<th>Recall</th>
+<th>CER (case-insens.)</th>
+<th>R×(1-CER)</th>
+<th>Word Acc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>2026-11-03_online_word_detector_hub_simple_htr_ondb</code></td>
+<td>84.1%</td>
+<td>87.4%</td>
+<td>27.3%</td>
+<td><strong>63.6%</strong></td>
+<td>53.8%</td>
+</tr>
+<tr>
+<td><code>2026-11-09_yolo_detector_lfm3_vl</code></td>
+<td>77.0%</td>
+<td>72.7%</td>
+<td><strong>19.6%</strong></td>
+<td>58.4%</td>
+<td><strong>66.4%</strong></td>
+</tr>
+<tr>
+<td><code>2026-10-09_yolo_detector_ppocrv5</code></td>
+<td>77.0%</td>
+<td>72.7%</td>
+<td>23.4%</td>
+<td>55.7%</td>
+<td>51.2%</td>
+</tr>
+<tr>
+<td><code>2026-10-17_yolo_detector_simple_htr_ondb_beam_vocab</code></td>
+<td>77.0%</td>
+<td>72.7%</td>
+<td>24.6%</td>
+<td>54.8%</td>
+<td>60.3%</td>
+</tr>
+<tr>
+<td><code>2026-10-05_yolo_detector_beam_vocab</code></td>
+<td>77.0%</td>
+<td>72.7%</td>
+<td>25.8%</td>
+<td>53.9%</td>
+<td>54.9%</td>
+</tr>
+<tr>
+<td><code>2026-10-17_yolo_detector_simple_htr_ondb</code></td>
+<td>77.0%</td>
+<td>72.7%</td>
+<td>26.9%</td>
+<td>53.1%</td>
+<td>53.6%</td>
+</tr>
+<tr>
+<td><code>2026-09-02_yolo_detector</code></td>
+<td>77.0%</td>
+<td>72.7%</td>
+<td>27.8%</td>
+<td>52.5%</td>
+<td>48.5%</td>
+</tr>
+<tr>
+<td><code>2024-07-18_htr_pipeline</code></td>
+<td>82.3%</td>
+<td>73.2%</td>
+<td>31.0%</td>
+<td>50.5%</td>
+<td>49.5%</td>
+</tr>
+<tr>
+<td><code>2026-06-07_htr_pipeline_native</code></td>
+<td>83.0%</td>
+<td>73.2%</td>
+<td>33.3%</td>
+<td>48.8%</td>
+<td>48.8%</td>
+</tr>
+<tr>
+<td><code>2026-10-09_ppocrv5_det_rec</code></td>
+<td>77.3%</td>
+<td>51.2%</td>
+<td>20.7%</td>
+<td>40.6%</td>
+<td>57.2%</td>
+</tr>
+<tr>
+<td><code>2026-09-17_rf_detr_detector</code></td>
+<td>79.9%</td>
+<td>56.9%</td>
+<td>30.2%</td>
+<td>39.7%</td>
+<td>48.5%</td>
+</tr>
+<tr>
+<td><code>2026-11-21_rnote_lfm3_vl</code> (mean of 3)</td>
+<td>37.9%</td>
+<td>37.8%</td>
+<td>21.5%</td>
+<td>29.6%</td>
+<td>73.3%</td>
+</tr>
+</tbody>
+</table>
+<p>The TrOCR pipelines were not rerun (see <a href="#current-status">Current status</a>).</p>
+<ul>
+<li><strong>Conclusion:</strong><ul>
+<li>With the same YOLO detector (precision 77.0%, recall 72.7%), LFM3-VL is
+  the best recogniser: CER 19.6% against 23.4% to 27.8% for the others, and
+  word accuracy 66.4% against 60.3% for the next best.</li>
+<li>The best pipeline overall wins on detection, not recognition: the online
+  word detector reaches recall 87.4% with a weaker recogniser.</li>
+<li>Online word detector plus LFM3-VL would combine the best detector with
+  the best recogniser, but was not tried: it would send more crops to a
+  model that needs about 3 s per crop.</li>
+</ul>
+</li>
+</ul>
+<h3 id="2026-11-21-server-flags-and-where-the-time-goes">2026-11-21 — Server flags and where the time goes</h3>
+<ul>
+<li><strong>Hypothesis:</strong> the speed flags of the Rnote experiment (flash attention,
+  q8_0 KV cache, more threads) speed up the word crop pipeline.</li>
+<li><strong>Setup:</strong> 10 YOLO crops of one example page, mean time per crop after a
+  warm-up call.</li>
+<li><strong>Results:</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Server flags</th>
+<th>Time per crop</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-np 1 -c 16384 -cram 0</code></td>
+<td>3.53 s</td>
+</tr>
+<tr>
+<td>the same plus <code>-fa on -ctk q8_0 -ctv q8_0</code></td>
+<td>3.25 s</td>
+</tr>
+<tr>
+<td>the same plus <code>-t 8 -tb 8</code></td>
+<td>4.07 s</td>
+</tr>
+</tbody>
+</table>
+<p>Outputs were identical in all three. About 95% of a crop's time is prompt
+  evaluation including the vision encoder (about 3 s); decoding a word takes
+  0.1 to 0.15 s.
+- <strong>Conclusion:</strong> the flags help decoding, not the encoder, so the gain on crops
+  is small (about 8%). Eight threads are slower than the default of four on this
+  4-core CPU with hyperthreading. The flags should matter more for page reading,
+  which writes hundreds of tokens per call; not measured.</p>
+<h3 id="2026-11-10-page-reading-variants-dropped">2026-11-10 — Page reading variants (dropped)</h3>
+<ul>
+<li><strong>Hypothesis:</strong> the model can return the word boxes of a page itself, and we
+  can make them good enough to replace the YOLO detector.</li>
+<li><strong>Setup:</strong> four variants of one pipeline, all with the model returning
+  <code>{text, box}</code> entries under a JSON grammar. Whole page: the page as one 150
+  DPI image. Strips: horizontal strips with overlap, one call each; a strip
+  keeps only the words centred in the band it owns, strips without ink are
+  skipped, duplicate boxes within a strip are dropped. The prompt also asked to
+  skip arrows and to box a formula as one entry, and <code>?</code>-only entries were
+  dropped. Snapped: each box replaced by the bounds of the pen strokes it
+  holds, as the ground truth boxes are stroke bounds. Code revisions <code>8a228e6</code>,
+  <code>fc07af2</code> and <code>f1a76b1</code>, removed in <code>199bd93</code>; the pipelines were
+  <code>2026-11-09_lfm3_vl_page</code> and <code>2026-11-10_lfm3_vl_page_snapped</code>.</li>
+<li><strong>Results:</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Variant</th>
+<th>Precision</th>
+<th>Recall</th>
+<th>CER (case-insens.)</th>
+<th>R×(1-CER)</th>
+<th>Word Acc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Whole page</td>
+<td>33.8%</td>
+<td>34.7%</td>
+<td>25.0%</td>
+<td>26.1%</td>
+<td>71.6%</td>
+</tr>
+<tr>
+<td>Strips 600/200 px</td>
+<td>45.0%</td>
+<td>44.8%</td>
+<td>19.8%</td>
+<td>36.0%</td>
+<td>79.1%</td>
+</tr>
+<tr>
+<td>Strips 400/150 px</td>
+<td>32.0%</td>
+<td>35.0%</td>
+<td>30.8%</td>
+<td>24.2%</td>
+<td>70.4%</td>
+</tr>
+<tr>
+<td>Strips 600/200 px, snapped</td>
+<td>53.4%</td>
+<td>51.7%</td>
+<td>21.3%</td>
+<td><strong>40.7%</strong></td>
+<td>75.2%</td>
+</tr>
+<tr>
+<td>Strips 400/150 px, snapped</td>
+<td>42.8%</td>
+<td>46.8%</td>
+<td>27.8%</td>
+<td>33.8%</td>
+<td>68.4%</td>
+</tr>
+</tbody>
+</table>
+<p>Runs took 20 to 35 minutes. The whole page and strips 600/200 rows come from
+  one run each, before the server was changed to the lean flags; the others
+  from the lean server.
+- <strong>Conclusion:</strong>
+    - Overlaid on a page, most predicted boxes sit on the right words. The
+      misses are merged, offset and extra boxes, mostly around arrows and
+      formulas.
+    - Strips and snapping each help, 400 px strips are worse than 600 px, and
+      the best variant (recall 51.7%) is still far behind the YOLO detector
+      (72.7%) and slow. Dropped; the code is in the git history.</p>
+<h3 id="2026-11-09-yolo-detector-with-lfm3-vl-crops">2026-11-09 — YOLO detector with LFM3-VL crops</h3>
+<ul>
+<li><strong>Hypothesis:</strong> LFM3-VL reads word crops better than SimpleHTR, TrOCR and
+  PP-OCRv5.</li>
+<li><strong>Setup:</strong> <code>2026-11-09_yolo_detector_lfm3_vl</code>, code revision <code>d5b69f9</code>. The
+  YOLO detector of <code>2026-09-02_yolo_detector</code>; one call per crop with the prompt
+  "Transcribe the handwritten word in this image. Reply with the word only."</li>
+<li><strong>Command:</strong> <code>uv run python scripts/run_benchmark.py -p 2026-11-09_yolo_detector_lfm3_vl</code></li>
+<li><strong>Results:</strong> precision 77.0%, recall 72.7%, CER 22.2% (case-sensitive) and
+  19.6% (case-insensitive), R×(1-CER) 58.4%, word accuracy 66.4% (196/295). About
+  20 minutes.</li>
+<li><strong>Best model:</strong> this pipeline, among the LFM3-VL ones; see the comparison above.</li>
+<li><strong>Conclusion:</strong> best recogniser, but a benchmark run takes about 20 minutes
+  against under a minute for each ONNX pipeline, and it needs a server.
+  Optional only.</li>
+</ul>
+<h2 id="current-status">Current status</h2>
+<ul>
+<li><code>LFM3VLModel</code> implemented with <code>recognize</code>, <code>recognize_batch</code> and
+  <code>read_page_like_rnote</code>; both pipelines are wired into <code>compute_predictions</code>.</li>
+<li>Needs a running <code>llama-server</code>; <code>from_pretrained()</code> raises a <code>ConnectionError</code>
+  with the command to start one if none is reachable.</li>
+<li>Benchmarked; see <a href="#experiments">Experiments</a>. Single runs apart from the
+  replica, so small differences are within noise.</li>
+<li>The TrOCR pipelines were not rerun on this dataset (<code>transformers</code> is not
+  installed here and the weights are large), so the comparison is missing them.</li>
+<li>The replica's prompt and grammar are copied from the GPL-3.0 Rnote fork,
+  credited in the code.</li>
+</ul>
+<h2 id="outlook">Outlook</h2>
+<ul>
+<li>Use the model as a teacher: pseudo-label unlabelled handwriting with it and
+  train the ONNX recogniser on that, to get its reading quality without running
+  it.</li>
+<li>Let it pre-fill transcriptions when annotating the benchmark.</li>
+<li>Cut the per-crop encoder cost, e.g. <code>--image-min-tokens</code> or several crops in
+  one image; not tried and may cost accuracy.</li>
+<li>Online word detector plus LFM3-VL, if speed ever allows.</li>
+<li>The model is reportedly also published as ONNX; not checked.</li>
+</ul>
+
+
+
+
+
+
+
+  
+    
+  
+  
+    
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 21, 2026 11:10:07 GMT">November 21, 2026</span>
+  </span>
+
+    
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Created">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 21, 2026 11:10:07 GMT">November 21, 2026</span>
+  </span>
+
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>
