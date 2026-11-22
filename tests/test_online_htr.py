@@ -187,3 +187,30 @@ def test_online_htr_model_handles_no_ink(tmp_path):
     assert model.recognize([]) == ""
     with pytest.raises(ValueError):
         model.recognize(_strokes(), decoder="nope")
+
+
+def test_online_htr_model_lexicon_snaps_a_misread_word(tmp_path):
+    pytest.importorskip("onnxruntime")
+    from xournalpp_htr.inference_models import OnlineHTRModel
+
+    _, _, export_dir = _export_for_inference(tmp_path, charset="acxt")
+    model = OnlineHTRModel.from_local(export_dir)
+
+    # Charset order is a, c, x, t, then the blank. The network reads "cxt", with
+    # "a" a close second in the middle.
+    log_probs = np.log(
+        np.array(
+            [
+                [0.02, 0.9, 0.02, 0.02, 0.04],  # c
+                [0.4, 0.02, 0.5, 0.02, 0.06],  # x (0.5) or a (0.4)
+                [0.02, 0.02, 0.02, 0.9, 0.04],  # t
+            ]
+        )
+    ).astype(np.float32)
+    model._compute_log_probs = lambda strokes: log_probs
+
+    assert model.recognize(_strokes(), decoder="beam") == "cxt"
+    model.use_lexicon(["cat", "dog"])
+    assert model.recognize(_strokes(), decoder="beam") == "cat"
+    model.use_lexicon(None)
+    assert model.recognize(_strokes(), decoder="beam") == "cxt"

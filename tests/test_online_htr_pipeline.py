@@ -54,3 +54,25 @@ def test_pipeline_loads_from_hub_without_a_local_dir(monkeypatch):
     models.compute_predictions(PIPELINE, _document())
 
     models.OnlineHTRModel.from_pretrained.assert_called_once_with()
+
+
+def test_beam_vocab_pipeline_decodes_with_beam_search_and_the_word_list(
+    monkeypatch, tmp_path
+):
+    detector = MagicMock()
+    detector.group_strokes.return_value = [frozenset({0})]
+    monkeypatch.setattr(models, "OnlineWordDetectorModel", MagicMock())
+    models.OnlineWordDetectorModel.from_pretrained.return_value = detector
+    monkeypatch.setattr(models, "OnlineHTRModel", MagicMock())
+    recognizer = models.OnlineHTRModel.from_local.return_value
+    recognizer.recognize.return_value = "cat"
+    monkeypatch.setattr(models, "SimpleHTRModel", MagicMock())
+    models.SimpleHTRModel.load_vocabulary.return_value = ["cat", "dog"]
+    monkeypatch.setenv(models.ONLINE_HTR_DIR_ENV, str(tmp_path))
+
+    models.compute_predictions(
+        "2026-11-22_online_word_detector_online_htr_beam_vocab", _document()
+    )
+
+    recognizer.use_lexicon.assert_called_once_with(["cat", "dog"])
+    assert recognizer.recognize.call_args.kwargs == {"decoder": "beam"}

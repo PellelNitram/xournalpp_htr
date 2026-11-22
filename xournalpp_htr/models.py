@@ -51,7 +51,15 @@ ONLINE_DETECTOR_PIPELINES = {"2026-11-03_online_word_detector_hub_simple_htr_ond
 # instead of from a rendered crop (issue #174). OnlineHTR is not on HF Hub yet; set
 # this environment variable to the directory of a local export (`model.onnx` and
 # `config.json`) to use it.
-ONLINE_HTR_PIPELINES = {"2026-11-22_online_word_detector_online_htr"}
+ONLINE_HTR_PIPELINES = {
+    "2026-11-22_online_word_detector_online_htr",
+    "2026-11-22_online_word_detector_online_htr_beam_vocab",
+}
+# The variant that decodes with beam search and snaps each word to SimpleHTR's
+# word list, like the `beam_vocab` pipelines of the image recognisers.
+ONLINE_HTR_BEAM_VOCAB_PIPELINES = {
+    "2026-11-22_online_word_detector_online_htr_beam_vocab"
+}
 ONLINE_HTR_DIR_ENV = "ONLINE_HTR_MODEL_DIR"
 
 
@@ -712,6 +720,8 @@ def compute_predictions(
                 if model_dir
                 else OnlineHTRModel.from_pretrained()
             )
+            if pipeline_name in ONLINE_HTR_BEAM_VOCAB_PIPELINES:
+                recognizer.use_lexicon(SimpleHTRModel.load_vocabulary())
         else:
             recognizer = SimpleHTROnDBModel.from_pretrained()
 
@@ -752,7 +762,12 @@ def compute_predictions(
 
                     if reads_strokes:
                         crop = None
-                        text = recognizer.recognize(word_strokes)
+                        text = recognizer.recognize(
+                            word_strokes,
+                            decoder="beam"
+                            if pipeline_name in ONLINE_HTR_BEAM_VOCAB_PIPELINES
+                            else "greedy",
+                        )
                     else:
                         crop = _render_isolated_strokes(
                             word_strokes, (xmin, ymin, xmax, ymax), RENDER_DPI

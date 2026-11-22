@@ -339,6 +339,7 @@ class OnlineHTRModel(HFHubInferenceModel):
         self._charset = config["charset"]
         self._points_per_unit = float(config["features"]["points_per_unit"])
         self._beam_decoder = build_beam_decoder(self._charset)
+        self._vocabulary: set[str] | None = None
 
     @classmethod
     def from_pretrained(cls, revision: str = "main") -> "OnlineHTRModel":
@@ -367,6 +368,17 @@ class OnlineHTRModel(HFHubInferenceModel):
             session=ort.InferenceSession(str(model_dir / "model.onnx")),
             config=config,
             revision="local",
+        )
+
+    def use_lexicon(self, vocabulary: list[str] | None) -> None:
+        """Bias "beam" decoding towards a word list.
+
+        The word list is the one published next to SimpleHTR
+        (``SimpleHTRModel.load_vocabulary``). Pass ``None`` to go back to plain
+        beam search. Has no effect on greedy decoding.
+        """
+        self._vocabulary = (
+            {w.lower() for w in vocabulary} if vocabulary is not None else None
         )
 
     def _compute_log_probs(
@@ -402,7 +414,9 @@ class OnlineHTRModel(HFHubInferenceModel):
         if len(log_probs) == 0:
             return ""
         if decoder == "beam":
-            return beam_decode(log_probs, self._beam_decoder)
+            return beam_decode(
+                log_probs, self._beam_decoder, vocabulary=self._vocabulary
+            )
 
         blank = len(self._charset)
         chars = []
