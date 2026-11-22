@@ -9,11 +9,14 @@ from xournalpp_htr.benchmark import (
     ReportData,
     SampleDetail,
     WordRow,
+    _bootstrap_ci,
     _cer,
     _collect_pages,
+    _edit_distance,
     _iou,
     _match,
     _matches,
+    _page_word_outcomes,
     write_html_report,
 )
 from xournalpp_htr.models import WordPrediction
@@ -332,3 +335,46 @@ def test_write_html_report_escapes_text(tmp_path):
     assert "&lt;b&gt;" in content
     assert "x&amp;y" in content
     assert "<b>" not in content
+
+
+# --- Search-oriented metrics --------------------------------------------------
+
+
+def test_edit_distance_counts_character_edits():
+    assert _edit_distance("kitten", "sitting") == 3
+    assert _edit_distance("", "abc") == 3
+    assert _edit_distance("same", "same") == 0
+
+
+def test_page_word_outcomes_counts_missed_words_against_recall():
+    words = [gt("hello"), gt("world"), gt("again"), gt("other", page_index=1)]
+    pairs = [
+        (words[0], pred("Hello")),  # exact, case-insensitively
+        (words[1], pred("worle")),  # one edit
+        (words[2], pred("xxxxx")),  # wrong
+    ]  # "other" on page 1 was missed
+    assert _page_word_outcomes(words, pairs) == {0: (3, 1, 2), 1: (1, 0, 0)}
+
+
+def test_bootstrap_ci_brackets_the_estimate_and_is_deterministic():
+    successes, totals = [8, 9, 5, 10, 7], [10, 10, 10, 10, 10]
+    low, high = _bootstrap_ci(successes, totals)
+    assert low < sum(successes) / sum(totals) < high
+    assert (low, high) == _bootstrap_ci(successes, totals)
+
+
+def test_bootstrap_ci_of_a_perfect_score_is_a_point():
+    assert _bootstrap_ci([10, 10, 10], [10, 10, 10]) == (1.0, 1.0)
+
+
+def test_bootstrap_ci_without_words():
+    assert _bootstrap_ci([], []) == (0.0, 0.0)
+
+
+def test_exact_recall_properties():
+    result = BenchmarkResult(
+        0.5, 0.5, 0.1, 0.1, 0.45, 0.5, 8, 8, 4, n_exact=2, n_within_one_edit=3
+    )
+    assert result.exact_recall == 0.25
+    assert result.within_one_edit_recall == 0.375
+    assert BenchmarkResult(0, 0, 0, 0, 0, 0, 0, 0, 0).exact_recall == 0.0
