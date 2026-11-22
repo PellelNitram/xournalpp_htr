@@ -6813,6 +6813,7 @@ training-online-htr = [
     { name = "onnx", version = "1.21.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
     { name = "tensorboard" },
     { name = "torch" },
+    { name = "torchvision" },
 ]
 training-simple-htr = [
     { name = "english-words" },
@@ -6934,6 +6935,7 @@ requires-dist = [
     { name = "torch", marker = "extra == 'training-word-detector-rf-detr'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torch", marker = "extra == 'training-word-detector-yolo'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torch", marker = "extra == 'trocr'", index = "https://download.pytorch.org/whl/cu128" },
+    { name = "torchvision", marker = "extra == 'training-online-htr'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torchvision", marker = "extra == 'training-simple-htr'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torchvision", marker = "extra == 'training-simple-htr-ondb'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torchvision", marker = "extra == 'training-word-detector'", index = "https://download.pytorch.org/whl/cu128" },

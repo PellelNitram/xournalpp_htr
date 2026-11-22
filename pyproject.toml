@@ -63,6 +63,7 @@ training-simple-htr-ondb = [
 ]
 training-online-htr = [
     "torch",
+    "torchvision",  # imported by training/data/datasets.py
     "tensorboard",
     "onnx",
     "hydra-core",
