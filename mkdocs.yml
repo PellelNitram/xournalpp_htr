@@ -48,6 +48,7 @@ nav:
     - WordDetectorYOLO: 'models/word_detector_yolo.md'
     - WordDetectorRFDETR: 'models/word_detector_rf_detr.md'
     - WordDetectorOnline: 'models/word_detector_online.md'
+    - OnlineHTR: 'models/online_htr.md'
     - TrOCR: 'models/trocr.md'
     - PP-OCRv5: 'models/pp_ocrv5.md'
     - LFM3-VL-2B: 'models/lfm3_vl.md'
