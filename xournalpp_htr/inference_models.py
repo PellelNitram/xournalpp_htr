@@ -26,6 +26,7 @@ import numpy as np
 import onnxruntime as ort
 from huggingface_hub import hf_hub_download
 
+from xournalpp_htr.training.online_htr.features import strokes_to_features
 from xournalpp_htr.training.shared.bounding_box import BoundingBox
 from xournalpp_htr.training.shared.ctc_decoding import beam_decode, build_beam_decoder
 from xournalpp_htr.training.shared.postprocessing import (
@@ -315,6 +316,102 @@ def strip_appended_punctuation(text: str) -> str:
     "thoughts:", is kept.
     """
     return _APPENDED_PUNCTUATION.sub("", text).strip()
+
+
+class OnlineHTRModel(HFHubInferenceModel):
+    """OnlineHTR: recognises the text of a group of pen strokes, loaded as ONNX.
+
+    A bidirectional LSTM with CTC loss after Carbune et al. (2020) that reads the
+    strokes themselves, not a rendering. The repository contains ``model.onnx``
+    and ``config.json`` (charset and feature parameters), as written by
+    ``training/online_htr/export.py``. The input is the strokes' ``(dx, dy, n)``
+    features, see ``training/online_htr/features.py``; Xournal++ has no
+    timestamps, so there is no time channel.
+    """
+
+    HF_REPO_ID = "PellelNitram/xournalpp-htr-online-htr"
+
+    def __init__(self, session: ort.InferenceSession, config: dict, revision: str):
+        super().__init__(revision)
+        self.session = session
+        self.config = config
+        self._input_name = session.get_inputs()[0].name
+        self._charset = config["charset"]
+        self._points_per_unit = float(config["features"]["points_per_unit"])
+        self._beam_decoder = build_beam_decoder(self._charset)
+
+    @classmethod
+    def from_pretrained(cls, revision: str = "main") -> "OnlineHTRModel":
+        onnx_path = hf_hub_download(cls.HF_REPO_ID, "model.onnx", revision=revision)
+        config_path = hf_hub_download(cls.HF_REPO_ID, "config.json", revision=revision)
+        with open(config_path) as f:
+            config = json.load(f)
+        return cls(
+            session=ort.InferenceSession(onnx_path),
+            config=config,
+            revision=revision,
+        )
+
+    @classmethod
+    def from_local(cls, model_dir: Path) -> "OnlineHTRModel":
+        """Load an exported model from a local directory.
+
+        For benchmarking a retrained model before publishing it. ``model_dir``
+        holds ``model.onnx`` and ``config.json``. The loaded model reports
+        ``revision="local"``.
+        """
+        model_dir = Path(model_dir)
+        with open(model_dir / "config.json") as f:
+            config = json.load(f)
+        return cls(
+            session=ort.InferenceSession(str(model_dir / "model.onnx")),
+            config=config,
+            revision="local",
+        )
+
+    def _compute_log_probs(
+        self, strokes: List[tuple[np.ndarray, np.ndarray]]
+    ) -> np.ndarray:
+        """Run the ONNX network on strokes.
+
+        Returns:
+            (seq_len, num_classes) log-probabilities; ``seq_len`` is 0 without ink.
+        """
+        features = strokes_to_features(strokes, self._points_per_unit)
+        if len(features) == 0:
+            return np.zeros((0, len(self._charset) + 1), dtype=np.float32)
+        log_probs = self.session.run(None, {self._input_name: features[:, None, :]})[0]
+        return log_probs[:, 0, :]  # (seq_len, batch, classes) -> (seq_len, classes)
+
+    def recognize(
+        self, strokes: List[tuple[np.ndarray, np.ndarray]], decoder: str = "greedy"
+    ) -> str:
+        """Recognise the text written by ``strokes``.
+
+        Args:
+            strokes: ``(x, y)`` coordinate arrays, one per stroke, in writing
+                order, with y pointing down as in a document.
+            decoder: "greedy" (default) or "beam" CTC decoding.
+        """
+        if decoder not in ("greedy", "beam"):
+            raise ValueError(
+                f"Unknown decoder {decoder!r}, expected 'greedy' or 'beam'."
+            )
+
+        log_probs = self._compute_log_probs(strokes)
+        if len(log_probs) == 0:
+            return ""
+        if decoder == "beam":
+            return beam_decode(log_probs, self._beam_decoder)
+
+        blank = len(self._charset)
+        chars = []
+        prev = blank
+        for idx in log_probs.argmax(axis=1):
+            if idx != prev and idx != blank:
+                chars.append(self._charset[idx])
+            prev = idx
+        return "".join(chars)
 
 
 class TrOCRModel(HFHubInferenceModel):

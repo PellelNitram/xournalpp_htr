@@ -141,3 +141,49 @@ def test_export_matches_torch(tmp_path):
         np.testing.assert_allclose(
             onnx_out, net(torch.from_numpy(feats)).numpy(), atol=1e-4
         )
+
+
+def _export_for_inference(tmp_path, charset="abc"):
+    cfg = ModelConfig()
+    charset = list(charset)
+    net = OnlineHTRNet(num_classes=len(charset) + 1, cfg=cfg).eval()
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    torch.save(net.state_dict(), run_dir / "best_model.pth")
+    (run_dir / "charset.json").write_text(json.dumps(charset))
+    omegaconf.OmegaConf.save(
+        {"model": asdict(cfg), "features": asdict(FeatureConfig())},
+        run_dir / "config.yaml",
+    )
+    export(run_dir / "best_model.pth", tmp_path / "export")
+    return net, charset, tmp_path / "export"
+
+
+def test_online_htr_model_from_local_matches_torch(tmp_path):
+    pytest.importorskip("onnxruntime")
+    from xournalpp_htr.inference_models import OnlineHTRModel
+    from xournalpp_htr.training.online_htr.features import strokes_to_features
+
+    net, charset, export_dir = _export_for_inference(tmp_path)
+    model = OnlineHTRModel.from_local(export_dir)
+    assert model.revision == "local"
+
+    strokes = _strokes()
+    feats = torch.from_numpy(strokes_to_features(strokes))[:, None, :]
+    with torch.no_grad():
+        expected = net(feats)[:, 0, :].numpy()
+    np.testing.assert_allclose(model._compute_log_probs(strokes), expected, atol=1e-4)
+
+    assert model.recognize(strokes) == greedy_decode(net(feats), charset)[0]
+    assert isinstance(model.recognize(strokes, decoder="beam"), str)
+
+
+def test_online_htr_model_handles_no_ink(tmp_path):
+    pytest.importorskip("onnxruntime")
+    from xournalpp_htr.inference_models import OnlineHTRModel
+
+    _, _, export_dir = _export_for_inference(tmp_path)
+    model = OnlineHTRModel.from_local(export_dir)
+    assert model.recognize([]) == ""
+    with pytest.raises(ValueError):
+        model.recognize(_strokes(), decoder="nope")
