@@ -96,9 +96,15 @@ def load_samples(root: Path, cfg: DataConfig) -> dict[str, list[Sample]]:
     )
 
     result: dict[str, list[Sample]] = {"train": [], "val": []}
+    skipped = []
     for entry in entries:
-        writer = writers[entry["sample_name"].rsplit("-", 1)[0]]
+        writer = writers.get(entry["sample_name"].rsplit("-", 1)[0])
+        if writer is None:  # a form missing from forms.txt: no writer to split by
+            skipped.append(entry["sample_name"])
+            continue
         result[split_of[writer]].extend(_samples_of_line(entry, writer, cfg))
+    if skipped:
+        print(f"Skipped {len(skipped)} lines without a writer: {skipped}")
     return result
 
 
