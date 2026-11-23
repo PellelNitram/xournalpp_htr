@@ -32,8 +32,9 @@ from xournalpp_htr.training.online_htr.features import NUM_CHANNELS
 from xournalpp_htr.training.online_htr.infer import load_charset
 from xournalpp_htr.training.online_htr.network import OnlineHTRNet
 
-# Not published yet; only used by `--upload`.
+# Used by `--upload` and by `OnlineHTRModel.from_pretrained`.
 HF_REPO_ID = "PellelNitram/xournalpp-htr-online-htr"
+MODEL_CARD = Path(__file__).parent / "model_card.md"
 
 
 def build_config(
@@ -94,13 +95,13 @@ def upload_to_hub(output_dir: Path, repo_id: str = HF_REPO_ID) -> None:
 
     api = HfApi()
     api.create_repo(repo_id, exist_ok=True)
-    for filename in ("model.onnx", "config.json"):
-        api.upload_file(
-            path_or_fileobj=str(output_dir / filename),
-            path_in_repo=filename,
-            repo_id=repo_id,
-        )
-    print(f"Uploaded model.onnx + config.json to {repo_id}")
+    for local, name in (
+        (output_dir / "model.onnx", "model.onnx"),
+        (output_dir / "config.json", "config.json"),
+        (MODEL_CARD, "README.md"),
+    ):
+        api.upload_file(path_or_fileobj=str(local), path_in_repo=name, repo_id=repo_id)
+    print(f"Uploaded model.onnx, config.json and README.md to {repo_id}")
 
 
 def main() -> None:
