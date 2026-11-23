@@ -63,8 +63,32 @@ class BenchmarkResult:
     n_gt_words: int
     n_predicted_words: int
     n_matched: int
+    #: Ground truth words found *and* read exactly (case-insensitive).
+    n_exact: int = 0
+    #: Ground truth words found and read within one character edit (case-insensitive).
+    n_within_one_edit: int = 0
+    #: 95% bootstrap intervals (over pages) of `exact_recall` and `within_one_edit_recall`.
+    exact_recall_ci: tuple[float, float] = (0.0, 0.0)
+    within_one_edit_recall_ci: tuple[float, float] = (0.0, 0.0)
     #: Only populated when `run_benchmark` is called with `collect_details=True`.
     details: "ReportData | None" = None
+
+    @property
+    def exact_recall(self) -> float:
+        """Share of all ground truth words found and read exactly (case-insensitive).
+
+        Unlike `word_accuracy`, missed words count against it, which is what a
+        user searching the notes experiences.
+        """
+        return self.n_exact / self.n_gt_words if self.n_gt_words > 0 else 0.0
+
+    @property
+    def within_one_edit_recall(self) -> float:
+        """Like `exact_recall`, but a word with one wrong character still counts.
+
+        Approximates a search that tolerates a typo.
+        """
+        return self.n_within_one_edit / self.n_gt_words if self.n_gt_words > 0 else 0.0
 
 
 @dataclass
@@ -164,8 +188,8 @@ def _matches(a: GroundTruthWord, b: WordPrediction) -> bool:
     return intersection / area_a >= _MIN_COVERAGE and area_b / area_a <= _MAX_AREA_RATIO
 
 
-def _cer(reference: str, hypothesis: str) -> float:
-    """Character error rate between two strings via edit distance."""
+def _edit_distance(reference: str, hypothesis: str) -> int:
+    """Number of character insertions, deletions and substitutions between two strings."""
     r, h = list(reference), list(hypothesis)
     d = np.zeros((len(r) + 1, len(h) + 1), dtype=int)
     for i in range(len(r) + 1):
@@ -176,7 +200,62 @@ def _cer(reference: str, hypothesis: str) -> float:
         for j in range(1, len(h) + 1):
             cost = 0 if r[i - 1] == h[j - 1] else 1
             d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost)
-    return d[len(r)][len(h)] / max(len(r), 1)
+    return int(d[len(r)][len(h)])
+
+
+def _cer(reference: str, hypothesis: str) -> float:
+    """Character error rate between two strings via edit distance."""
+    return _edit_distance(reference, hypothesis) / max(len(reference), 1)
+
+
+def _page_word_outcomes(
+    gt_words: list[GroundTruthWord],
+    pairs: list[tuple[GroundTruthWord, WordPrediction]],
+) -> dict[int, tuple[int, int, int]]:
+    """Per page: (ground truth words, read exactly, read within one edit).
+
+    Both readings are case-insensitive and count only words the pipeline found;
+    a missed word is in neither. The denominator is *all* ground truth words, so
+    these are the shares of the page's words a user would find by searching.
+    """
+    outcomes: dict[int, list[int]] = {}
+    for gt_word in gt_words:
+        outcomes.setdefault(gt_word.page_index, [0, 0, 0])[0] += 1
+    for gt_word, pred_word in pairs:
+        distance = _edit_distance(gt_word.text.lower(), pred_word.text.lower())
+        outcomes[gt_word.page_index][1] += distance == 0
+        outcomes[gt_word.page_index][2] += distance <= 1
+    return {
+        page: (counts[0], counts[1], counts[2]) for page, counts in outcomes.items()
+    }
+
+
+def _bootstrap_ci(
+    successes: list[int],
+    totals: list[int],
+    n_resamples: int = 2000,
+    confidence: float = 0.95,
+    seed: int = 0,
+) -> tuple[float, float]:
+    """Percentile bootstrap interval of ``sum(successes) / sum(totals)``.
+
+    Pages are resampled as a whole, not single words: the words of a page share
+    a writer, a pen and a layout, so they are not independent. Deterministic for
+    a given ``seed``, so repeated runs report the same interval.
+    """
+    successes_a, totals_a = np.asarray(successes), np.asarray(totals)
+    if len(totals_a) == 0 or totals_a.sum() == 0:
+        return 0.0, 0.0
+    rng = np.random.default_rng(seed)
+    picks = rng.integers(0, len(totals_a), size=(n_resamples, len(totals_a)))
+    denominators = totals_a[picks].sum(axis=1)
+    ratios = (
+        successes_a[picks].sum(axis=1)[denominators > 0]
+        / denominators[denominators > 0]
+    )
+    tail = (1.0 - confidence) / 2.0 * 100.0
+    low, high = np.percentile(ratios, [tail, 100.0 - tail])
+    return float(low), float(high)
 
 
 def _match(
@@ -243,6 +322,9 @@ def run_benchmark(
     total_edit_chars_case_insensitive = 0
     total_gt_chars_matched = 0
     total_exact_matches = 0
+    page_gt: list[int] = []
+    page_exact: list[int] = []
+    page_near: list[int] = []
 
     details = (
         ReportData(
@@ -280,6 +362,11 @@ def run_benchmark(
             total_edit_chars_case_insensitive += round(cer_ci * len(gt_word.text))
             if cer_ci == 0.0:
                 total_exact_matches += 1
+
+        for n_gt, n_exact, n_near in _page_word_outcomes(gt_words, pairs).values():
+            page_gt.append(n_gt)
+            page_exact.append(n_exact)
+            page_near.append(n_near)
 
         if crop_analysis is not None:
             crop_analysis.add_sample(
@@ -326,6 +413,10 @@ def run_benchmark(
         n_gt_words=total_gt,
         n_predicted_words=total_pred,
         n_matched=total_matched,
+        n_exact=sum(page_exact),
+        n_within_one_edit=sum(page_near),
+        exact_recall_ci=_bootstrap_ci(page_exact, page_gt),
+        within_one_edit_recall_ci=_bootstrap_ci(page_near, page_gt),
         details=details,
     )
 
@@ -596,7 +687,8 @@ def write_html_report(result: BenchmarkResult, out_path: Path) -> Path:
         f"CER {_pct(result.cer)} ({_pct(result.cer_case_insensitive)} "
         f"case-insensitive) · "
         f"search quality {_pct(result.recall_times_accuracy)} · "
-        f"exact match {_pct(result.word_accuracy)}"
+        f"exact match {_pct(result.word_accuracy)} · "
+        f"exact recall {_pct(result.exact_recall)}"
         "</div>",
         _legend(),
     ]

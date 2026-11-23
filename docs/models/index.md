@@ -20,6 +20,9 @@ model.
   that groups pen strokes into words (boosted trees, trained on IAM-OnDB).
 - [SimpleHTR-OnDB](simple_htr_ondb.md) — SimpleHTR retrained on IAM-OnDB
   strokes rendered like Xournal++ pages, alone and combined with IAM-DB.
+- [OnlineHTR](online_htr.md) — stroke-based BiLSTM-CTC recogniser on `(dx, dy, n)`
+  features (port of [OnlineHTR](https://github.com/PellelNitram/OnlineHTR)),
+  trained on IAM-OnDB lines and words.
 - [TrOCR](trocr.md) — Microsoft's pretrained word-level text recognition,
   evaluated against SimpleHTR; optional, runs through `transformers`
   (exception to ADR 006).

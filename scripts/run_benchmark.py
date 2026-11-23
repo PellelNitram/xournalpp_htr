@@ -93,6 +93,12 @@ if __name__ == "__main__":
                     "cer_case_insensitive": result.cer_case_insensitive,
                     "recall_times_accuracy": result.recall_times_accuracy,
                     "word_accuracy": result.word_accuracy,
+                    "exact_recall": result.exact_recall,
+                    "exact_recall_ci": result.exact_recall_ci,
+                    "within_one_edit_recall": result.within_one_edit_recall,
+                    "within_one_edit_recall_ci": result.within_one_edit_recall_ci,
+                    "n_exact": result.n_exact,
+                    "n_within_one_edit": result.n_within_one_edit,
                     "n_gt_words": result.n_gt_words,
                     "n_predicted_words": result.n_predicted_words,
                     "n_matched": result.n_matched,
@@ -120,6 +126,14 @@ if __name__ == "__main__":
         print(f"R×(1-CER): {result.recall_times_accuracy:.1%}  (recall × (1 − CER_ci))")
         print(
             f"Word Acc : {result.word_accuracy:.1%}  ({round(result.word_accuracy * result.n_matched)}/{result.n_matched} matched words)"
+        )
+        print(
+            f"Exact rec: {result.exact_recall:.1%}  ({result.n_exact}/{result.n_gt_words} GT words found and read "
+            f"exactly, case-insensitive; 95% CI {result.exact_recall_ci[0]:.1%}-{result.exact_recall_ci[1]:.1%})"
+        )
+        print(
+            f"≤1 edit  : {result.within_one_edit_recall:.1%}  ({result.n_within_one_edit}/{result.n_gt_words} GT words "
+            f"found and read within one edit; 95% CI {result.within_one_edit_recall_ci[0]:.1%}-{result.within_one_edit_recall_ci[1]:.1%})"
         )
         if args["html_report"] is not None:
             print(f"Report   : {args['html_report']}")
