@@ -97,13 +97,18 @@ and read exactly (case-insensitive), with a 95% bootstrap interval over pages:
 | Pipeline | CER (case-ins.) | R×(1−CER) | Word acc. | Exact recall | ≤1 edit recall |
 |---|---|---|---|---|---|
 | OnlineHTR, greedy | 28.5% | 62.5% | 43.9% (156/355) | 38.4% (33.3–44.6) | 61.6% |
-| **OnlineHTR, beam + vocab** | **27.1%** | **63.8%** | 52.4% (186/355) | **45.8%** (41.3–54.5) | **64.0%** |
-| SimpleHTR-OnDB, greedy (`2026-11-03_online_word_detector_hub_simple_htr_ondb`) | 27.3% | 63.6% | 53.8% | not computed | – |
+| OnlineHTR, beam + vocab | 27.1% | 63.8% | 52.4% (186/355) | 45.8% (41.3–54.5) | 64.0% |
+| SimpleHTR-OnDB, greedy (`2026-11-03_online_word_detector_hub_simple_htr_ondb`) | 27.3% | 63.6% | 53.8% (191/355) | 47.0% (40.4–55.3) | 64.8% |
+| **SimpleHTR-OnDB, beam + vocab** (`2026-11-23_online_word_detector_hub_simple_htr_ondb_beam_vocab`) | **26.5%** | **64.3%** | **58.0%** (206/355) | **50.7%** (45.1–60.1) | **65.0%** |
 
-OnlineHTR with the word list is level with SimpleHTR-OnDB. The comparison is
-not like for like (SimpleHTR-OnDB without its own beam + vocab variant), and
-the intervals are wide. The comparison table with the new metrics for all
-pipelines is still to be recomputed.
+**OnlineHTR does not beat SimpleHTR-OnDB.** With the same detector and the same
+word list, SimpleHTR-OnDB is ahead on every metric: +4.9 points exact recall,
++5.6 points word accuracy, +0.5 points R×(1−CER). The intervals overlap
+heavily (406 words, bootstrap over pages), so this is a lean, not a
+proven gap; no paired test was run. OnlineHTR's strokes-only input and 3.8 MB
+model do not buy accuracy on this benchmark, and the word list matters more
+than the choice of recogniser (+7.4 points for OnlineHTR, +3.7 for SimpleHTR-OnDB
+in exact recall).
 
 ## Experiments
 
@@ -153,8 +158,9 @@ pipelines is still to be recomputed.
 - **Results:** see [Best model](#best-model): +7.4 points exact recall and +8.5
   points word accuracy over greedy, larger than the interval width. Beam search
   without the word list gained little on the validation set.
-- **Conclusion:** the word list is what matters. Compare against SimpleHTR-OnDB
-  with *its* beam + vocab variant before ranking the two.
+- **Conclusion:** the word list is what matters, for both recognisers. Against
+  SimpleHTR-OnDB with *its* beam + vocab variant OnlineHTR is behind, see
+  [Best model](#best-model).
 
 ### 2026-11-22 — Final training run
 
@@ -212,5 +218,4 @@ words are read poorly.
 - Fall back to greedy decoding when the word list matches badly; punctuation in
   the training labels.
 - Local Gradio demo (ADR 007).
-- Benchmark all pipelines with the new metrics; SimpleHTR-OnDB with beam + vocab
-  as the fair comparison.
+- Benchmark all pipelines with the new metrics.
