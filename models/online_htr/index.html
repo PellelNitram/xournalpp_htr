@@ -1944,27 +1944,39 @@ and read exactly (case-insensitive), with a 95% bootstrap interval over pages:</
 <td>61.6%</td>
 </tr>
 <tr>
-<td><strong>OnlineHTR, beam + vocab</strong></td>
-<td><strong>27.1%</strong></td>
-<td><strong>63.8%</strong></td>
+<td>OnlineHTR, beam + vocab</td>
+<td>27.1%</td>
+<td>63.8%</td>
 <td>52.4% (186/355)</td>
-<td><strong>45.8%</strong> (41.3–54.5)</td>
-<td><strong>64.0%</strong></td>
+<td>45.8% (41.3–54.5)</td>
+<td>64.0%</td>
 </tr>
 <tr>
 <td>SimpleHTR-OnDB, greedy (<code>2026-11-03_online_word_detector_hub_simple_htr_ondb</code>)</td>
 <td>27.3%</td>
 <td>63.6%</td>
-<td>53.8%</td>
-<td>not computed</td>
-<td>–</td>
+<td>53.8% (191/355)</td>
+<td>47.0% (40.4–55.3)</td>
+<td>64.8%</td>
+</tr>
+<tr>
+<td><strong>SimpleHTR-OnDB, beam + vocab</strong> (<code>2026-11-23_online_word_detector_hub_simple_htr_ondb_beam_vocab</code>)</td>
+<td><strong>26.5%</strong></td>
+<td><strong>64.3%</strong></td>
+<td><strong>58.0%</strong> (206/355)</td>
+<td><strong>50.7%</strong> (45.1–60.1)</td>
+<td><strong>65.0%</strong></td>
 </tr>
 </tbody>
 </table>
-<p>OnlineHTR with the word list is level with SimpleHTR-OnDB. The comparison is
-not like for like (SimpleHTR-OnDB without its own beam + vocab variant), and
-the intervals are wide. The comparison table with the new metrics for all
-pipelines is still to be recomputed.</p>
+<p><strong>OnlineHTR does not beat SimpleHTR-OnDB.</strong> With the same detector and the same
+word list, SimpleHTR-OnDB is ahead on every metric: +4.9 points exact recall,
++5.6 points word accuracy, +0.5 points R×(1−CER). The intervals overlap
+heavily (406 words, bootstrap over pages), so this is a lean, not a
+proven gap; no paired test was run. OnlineHTR's strokes-only input and 3.8 MB
+model do not buy accuracy on this benchmark, and the word list matters more
+than the choice of recogniser (+7.4 points for OnlineHTR, +3.7 for SimpleHTR-OnDB
+in exact recall).</p>
 <h2 id="experiments">Experiments</h2>
 <h3 id="2026-11-22-per-word-error-analysis-on-the-benchmark">2026-11-22 — Per-word error analysis on the benchmark</h3>
 <ul>
@@ -2073,8 +2085,9 @@ pipelines is still to be recomputed.</p>
 <li><strong>Results:</strong> see <a href="#best-model">Best model</a>: +7.4 points exact recall and +8.5
   points word accuracy over greedy, larger than the interval width. Beam search
   without the word list gained little on the validation set.</li>
-<li><strong>Conclusion:</strong> the word list is what matters. Compare against SimpleHTR-OnDB
-  with <em>its</em> beam + vocab variant before ranking the two.</li>
+<li><strong>Conclusion:</strong> the word list is what matters, for both recognisers. Against
+  SimpleHTR-OnDB with <em>its</em> beam + vocab variant OnlineHTR is behind, see
+  <a href="#best-model">Best model</a>.</li>
 </ul>
 <h3 id="2026-11-22-final-training-run">2026-11-22 — Final training run</h3>
 <ul>
@@ -2153,8 +2166,7 @@ words are read poorly.</p>
 <li>Fall back to greedy decoding when the word list matches badly; punctuation in
   the training labels.</li>
 <li>Local Gradio demo (ADR 007).</li>
-<li>Benchmark all pipelines with the new metrics; SimpleHTR-OnDB with beam + vocab
-  as the fair comparison.</li>
+<li>Benchmark all pipelines with the new metrics.</li>
 </ul>
 
 
@@ -2178,7 +2190,7 @@ words are read poorly.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 23, 2026 08:19:26 GMT">November 23, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 23, 2026 10:12:06 GMT">November 23, 2026</span>
   </span>
 
     
