@@ -76,3 +76,26 @@ def test_beam_vocab_pipeline_decodes_with_beam_search_and_the_word_list(
 
     recognizer.use_lexicon.assert_called_once_with(["cat", "dog"])
     assert recognizer.recognize.call_args.kwargs == {"decoder": "beam"}
+
+
+def test_simple_htr_ondb_beam_vocab_pipeline_decodes_crops_with_the_word_list(
+    monkeypatch,
+):
+    """Issue #178: the like-for-like comparison, SimpleHTR-OnDB with beam + word list."""
+    detector = MagicMock()
+    detector.group_strokes.return_value = [frozenset({0})]
+    monkeypatch.setattr(models, "OnlineWordDetectorModel", MagicMock())
+    models.OnlineWordDetectorModel.from_pretrained.return_value = detector
+    monkeypatch.setattr(models, "SimpleHTROnDBModel", MagicMock())
+    recognizer = models.SimpleHTROnDBModel.from_pretrained.return_value
+    recognizer.recognize.return_value = "cat"
+    monkeypatch.setattr(models, "SimpleHTRModel", MagicMock())
+    models.SimpleHTRModel.load_vocabulary.return_value = ["cat", "dog"]
+
+    predictions = models.compute_predictions(
+        "2026-11-23_online_word_detector_hub_simple_htr_ondb_beam_vocab", _document()
+    )
+
+    recognizer.use_lexicon.assert_called_once_with(["cat", "dog"])
+    assert recognizer.recognize.call_args.kwargs == {"decoder": "beam"}
+    assert [p.text for p in predictions[0]] == ["cat"]

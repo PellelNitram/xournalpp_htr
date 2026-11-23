@@ -45,7 +45,16 @@ class WordPrediction:
 # stroke-based detector (issue #168) and reads each word with SimpleHTR-OnDB. Each
 # crop is rendered from the strokes of its word alone, so that neighbouring words
 # inside its box stay out.
-ONLINE_DETECTOR_PIPELINES = {"2026-11-03_online_word_detector_hub_simple_htr_ondb"}
+ONLINE_DETECTOR_PIPELINES = {
+    "2026-11-03_online_word_detector_hub_simple_htr_ondb",
+    "2026-11-23_online_word_detector_hub_simple_htr_ondb_beam_vocab",
+}
+# The variant that decodes with beam search and snaps each word to SimpleHTR's
+# word list (issue #178), for a like-for-like comparison with OnlineHTR's
+# `beam_vocab` pipeline.
+ONLINE_DETECTOR_BEAM_VOCAB_PIPELINES = {
+    "2026-11-23_online_word_detector_hub_simple_htr_ondb_beam_vocab"
+}
 
 # Same detector, but each word is read by OnlineHTR straight from its strokes
 # instead of from a rendered crop (issue #174). OnlineHTR is not on HF Hub yet; set
@@ -724,6 +733,8 @@ def compute_predictions(
                 recognizer.use_lexicon(SimpleHTRModel.load_vocabulary())
         else:
             recognizer = SimpleHTROnDBModel.from_pretrained()
+            if pipeline_name in ONLINE_DETECTOR_BEAM_VOCAB_PIPELINES:
+                recognizer.use_lexicon(SimpleHTRModel.load_vocabulary())
 
         stroke_pages = unlabeled_pages(document)
 
@@ -774,7 +785,12 @@ def compute_predictions(
                         )
                         if crop.size == 0:
                             continue
-                        text = recognizer.recognize(crop)
+                        text = recognizer.recognize(
+                            crop,
+                            decoder="beam"
+                            if pipeline_name in ONLINE_DETECTOR_BEAM_VOCAB_PIPELINES
+                            else "greedy",
+                        )
 
                     prediction = WordPrediction(
                         text=text,
