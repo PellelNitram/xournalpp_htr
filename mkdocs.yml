@@ -38,6 +38,7 @@ nav:
       - 006 Model registry and training environment: 'ADRs/006_model_registry_and_training_environment.md'
       - 007 Model demos local only: 'ADRs/007_model_demos_local_only.md'
       - 008 Keep htr_pipeline until native parity: 'ADRs/008_keep_htr_pipeline_until_native_parity.md'
+      - 009 Distribution via prebuilt binary and curl installer: 'ADRs/009_distribution_via_prebuilt_binary_and_curl_installer.md'
     - PoCs:
       - Simplify Installation with single file executable: 'PoCs/simplify_installation_with_single_file_executable.md'
   - Models:
