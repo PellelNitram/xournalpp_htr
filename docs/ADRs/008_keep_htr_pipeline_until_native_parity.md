@@ -1,7 +1,7 @@
 # ADR 008 – Keep `htr_pipeline` Until the Native Pipeline Reaches Parity
 
 - Date: 2026-08-15
-- Status: Accepted
+- Status: Superseded by [ADR 009](009_distribution_via_prebuilt_binary_and_curl_installer.md)
 - PRD: None
 - Drivers: Martin Lellep ([@PellelNitram](https://github.com/PellelNitram/))
 - Deciders: Martin Lellep ([@PellelNitram](https://github.com/PellelNitram/))
