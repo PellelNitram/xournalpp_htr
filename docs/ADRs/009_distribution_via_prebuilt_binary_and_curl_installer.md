@@ -302,8 +302,9 @@ Possible POCs before committing: (a) binary on a clean Docker/VM image,
    numpy only)? That decides binary size. Verify in the spike.
 3. **Flatpak/snap Xournal++**: can the plugin execute a binary outside the
    sandbox?
-4. **Does `xournalpp` need to be found by the binary** (PATH vs configured
-   path), and what do we do when it is missing?
+4. **Xournal++ dependency**: does `app.export` replace the `xournalpp -p`
+   call, or is the configured-path fallback needed? See
+   [Xournal++ dependency](#xournal-dependency).
 
 ## Alternatives
 
