@@ -73,12 +73,23 @@ xournalpp-htr-<os>-<arch>.zip
 5. Copy `plugin/` there and write `config.lua` pointing at the binary.
 6. Print a success message and the shortcut (`Ctrl+F1`).
 
-Flags: `--version 2026.12.0` (or `nightly`), `--uninstall`, `--plugin-dir <path>`.
+Each release ships its own `install.sh`, and CI writes that release's version
+into it when publishing. A script therefore always installs the release it
+was downloaded from, and the URL alone picks the version:
+
+| URL | Installs |
+|---|---|
+| `.../releases/latest/download/install.sh` | Latest stable release |
+| `.../releases/download/2026.12.0/install.sh` | Exactly `2026.12.0` |
+| `.../releases/download/nightly/install.sh` | Current `nightly` |
+
+There is no `--version` flag. Flags: `--uninstall`, `--plugin-dir <path>`.
 
 ### CI/CD flow
 
 Every trigger runs the same build job per OS: `pyinstaller run_htr.spec`,
-smoke test on a tiny `.xopp` fixture, zip. A release is only published if the
+smoke test on a tiny `.xopp` fixture plus its pre-rendered PDF (no Xournal++
+needed, see [Xournal++ dependency](#xournal-dependency)), zip. A release is only published if the
 smoke test passes.
 
 | Trigger | Result | Audience |
@@ -95,6 +106,11 @@ smoke test passes.
   bump PATCH, new month → `YYYY.MM.0`. Cron and button share this logic.
 
 ### The `nightly` pre-release
+
+*Pre-release* and *nightly* are not two kinds of release. *Pre-release* is a
+checkbox GitHub offers on any release: the release is labelled as such and
+`releases/latest` skips it. *`nightly`* is the name of the one release of ours
+that has this checkbox set. Monthly and hotfix releases never set it.
 
 **Purpose.** Monthly releases are the only builds users get. `nightly` closes
 the gap between "merged to `master`" and "released":
@@ -121,7 +137,7 @@ stable, `.../releases/download/nightly/install.sh`; `releases/latest` ignores
 pre-releases, so the user curl command never installs it. Install it with:
 
 ```bash
-curl -fsSL https://github.com/PellelNitram/xournalpp_htr/releases/download/nightly/install.sh | bash -s -- --version nightly
+curl -fsSL https://github.com/PellelNitram/xournalpp_htr/releases/download/nightly/install.sh | bash
 ```
 
 Re-running the monthly install command switches back to the stable release.
@@ -140,9 +156,37 @@ Windows machines:
 | `scripts/next_calver.sh` | Print the next CalVer tag (dry run of the release logic) |
 
 Only the publishing steps (tagging, uploading release assets) need GitHub and
-stay CI-only. [`act`](https://github.com/nektos/act) can replay the Linux
-workflow in Docker for debugging the YAML itself, but is optional: it cannot
-emulate Windows runners.
+stay CI-only.
+
+Debugging the workflow YAML itself locally is out of scope for this ADR.
+[`act`](https://github.com/nektos/act) could replay the Linux workflows in
+Docker if that need comes up later (it cannot emulate Windows runners).
+
+### Development life cycle
+
+```
+merge to master ──► nightly updated ──► test on own Linux/Windows machines
+                                          │
+                       ┌──────────────────┴──────────────────┐
+                    all good                        bug in released version
+                       │                                     │
+          1st of month: cron publishes      fix ──► merge ──► nightly ──► verify
+          YYYY.MM.0 (if anything changed)                     │
+                                             manual button publishes YYYY.MM.(N+1)
+```
+
+1. Every merge to `master` updates `nightly`.
+2. `nightly` is installed and used on the Linux and Windows machines; this is
+   where regressions are noticed before users see them.
+3. On the 1st of the month the cron publishes `YYYY.MM.0` if anything was
+   merged since the last release.
+4. If a bug in the current release is serious enough not to wait: fix it,
+   merge, verify the fix on `nightly`, then press the manual button. It runs
+   the same workflow as the cron and publishes the next PATCH, e.g.
+   `2026.12.1`.
+
+Monthly and hotfix releases are the same workflow with a different trigger,
+so there is only one release path to maintain.
 
 ## User experience
 
@@ -158,10 +202,59 @@ curl -fsSL https://github.com/PellelNitram/xournalpp_htr/releases/latest/downloa
 2. Menu *Plugin → Xournal++ HTR* (or `Ctrl+F1`).
 3. Choose where to save; a searchable PDF is written there.
 
-**Update**: re-run the install command. **Uninstall**: `install.sh --uninstall`.
+**Update** (re-running the install command installs the latest release over
+the current one):
 
-Prerequisite: Xournal++ itself is installed (the binary renders `.xopp` via
-`xournalpp` on `$PATH` or a configured path).
+```bash
+curl -fsSL https://github.com/PellelNitram/xournalpp_htr/releases/latest/download/install.sh | bash
+```
+
+**Uninstall** (removes `~/.local/share/xournalpp-htr/` and the plugin folder;
+the HF Hub model cache is left alone and printed for manual removal):
+
+```bash
+curl -fsSL https://github.com/PellelNitram/xournalpp_htr/releases/latest/download/install.sh | bash -s -- --uninstall
+```
+
+Prerequisite: Xournal++ itself is installed, see below.
+
+## Xournal++ dependency
+
+Producing the searchable PDF needs a render of the `.xopp` as PDF. Today the
+Python code calls `xournalpp <file> -p <out.pdf>` from `$PATH`
+(`utils.export_to_pdf_with_xournalpp`). That breaks for the binary on Windows
+(Xournal++ is rarely on `PATH`), for Flatpak/snap installs (the command is
+`flatpak run com.github.xournalpp.xournalpp`) and in CI (no Xournal++, no
+display).
+
+**Proposal: the plugin renders the PDF, the binary only adds the text layer.**
+The plugin runs inside Xournal++, which can export the open document itself
+via the Lua API (`app.export`, Xournal++ ≥ 1.2). The plugin exports to a
+temporary PDF and calls
+
+```
+run_htr -if notes.xopp --input-pdf /tmp/xyz.pdf -of notes_searchable.pdf
+```
+
+- No Xournal++ path to find or configure on any OS or packaging.
+- The smoke test runs on a committed `.xopp` + PDF fixture pair, so CI needs
+  no Xournal++.
+- Needs a new `--input-pdf` option; without it the CLI keeps calling
+  `xournalpp` as today (developer mode, scripts).
+- To verify in a POC: `app.export` produces the same PDF as `xournalpp -p`.
+
+**Fallback if `app.export` falls short: a configured path.** The binary takes
+`--xournalpp <command>`; the installer detects Xournal++ and writes it into
+the plugin config, which the user can edit:
+
+```lua
+-- ~/.config/xournalpp/plugins/xournalpp_htr/config.lua
+_M.htr_executable = "/home/me/.local/share/xournalpp-htr/current/xournalpp_htr/run_htr"
+_M.xournalpp_executable = "xournalpp"                                     -- native, on PATH
+-- _M.xournalpp_executable = "flatpak run com.github.xournalpp.xournalpp"  -- Flatpak
+-- _M.xournalpp_executable = "/home/me/Apps/Xournal++.AppImage"            -- AppImage
+-- _M.xournalpp_executable = [[C:\Program Files\Xournal++\bin\xournalpp.exe]]  -- Windows
+```
 
 ## Work packages
 
@@ -178,7 +271,8 @@ Prerequisite: Xournal++ itself is installed (the binary renders `.xopp` via
 
 Possible POCs before committing: (a) binary on a clean Docker/VM image,
 (b) Xournal++ plugin calling the binary from Flatpak (sandbox may block
-`os.execute` access to `~/.local/share`).
+`os.execute` access to `~/.local/share`), (c) plugin exporting the PDF via
+`app.export` (see [Xournal++ dependency](#xournal-dependency)).
 
 ## Consequences
 
