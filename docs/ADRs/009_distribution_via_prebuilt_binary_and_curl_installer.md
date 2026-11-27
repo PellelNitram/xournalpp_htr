@@ -73,7 +73,7 @@ xournalpp-htr-<os>-<arch>.zip
 5. Copy `plugin/` there and write `config.lua` pointing at the binary.
 6. Print a success message and the shortcut (`Ctrl+F1`).
 
-Flags: `--version vX.Y.Z`, `--uninstall`, `--plugin-dir <path>`.
+Flags: `--version 2026.12.0` (or `nightly`), `--uninstall`, `--plugin-dir <path>`.
 
 ### CI/CD flow
 
@@ -91,12 +91,58 @@ smoke test passes.
 - **Workflow run artifacts** live on the run page (Actions tab), need a GitHub
   login, expire after 90 days and have no stable URL, so they are for
   development only.
-- **`nightly`** is a pre-release with a fixed tag and a stable URL
-  (`.../releases/download/nightly/...`). `releases/latest` ignores
-  pre-releases, so the user curl URL never points at it. Test with
-  `curl ... /releases/download/nightly/install.sh | bash -s -- --version nightly`.
 - **Version computation**: find the latest `YYYY.MM.*` tag; same month →
   bump PATCH, new month → `YYYY.MM.0`. Cron and button share this logic.
+
+### The `nightly` pre-release
+
+**Purpose.** Monthly releases are the only builds users get. `nightly` closes
+the gap between "merged to `master`" and "released":
+
+- Test the latest `master` exactly as a user would (real `install.sh`, real
+  zip, real plugin) on the Linux and Windows machines, before the monthly
+  release picks it up.
+- Hand a fix to someone who reported a bug without waiting up to a month or
+  cutting a hotfix release.
+- Workflow run artifacts cannot do this: they need a login, expire, have no
+  stable URL and are not what `install.sh` downloads.
+
+**How it works.** On every push to `master` whose build and smoke test pass,
+CI:
+
+1. Moves the git tag `nightly` to the new commit (force-update).
+2. Replaces all assets of the GitHub Release `nightly` (zips, `SHA256SUMS`,
+   `install.sh`) with the fresh ones, keeping it marked as *pre-release*.
+3. Writes the commit SHA and build date into the release notes, so a bug
+   report against `nightly` names the exact commit.
+
+There is always exactly one `nightly`, never a history of them. Its URL is
+stable, `.../releases/download/nightly/install.sh`; `releases/latest` ignores
+pre-releases, so the user curl command never installs it. Install it with:
+
+```bash
+curl -fsSL https://github.com/PellelNitram/xournalpp_htr/releases/download/nightly/install.sh | bash -s -- --version nightly
+```
+
+Re-running the monthly install command switches back to the stable release.
+
+### Local execution
+
+CI logic lives in `Makefile` targets and scripts, and the workflow YAML only
+calls them (thin workflows). The same commands run locally on the Linux and
+Windows machines:
+
+| Target | Does |
+|---|---|
+| `make build-binary` | `pyinstaller run_htr.spec` + zip into `dist/` |
+| `make smoke-test-binary` | Run the built binary on the `.xopp` fixture |
+| `make install-local` | Run `install.sh` against the local `dist/` zip (no download) |
+| `scripts/next_calver.sh` | Print the next CalVer tag (dry run of the release logic) |
+
+Only the publishing steps (tagging, uploading release assets) need GitHub and
+stay CI-only. [`act`](https://github.com/nektos/act) can replay the Linux
+workflow in Docker for debugging the YAML itself, but is optional: it cannot
+emulate Windows runners.
 
 ## User experience
 
@@ -124,7 +170,7 @@ Prerequisite: Xournal++ itself is installed (the binary renders `.xopp` via
 | 0 | Make the best pipeline the default, drop `htr_pipeline` | #125 | First: shrinks the binary |
 | 1 | Decide modes, slim user dependency set, model bundling | #66 | Gates the rest |
 | 2 | PyInstaller spike: clean VM test, one-dir, startup time, size | #67 | Extends the existing PoC |
-| 3 | CI workflow: Linux build + smoke test + artifact | new | `ci-cd`, `installation` |
+| 3 | CI workflow: Linux build + smoke test + artifact, logic in `make` targets runnable locally | new | `ci-cd`, `installation` |
 | 4 | `install.sh` + plugin config generation + uninstall | #68, #69 | Merge into one script |
 | 5 | Release jobs: monthly cron + manual button (CalVer), `nightly` pre-release, checksums | new | |
 | 6 | Docs: curl line in `installation_user.md` | #147 | Last |
