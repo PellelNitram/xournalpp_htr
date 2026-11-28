@@ -85,8 +85,9 @@ was downloaded from, and the URL alone picks the version:
 
 The different URL shapes are GitHub's, not ours: a specific release's file is
 at `releases/download/<tag>/<file>`, while `releases/latest/download/<file>` is
-a special GitHub redirect to the same file in whichever release is currently
-the latest. Only the redirect gives a URL that never changes yet always
+a special GitHub redirect: GitHub answers it with an HTTP redirect to
+`releases/download/<latest tag>/<file>`, where *latest* is the newest release
+that is neither a draft nor a pre-release. Only the redirect gives a URL that never changes yet always
 installs the newest release.
 
 There is no `--version` flag. Flags: `--uninstall`, `--plugin-dir <path>`.
@@ -96,11 +97,13 @@ There is no `--version` flag. Flags: `--uninstall`, `--plugin-dir <path>`.
 Every trigger runs the same build job per OS: `pyinstaller run_htr.spec`,
 smoke test, zip. The smoke test runs the built binary on a fixture and
 checks that it exits cleanly and writes a PDF with a text layer. The fixture
-is a small handwritten `.xopp` document (a few lines of notes) committed to
-the repo under `tests/`, together with the PDF Xournal++ renders from it, so
-the smoke test needs no Xournal++ (see
-[Xournal++ dependency](#xournal-dependency)). No such fixture exists yet; it
-is created as part of the CI work package. A release is only published if the
+is `data/2024-07-26_minimal.xopp` from the HF dataset
+[`PellelNitram/xournalpp_htr_examples`](https://huggingface.co/datasets/PellelNitram/xournalpp_htr_examples)
+(already used by `tests/conftest.py`), plus the PDF Xournal++ renders from it,
+which is added to the same dataset as `data/2024-07-26_minimal.pdf`. Nothing
+is committed to the repo; CI downloads both pinned to a dataset revision. With
+the PDF at hand the smoke test needs no Xournal++ (see
+[Xournal++ dependency](#xournal-dependency)). A release is only published if the
 smoke test passes.
 
 | Trigger | Result | Audience |
@@ -190,11 +193,9 @@ merge to master ──► nightly updated ──► test on own Linux/Windows ma
 ```
 
 1. Every merge to `master` updates `nightly`.
-2. Every `nightly` build passes the automated smoke test. Manual testing on
-   the Linux and Windows machines is a spot check, not a gate: install
-   `nightly` after risky merges and once in the last days of the month,
-   before the cron releases it. Untested nightlies are fine; the smoke test
-   still guards every release.
+2. Every `nightly` build passes the automated checks below. Manual testing
+   on the Linux and Windows machines is optional (e.g. after risky merges);
+   releases must be safe without it.
 3. On the 1st of the month the cron publishes `YYYY.MM.0` if anything was
    merged since the last release.
 4. If a bug in the current release is serious enough not to wait: fix it,
@@ -204,6 +205,26 @@ merge to master ──► nightly updated ──► test on own Linux/Windows ma
 
 Monthly and hotfix releases are the same workflow with a different trigger,
 so there is only one release path to maintain.
+
+### Automated checks instead of manual testing
+
+Since nightlies will rarely be tested by hand, the release gate is automated.
+Each check runs on every OS of the matrix:
+
+| Check | Catches | Runs on |
+|---|---|---|
+| Smoke test (fixture above) | Binary does not start, missing libs or models, broken CLI | Every build |
+| Install test: run `install.sh` / `install.ps1` against the built zip in the clean runner, check plugin files, `config.lua` and binary path, then `--uninstall` | Broken installer, wrong paths | Every build |
+| `luac -p` on the plugin | Lua syntax errors | Every build |
+| Quality gate: run the default pipeline through the binary on `xournalpp_htr_benchmark`; fail if recall × (1 − CER) drops more than a set margin below the last release | Silent accuracy regressions | Release workflow (and `nightly`) |
+
+What stays untested automatically is the plugin running inside a real
+Xournal++ (menu, `app.export`, file dialog). That code changes rarely; test it
+by hand when it changes.
+
+Should a bad release slip through anyway: every release stays installable via
+its fixed URL (`.../releases/download/<previous version>/install.sh`), which
+is the documented rollback, and the manual button ships the fix.
 
 ## User experience
 
