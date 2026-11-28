@@ -83,13 +83,24 @@ was downloaded from, and the URL alone picks the version:
 | `.../releases/download/2026.12.0/install.sh` | Exactly `2026.12.0` |
 | `.../releases/download/nightly/install.sh` | Current `nightly` |
 
+The different URL shapes are GitHub's, not ours: a specific release's file is
+at `releases/download/<tag>/<file>`, while `releases/latest/download/<file>` is
+a special GitHub redirect to the same file in whichever release is currently
+the latest. Only the redirect gives a URL that never changes yet always
+installs the newest release.
+
 There is no `--version` flag. Flags: `--uninstall`, `--plugin-dir <path>`.
 
 ### CI/CD flow
 
 Every trigger runs the same build job per OS: `pyinstaller run_htr.spec`,
-smoke test on a tiny `.xopp` fixture plus its pre-rendered PDF (no Xournal++
-needed, see [Xournal++ dependency](#xournal-dependency)), zip. A release is only published if the
+smoke test, zip. The smoke test runs the built binary on a fixture and
+checks that it exits cleanly and writes a PDF with a text layer. The fixture
+is a small handwritten `.xopp` document (a few lines of notes) committed to
+the repo under `tests/`, together with the PDF Xournal++ renders from it, so
+the smoke test needs no Xournal++ (see
+[Xournal++ dependency](#xournal-dependency)). No such fixture exists yet; it
+is created as part of the CI work package. A release is only published if the
 smoke test passes.
 
 | Trigger | Result | Audience |
@@ -108,8 +119,11 @@ smoke test passes.
 ### The `nightly` pre-release
 
 *Pre-release* and *nightly* are not two kinds of release. *Pre-release* is a
-checkbox GitHub offers on any release: the release is labelled as such and
-`releases/latest` skips it. *`nightly`* is the name of the one release of ours
+checkbox GitHub offers on any release. It has two effects: the release page
+shows a "Pre-release" badge, and GitHub never treats it as the *latest*
+release. Since the user install command uses `releases/latest/...`, it
+resolves to the newest monthly or hotfix release, even when `nightly` was
+updated more recently. *`nightly`* is the name of the one release of ours
 that has this checkbox set. Monthly and hotfix releases never set it.
 
 **Purpose.** Monthly releases are the only builds users get. `nightly` closes
@@ -176,8 +190,11 @@ merge to master ──► nightly updated ──► test on own Linux/Windows ma
 ```
 
 1. Every merge to `master` updates `nightly`.
-2. `nightly` is installed and used on the Linux and Windows machines; this is
-   where regressions are noticed before users see them.
+2. Every `nightly` build passes the automated smoke test. Manual testing on
+   the Linux and Windows machines is a spot check, not a gate: install
+   `nightly` after risky merges and once in the last days of the month,
+   before the cron releases it. Untested nightlies are fine; the smoke test
+   still guards every release.
 3. On the 1st of the month the cron publishes `YYYY.MM.0` if anything was
    merged since the last release.
 4. If a bug in the current release is serious enough not to wait: fix it,
@@ -242,6 +259,11 @@ run_htr -if notes.xopp --input-pdf /tmp/xyz.pdf -of notes_searchable.pdf
 - Needs a new `--input-pdf` option; without it the CLI keeps calling
   `xournalpp` as today (developer mode, scripts).
 - To verify in a POC: `app.export` produces the same PDF as `xournalpp -p`.
+- **Demo**: the HF Space demo (`scripts/demo.py`) does not use the CLI or the
+  plugin. It calls `utils.export_to_pdf_with_xournalpp` directly, with
+  Xournal++ installed in its Docker image. That function stays, so the demo is
+  unaffected by `--input-pdf` and needs no `--xournalpp` option. Confirm by
+  building and running the demo image after the change.
 
 **Fallback if `app.export` falls short: a configured path.** The binary takes
 `--xournalpp <command>`; the installer detects Xournal++ and writes it into
