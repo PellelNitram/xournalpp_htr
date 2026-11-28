@@ -220,7 +220,16 @@ Each check runs on every OS of the matrix:
 
 What stays untested automatically is the plugin running inside a real
 Xournal++ (menu, `app.export`, file dialog). That code changes rarely; test it
-by hand when it changes.
+by hand when it changes, on Linux and Windows:
+
+1. Install the build under test (`nightly` or `make install-local`).
+2. Open `2024-07-26_minimal.xopp` from `xournalpp_htr_examples` in Xournal++.
+3. Run *Plugin → Xournal++ HTR* (`Ctrl+F1`) and save the output PDF.
+4. Open the PDF, search for a word from the note and check that it is found
+   and highlighted at the right place.
+
+Automating this (e.g. `xvfb-run` + `xdotool`, or mocked Lua unit tests) is
+possible but out of scope.
 
 Should a bad release slip through anyway: every release stays installable via
 its fixed URL (`.../releases/download/<previous version>/install.sh`), which
